@@ -1,0 +1,40 @@
+{
+  "name": "kaboom-kitten",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "npm run gen:art && nuxt build",
+    "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
+    "postinstall": "nuxt prepare",
+    "gen:placeholders": "node scripts/gen-card-placeholders.mjs",
+    "gen:manifest": "node scripts/gen-card-manifest.mjs",
+    "gen:art": "npm run gen:placeholders && npm run gen:manifest",
+    "test": "vitest run",
+    "test:unit": "vitest run server",
+    "test:integration": "vitest run tests",
+    "test:watch": "vitest",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^1.0.1",
+    "ioredis": "^6.0.0",
+    "nuxt": "^4.5.2",
+    "pinia": "^4.0.2",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^4.1.0",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^20.11.2",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.0.0",
+    "ws": "^8.21.3"
+  }
+}

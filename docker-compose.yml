@@ -1,0 +1,48 @@
+services:
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    # Published so `npm run dev` on the host can use it too. Override
+    # REDIS_PORT if 6379 is already taken by another project.
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NUXT_REDIS_URL: redis://redis:6379
+      NUXT_PUBLIC_BASE_URL: ${NUXT_PUBLIC_BASE_URL:-http://localhost:3000}
+      NUXT_PUBLIC_MAX_PLAYERS: ${NUXT_PUBLIC_MAX_PLAYERS:-10}
+      NUXT_NOPE_WINDOW_MS: ${NUXT_NOPE_WINDOW_MS:-5000}
+      NUXT_TURN_TIMEOUT_MS: ${NUXT_TURN_TIMEOUT_MS:-45000}
+      NUXT_ROOM_TTL_SECONDS: ${NUXT_ROOM_TTL_SECONDS:-21600}
+    depends_on:
+      redis:
+        condition: service_healthy
+    # node -e rather than curl/wget: the alpine runtime image has neither.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  redis-data:

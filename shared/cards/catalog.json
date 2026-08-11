@@ -1,0 +1,342 @@
+{
+  "$comment": "Single source of truth for card DATA (identity, deck counts, presentation). Behaviour lives in server/game/cards/*.ts, keyed by the same id. Consumed by the engine, the UI and scripts/gen-card-placeholders.mjs.",
+  "handSize": 7,
+  "cards": [
+    {
+      "id": "exploding-kitten",
+      "name": "Exploding Kitten",
+      "label": "Kaboom",
+      "category": "kitten",
+      "deck": {
+        "formula": "players-minus-1"
+      },
+      "color": "#c0392b",
+      "emoji": "💥",
+      "text": "You explode unless you play a Defuse.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "defuse",
+      "name": "Defuse",
+      "label": "Save yourself",
+      "category": "defuse",
+      "deck": {
+        "formula": "defuse"
+      },
+      "color": "#27ae60",
+      "emoji": "🛡️",
+      "text": "Stops an Exploding Kitten. Put the kitten back anywhere in the deck.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "nope",
+      "name": "Nope",
+      "label": "Stop that",
+      "category": "action",
+      "deck": {
+        "base": 5
+      },
+      "color": "#e74c3c",
+      "emoji": "⛔",
+      "text": "Stop any action except a Defuse or an Exploding Kitten. Can be Noped.",
+      "play": {
+        "solo": true,
+        "anytime": true
+      }
+    },
+    {
+      "id": "attack-2x",
+      "name": "Attack 2x",
+      "label": "Attack",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#d35400",
+      "emoji": "⚔️",
+      "text": "End your turn(s) without drawing. The next player takes 2 turns.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "targeted-attack-2x",
+      "name": "Targeted Attack 2x",
+      "label": "Pick a victim",
+      "category": "action",
+      "deck": {
+        "base": 3
+      },
+      "color": "#e67e22",
+      "emoji": "🎯",
+      "text": "End your turn(s) without drawing. A player of your choice takes 2 turns.",
+      "play": {
+        "solo": true,
+        "target": true
+      }
+    },
+    {
+      "id": "personal-attack-3x",
+      "name": "Personal Attack 3x",
+      "label": "Take 3 turns",
+      "category": "action",
+      "deck": {
+        "base": 3
+      },
+      "color": "#8e44ad",
+      "emoji": "🔥",
+      "text": "End your turn without drawing, then take 3 turns yourself.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "skip",
+      "name": "Skip",
+      "label": "End your turn",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#16a085",
+      "emoji": "⏭️",
+      "text": "End your turn without drawing a card.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "reverse",
+      "name": "Reverse",
+      "label": "Turn it around",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#2980b9",
+      "emoji": "🔄",
+      "text": "Reverse the order of play and end your turn without drawing.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "shuffle",
+      "name": "Shuffle",
+      "label": "Mix the deck",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#2c3e50",
+      "emoji": "🎲",
+      "text": "Shuffle the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "favor",
+      "name": "Favor",
+      "label": "Demand a card",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#c2185b",
+      "emoji": "🤲",
+      "text": "A player of your choice gives you a card of their choosing.",
+      "play": {
+        "solo": true,
+        "target": true
+      }
+    },
+    {
+      "id": "draw-from-the-bottom",
+      "name": "Draw From the Bottom",
+      "label": "From the bottom",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#795548",
+      "emoji": "⬇️",
+      "text": "End your turn by drawing the bottom card of the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "see-the-future-3x",
+      "name": "See the Future 3x",
+      "label": "Peek at 3",
+      "category": "action",
+      "deck": {
+        "base": 5
+      },
+      "color": "#7b1fa2",
+      "emoji": "🔮",
+      "text": "Privately view the top 3 cards of the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "see-the-future-5x",
+      "name": "See the Future 5x",
+      "label": "Peek at 5",
+      "category": "action",
+      "deck": {
+        "base": 2,
+        "min": 1
+      },
+      "color": "#6a1b9a",
+      "emoji": "🔮",
+      "text": "Privately view the top 5 cards of the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "alter-the-future-3x",
+      "name": "Alter the Future 3x",
+      "label": "Reorder 3",
+      "category": "action",
+      "deck": {
+        "base": 4
+      },
+      "color": "#3949ab",
+      "emoji": "🔀",
+      "text": "Privately view and rearrange the top 3 cards of the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "alter-the-future-5x",
+      "name": "Alter the Future 5x",
+      "label": "Reorder 5",
+      "category": "action",
+      "deck": {
+        "base": 2,
+        "min": 1
+      },
+      "color": "#283593",
+      "emoji": "🔀",
+      "text": "Privately view and rearrange the top 5 cards of the draw pile.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "garbage-collection",
+      "name": "Garbage Collection",
+      "label": "Everyone pays up",
+      "category": "action",
+      "deck": {
+        "base": 2,
+        "min": 1
+      },
+      "color": "#546e7a",
+      "emoji": "🗑️",
+      "text": "Every player puts 1 card into a pile. Shuffle it and deal the cards back out.",
+      "play": {
+        "solo": true
+      }
+    },
+    {
+      "id": "tacocat",
+      "name": "Tacocat",
+      "label": "Annoy",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#f39c12",
+      "emoji": "🌮",
+      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "cattermelon",
+      "name": "Cattermelon",
+      "label": "Annoy",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#2ecc71",
+      "emoji": "🍉",
+      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "hairy-potato-cat",
+      "name": "Hairy Potato Cat",
+      "label": "Annoy",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#a1887f",
+      "emoji": "🥔",
+      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "rainbow-ralphing-cat",
+      "name": "Rainbow Ralphing Cat",
+      "label": "Annoy",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#00bcd4",
+      "emoji": "🌈",
+      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "beard-cat",
+      "name": "Beard Cat",
+      "label": "Annoy",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#5d4037",
+      "emoji": "🧔",
+      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "play": {
+        "solo": false
+      }
+    },
+    {
+      "id": "feral-cat",
+      "name": "Feral Cat",
+      "label": "Any cat",
+      "category": "cat",
+      "deck": {
+        "base": 4
+      },
+      "color": "#ff5722",
+      "emoji": "🐈",
+      "text": "Use as any Cat Card in a combo.",
+      "play": {
+        "solo": false
+      }
+    }
+  ]
+}
