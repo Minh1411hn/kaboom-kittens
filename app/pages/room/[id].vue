@@ -274,21 +274,15 @@ async function leaveToLobby() {
                 </p>
                 <ShareLink :room-id="roomId" />
 
-                <div class="row">
-                    <PlaqueButton
+                <div class="start-game-container">
+                    <button
                         v-if="isHost"
-                        :title="
-                            state.players.length < 2
-                                ? 'Need one more player'
-                                : `Play with ${state.players.length}`
-                        "
-                        subtitle="Start the game"
-                        icon="🎲"
-                        variant="primary"
-                        chevron
+                        class="primary start-btn"
                         :disabled="state.players.length < 2"
                         @click="startGame"
-                    />
+                    >
+                        Start the game
+                    </button>
                     <p v-else class="muted">
                         Waiting for the host to press Play.
                     </p>
@@ -510,16 +504,24 @@ async function leaveToLobby() {
 }
 
 .red-theme .panel {
-    background: linear-gradient(
-        160deg,
-        rgb(122 20 20 / 55%),
-        rgb(61 10 12 / 78%)
-    );
-    border: 2px solid var(--maroon-edge);
+    background: rgba(30, 5, 5, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
     color: var(--text);
-    box-shadow:
-        var(--shadow),
-        inset 0 0 0 1px rgb(255 255 255 / 8%);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.start-game-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.start-btn {
+    font-size: 1.5rem;
+    padding: 1rem 2.5rem;
+    box-shadow: 0 8px 24px rgba(255, 122, 26, 0.4);
 }
 
 .red-theme .panel h2 {

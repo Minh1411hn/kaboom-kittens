@@ -88,7 +88,7 @@ body,
 body {
   margin: 0;
   background-color: var(--bg);
-  background-image: url('/common/background.png');
+  background-image: url('/common/background-wood.png');
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
