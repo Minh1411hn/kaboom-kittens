@@ -10,7 +10,7 @@ import {
   playerHasOtherPeer,
   send,
 } from '../services/bus'
-import { appendChat, getRoomMeta, listRooms, loadChat, loadState } from '../services/roomRepo'
+import { appendChat, getRoomMeta, listRooms, loadChat } from '../services/roomRepo'
 import {
   applyCommand,
   broadcastRoom,
@@ -121,9 +121,7 @@ export default defineWebSocketHandler({
     // Another tab may still hold the seat; only the last one counts as leaving.
     if (playerHasOtherPeer(context.roomId, context.playerId, peer)) return
 
-    const state = await loadState(context.roomId)
-    if (state?.status === 'lobby') await leaveRoom(context.roomId, context.playerId)
-    else await markConnection(context.roomId, context.playerId, false)
+    await markConnection(context.roomId, context.playerId, false)
   },
 })
 
