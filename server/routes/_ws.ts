@@ -207,6 +207,9 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
     case 'pass-nope':
       return runCommand(peer, { type: 'pass-nope', playerId: context.playerId, now })
 
+    case 'quit-game':
+      return runCommand(peer, { type: 'quit-game', playerId: context.playerId, now })
+
     case 'submit-interaction':
       return runCommand(peer, {
         type: 'submit-interaction',

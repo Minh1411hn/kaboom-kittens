@@ -169,19 +169,10 @@ function since(at: number): string {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background:
-        radial-gradient(
-            ellipse at 50% 40%,
-            var(--red-1) 0%,
-            var(--red-2) 90%,
-            var(--red-3) 100%
-        ),
-        url("/common/red-pattern.svg");
-    background-repeat: no-repeat, repeat;
-    background-size:
-        cover,
-        340px 340px;
-    background-position: center, center;
+    background-image: url("/common/background-red-texture.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
 }
 
 /*

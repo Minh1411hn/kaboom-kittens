@@ -536,6 +536,64 @@ describe('exploding kittens', () => {
   })
 })
 
+describe('quit game', () => {
+  it('eliminates the quitter and continues when others remain', () => {
+    const state = started(3)
+    const quitter = currentPlayer(state)!
+
+    const after = run(state, { type: 'quit-game', playerId: quitter.id })
+    expect(after.status).toBe('playing')
+    expect(playerById(after, quitter.id)!.alive).toBe(false)
+    expect(playerById(after, quitter.id)!.hand).toHaveLength(0)
+    expect(after.discardPile.length).toBeGreaterThan(0)
+  })
+
+  it('ends the game when the second-to-last player quits', () => {
+    const state = started(2)
+    const quitter = currentPlayer(state)!
+    const survivor = state.players.find((p) => p.id !== quitter.id)!
+
+    const after = run(state, { type: 'quit-game', playerId: quitter.id })
+    expect(after.status).toBe('over')
+    expect(after.winnerId).toBe(survivor.id)
+  })
+
+  it('advances the turn when the current player quits', () => {
+    const state = started(4)
+    const quitter = currentPlayer(state)!
+
+    const after = run(state, { type: 'quit-game', playerId: quitter.id })
+    expect(currentPlayer(after)!.id).not.toBe(quitter.id)
+    expect(playerById(after, currentPlayer(after)!.id)!.alive).toBe(true)
+  })
+
+  it('does not change whose turn it is when a non-current player quits', () => {
+    const state = started(4)
+    const current = currentPlayer(state)!
+    const other = state.players.find((p) => p.id !== current.id)!
+
+    const after = run(state, { type: 'quit-game', playerId: other.id })
+    expect(currentPlayer(after)!.id).toBe(current.id)
+  })
+
+  it('refuses to quit before the game starts', () => {
+    const state = newGame(3)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'p0' })).toMatch(/not running/i)
+  })
+
+  it('refuses to quit twice', () => {
+    let state = started(3)
+    const quitter = currentPlayer(state)!
+    state = run(state, { type: 'quit-game', playerId: quitter.id })
+    expect(expectRejected(state, { type: 'quit-game', playerId: quitter.id })).toMatch(/already/i)
+  })
+
+  it('refuses to quit for a player not in the game', () => {
+    const state = started(3)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'nobody' })).toMatch(/not in this game/i)
+  })
+})
+
 describe('cat combos', () => {
   it('a matching pair steals a random card', () => {
     const state = started(3)

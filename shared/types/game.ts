@@ -282,7 +282,7 @@ export type Command =
   | { type: 'close-nope-window'; now: number }
   | { type: 'timeout-turn'; now: number }
   | { type: 'timeout-interaction'; now: number }
-  | { type: 'player-left'; playerId: string; now: number }
+  | { type: 'quit-game'; playerId: string; now: number }
 
 // ---------------------------------------------------------------------------
 // Redacted view sent to clients

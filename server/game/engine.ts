@@ -194,17 +194,23 @@ function dispatch(
       return completeInteractionIfReady(state, env)
     }
 
-    case 'player-left': {
+    case 'quit-game': {
+      if (state.status !== 'playing') return 'The game is not running.'
+      const player = playerById(state, command.playerId)
+      if (!player) return 'You are not in this game.'
+      if (!player.alive) return 'You have already left the game.'
+      // No interaction/nopeWindow guard here, unlike draw-card — a player
+      // quitting should go through even mid-prompt or mid-Nope-window.
       removePlayer(state, command.playerId)
-      if (state.status === 'playing') {
-        logEvent(
-          state,
-          { type: 'player-exploded', playerId: command.playerId, message: `A player left the game.` },
-          env.now,
-        )
-        skipEliminatedCurrent(state)
-        checkGameOver(state, env.now)
-      }
+      logEvent(
+        state,
+        { type: 'player-exploded', playerId: command.playerId, message: `${player.nickname} quit the game.` },
+        env.now,
+      )
+      // settle() below re-runs both of these, but only this explicit call
+      // produces the "quit the game" log line above.
+      skipEliminatedCurrent(state)
+      checkGameOver(state, env.now)
       return undefined
     }
   }

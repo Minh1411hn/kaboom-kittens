@@ -45,6 +45,7 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('draw-card') }),
   z.object({ type: z.literal('pass-nope') }),
+  z.object({ type: z.literal('quit-game') }),
   z.object({
     type: z.literal('submit-interaction'),
     interactionId: z.string().max(64),

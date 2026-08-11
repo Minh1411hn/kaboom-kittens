@@ -27,6 +27,7 @@ const selectedUids = ref<string[]>([]);
 const targetId = ref<string | null>(null);
 const namedCardId = ref<CardId | null>(null);
 const logOpen = ref(false);
+const confirmingQuit = ref(false);
 
 // --- derived state ---------------------------------------------------------
 
@@ -53,6 +54,9 @@ const youAreSeated = computed(() =>
 );
 const alive = computed(() =>
     Boolean(state.value?.players.find((p) => p.id === you.value?.id)?.alive),
+);
+const canQuit = computed(
+    () => isPlaying.value && alive.value && youAreSeated.value,
 );
 
 /** Your own seat sits at the bottom-left; everyone else arcs across the top. */
@@ -214,6 +218,20 @@ async function leaveToLobby() {
     send({ type: "leave" });
     await navigateTo("/");
 }
+
+function askToQuit() {
+    confirmingQuit.value = true;
+}
+
+async function quitGame() {
+    confirmingQuit.value = false;
+    send({ type: "quit-game" });
+    await navigateTo("/");
+}
+
+function cancelQuit() {
+    confirmingQuit.value = false;
+}
 </script>
 
 <template>
@@ -229,6 +247,14 @@ async function leaveToLobby() {
                         @click="leaveToLobby"
                     >
                         ←
+                    </button>
+                    <button
+                        v-if="canQuit"
+                        class="icon danger"
+                        title="Quit the game — you will be eliminated"
+                        @click="askToQuit"
+                    >
+                        🚪 Quit
                     </button>
                     <div class="stack tight">
                         <strong class="room-title">{{
@@ -462,6 +488,16 @@ async function leaveToLobby() {
                 :players="state.players"
                 @submit="submitInteraction"
             />
+
+            <ConfirmDialog
+                v-if="confirmingQuit"
+                title="Quit the game?"
+                message="You'll be eliminated and can't rejoin this round."
+                confirm-label="Quit"
+                cancel-label="Stay"
+                @confirm="quitGame"
+                @cancel="cancelQuit"
+            />
         </template>
     </div>
 </template>
@@ -488,19 +524,10 @@ async function leaveToLobby() {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background:
-        radial-gradient(
-            ellipse at 50% 40%,
-            var(--red-1) 0%,
-            var(--red-2) 90%,
-            var(--red-3) 100%
-        ),
-        url("/common/red-pattern.svg");
-    background-repeat: no-repeat, repeat;
-    background-size:
-        cover,
-        340px 340px;
-    background-position: center, center;
+    background-image: url("/common/background-red-texture.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
 }
 
 .red-theme .panel {
@@ -509,7 +536,9 @@ async function leaveToLobby() {
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 16px;
     color: var(--text);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .start-game-container {
@@ -628,14 +657,6 @@ async function leaveToLobby() {
     min-height: 74vh;
     padding: 1.25rem 1.5rem 1.5rem;
     border-radius: 26px;
-    background:
-        radial-gradient(
-            70% 55% at 50% 42%,
-            rgb(255 236 200 / 12%),
-            transparent 70%
-        ),
-        rgb(0 0 0 / 8%);
-    box-shadow: inset 0 0 60px rgb(30 12 0 / 35%);
 }
 
 .seat-arc {
