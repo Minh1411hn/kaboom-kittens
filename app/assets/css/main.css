@@ -25,13 +25,13 @@
   --ink: #2c2117;
   --ink-dim: #7a6a56;
 
-  /* Cards are white paper with a coloured border. */
+  /* Cards are white paper with a colored border. */
   --card-paper: #fff;
   --card-ink: #1d1d1f;
   --card-ink-dim: #8a8a90;
   --card-radius: 14px;
   --card-border: 4px;
-  --card-ratio: 5 / 7;
+  --card-ratio: 128 / 136;
 
   /* The draw pile's red-to-orange heat. */
   --deck-hot: #e8352e;

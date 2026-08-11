@@ -26,13 +26,6 @@ const overlap = computed(() => {
   return Math.max(6, Math.min(96, needed))
 })
 
-const tilt = (index: number): string => {
-  const middle = (props.hand.length - 1) / 2
-  const offset = index - middle
-  const angle = Math.max(-11, Math.min(11, offset * 2.6))
-  const lift = Math.abs(offset) * 3.4
-  return `rotate(${angle}deg) translateY(${lift}px)`
-}
 </script>
 
 <template>
@@ -41,7 +34,7 @@ const tilt = (index: number): string => {
       v-for="(card, index) in hand"
       :key="card.uid"
       class="slot"
-      :style="{ marginLeft: index === 0 ? '0' : `-${overlap}px`, transform: tilt(index) }"
+      :style="{ marginLeft: index === 0 ? '0' : `-${overlap}px` }"
     >
       <button class="pick" @click="$emit('toggle', card.uid)">
         <CardImage
@@ -67,7 +60,6 @@ const tilt = (index: number): string => {
 
 .slot {
   transition: transform 0.15s ease;
-  transform-origin: 50% 130%;
 }
 
 .slot:hover {

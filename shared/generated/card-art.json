@@ -1,9 +1,12 @@
 {
   "alter-the-future-3x": [
-    "/cards/alter-the-future-3x/1.svg"
+    "/cards/alter-the-future-3x/1.svg",
+    "/cards/alter-the-future-3x/ATF.Manatee.png"
   ],
   "alter-the-future-5x": [
-    "/cards/alter-the-future-5x/1.svg"
+    "/cards/alter-the-future-5x/1.svg",
+    "/cards/alter-the-future-5x/ATF.PurplePickle.png",
+    "/cards/alter-the-future-5x/ATF.Tesla.png"
   ],
   "attack-2x": [
     "/cards/attack-2x/1.svg"
@@ -12,19 +15,28 @@
     "/cards/beard-cat/1.svg"
   ],
   "card-back": [
-    "/cards/card-back/1.svg"
+    "/cards/card-back/1.svg",
+    "/cards/card-back/Cardback.png"
   ],
   "cattermelon": [
     "/cards/cattermelon/1.svg"
   ],
   "defuse": [
-    "/cards/defuse/1.svg"
+    "/cards/defuse/1.svg",
+    "/cards/defuse/Defuse.Banjo.png",
+    "/cards/defuse/defuse.catnip.png",
+    "/cards/defuse/defuse.laser.png"
   ],
   "draw-from-the-bottom": [
-    "/cards/draw-from-the-bottom/1.svg"
+    "/cards/draw-from-the-bottom/1.svg",
+    "/cards/draw-from-the-bottom/DFB.png"
   ],
   "exploding-kitten": [
-    "/cards/exploding-kitten/1.svg"
+    "/cards/exploding-kitten/1.svg",
+    "/cards/exploding-kitten/bomb.kitten.png",
+    "/cards/exploding-kitten/bomb.kitten.streaking.png",
+    "/cards/exploding-kitten/bomb.kitten.warning.png",
+    "/cards/exploding-kitten/bomb.kitten2.png"
   ],
   "favor": [
     "/cards/favor/1.svg"
@@ -33,7 +45,8 @@
     "/cards/feral-cat/1.svg"
   ],
   "garbage-collection": [
-    "/cards/garbage-collection/1.svg"
+    "/cards/garbage-collection/1.svg",
+    "/cards/garbage-collection/GarbageCollection.png"
   ],
   "hairy-potato-cat": [
     "/cards/hairy-potato-cat/1.svg"
@@ -42,25 +55,37 @@
     "/cards/nope/1.svg"
   ],
   "personal-attack-3x": [
-    "/cards/personal-attack-3x/1.svg"
+    "/cards/personal-attack-3x/1.svg",
+    "/cards/personal-attack-3x/SelfSlap3B.png",
+    "/cards/personal-attack-3x/SelfSlap3C.png"
   ],
   "rainbow-ralphing-cat": [
     "/cards/rainbow-ralphing-cat/1.svg"
   ],
   "reverse": [
-    "/cards/reverse/1.svg"
+    "/cards/reverse/1.svg",
+    "/cards/reverse/Reverse.Backwards.png",
+    "/cards/reverse/Reverse.SirScratch.png"
   ],
   "see-the-future-3x": [
-    "/cards/see-the-future-3x/1.svg"
+    "/cards/see-the-future-3x/1.svg",
+    "/cards/see-the-future-3x/STF.Mantis3.png",
+    "/cards/see-the-future-3x/STF.Pigacorn3.png"
   ],
   "see-the-future-5x": [
-    "/cards/see-the-future-5x/1.svg"
+    "/cards/see-the-future-5x/1.svg",
+    "/cards/see-the-future-5x/STF.Angler5.png",
+    "/cards/see-the-future-5x/STF.Bear5.png"
   ],
   "shuffle": [
-    "/cards/shuffle/1.svg"
+    "/cards/shuffle/1.svg",
+    "/cards/shuffle/Shuffle.Litterbox.png"
   ],
   "skip": [
-    "/cards/skip/1.svg"
+    "/cards/skip/1.svg",
+    "/cards/skip/Skip.Bunnyraptor.png",
+    "/cards/skip/Skip.Nap.png",
+    "/cards/skip/Skip.Sprint.png"
   ],
   "tacocat": [
     "/cards/tacocat/1.svg"

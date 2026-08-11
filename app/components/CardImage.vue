@@ -28,7 +28,10 @@ const entry = computed(() => (props.cardId ? CARD_BY_ID[props.cardId] : null))
  * face out of the DOM entirely — the card id must never reach a viewer who is
  * only allowed to see a back.
  */
-const framed = computed(() => props.variant === 'frame' && !props.faceDown && Boolean(entry.value))
+const framed = computed(() => {
+  if (props.variant !== 'frame' || props.faceDown || !entry.value || !props.cardId) return false
+  return artVariantCount(props.cardId) === 1
+})
 
 const src = computed(() =>
   props.faceDown || !props.cardId ? cardBackUrl() : cardArtUrl(props.cardId, props.uid),

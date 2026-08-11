@@ -163,7 +163,7 @@ const back = cardBackUrl()
   z-index: 1;
   display: block;
   width: 168px;
-  aspect-ratio: 1;
+  aspect-ratio: var(--card-ratio);
   border-radius: 22px;
   overflow: hidden;
   box-shadow:
