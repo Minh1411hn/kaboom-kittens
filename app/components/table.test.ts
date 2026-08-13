@@ -237,6 +237,16 @@ describe("HandFan", () => {
     });
     expect(wrapper.text()).toContain("No cards left");
   });
+
+  it("flips over only the card the drag just delivered", async () => {
+    const hand = [card("skip", "a"), card("nope", "b")];
+    const wrapper = await mountSuspended(HandFan, {
+      props: { hand, selected: [], flipUid: "b" },
+    });
+    const slots = wrapper.findAll(".slot");
+    expect(slots[0]!.classes()).not.toContain("flip-in");
+    expect(slots[1]!.classes()).toContain("flip-in");
+  });
 });
 
 describe("TableCenter", () => {
@@ -256,8 +266,16 @@ describe("TableCenter", () => {
     expect(wrapper.text()).toContain("4");
     expect(wrapper.get(".deck").attributes("disabled")).toBeDefined();
 
+    // Drawing is a drag: the press starts a gesture, it never draws by itself.
     await wrapper.setProps({ canDraw: true });
+    await wrapper.get(".deck").trigger("pointerdown");
+    expect(wrapper.emitted("drawPointerDown")).toHaveLength(1);
+    expect(wrapper.emitted("draw")).toBeUndefined();
     await wrapper.get(".deck").trigger("click");
+    expect(wrapper.emitted("draw")).toBeUndefined();
+
+    // Keyboard is the one path that draws outright.
+    await wrapper.get(".deck").trigger("keydown.enter");
     expect(wrapper.emitted("draw")).toHaveLength(1);
   });
 

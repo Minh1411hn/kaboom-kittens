@@ -9,9 +9,16 @@ const props = defineProps<{
   canDraw: boolean
   deadline: number | null
   peek: Card[] | null
+  /** The ghost is out, so the top of the stack should read as lifted off. */
+  dragging?: boolean
 }>()
 
-defineEmits<{ draw: [] }>()
+defineEmits<{
+  /** The keyboard path — a mouse click deliberately does not draw. */
+  draw: []
+  /** Hands the gesture to `useDrawDrag` in the page. */
+  drawPointerDown: [PointerEvent]
+}>()
 
 const { remaining } = useCountdown(() => props.deadline)
 
@@ -36,10 +43,13 @@ const back = cardBackUrl()
     <div class="pile">
       <button
         class="deck"
+        :class="{ dragging }"
         :disabled="!canDraw"
-        :title="canDraw ? 'Draw a card' : ''"
-        :aria-label="`Draw pile, ${drawCount} cards left`"
-        @click="$emit('draw')"
+        :title="canDraw ? 'Drag the top card into your hand' : ''"
+        :aria-label="`Draw pile, ${drawCount} cards left. Drag the top card into your hand, or press Enter to draw.`"
+        @pointerdown="$emit('drawPointerDown', $event)"
+        @keydown.enter.prevent="$emit('draw')"
+        @keydown.space.prevent="$emit('draw')"
       >
         <span class="pile-face">
           <img :src="back" alt="" draggable="false" />
@@ -137,6 +147,10 @@ const back = cardBackUrl()
   border-radius: 22px;
   background: none;
   box-shadow: none;
+  /* Without this the browser claims the gesture and scrolls the page instead. */
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .deck::before,
@@ -180,7 +194,18 @@ const back = cardBackUrl()
 }
 
 .deck:not(:disabled) {
-  cursor: pointer;
+  cursor: grab;
+}
+
+/* The top card is in your hand, not on the stack — leave the two offset layers
+   behind it standing so the pile still reads as a pile. */
+.deck.dragging {
+  cursor: grabbing;
+}
+
+.deck.dragging .pile-face {
+  opacity: 0.3;
+  box-shadow: none;
 }
 
 .deck:not(:disabled) .pile-face {

@@ -28,6 +28,8 @@ const targetId = ref<string | null>(null);
 const namedCardId = ref<CardId | null>(null);
 const logOpen = ref(false);
 const confirmingQuit = ref(false);
+/** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
+const drawPending = ref(false);
 
 // --- derived state ---------------------------------------------------------
 
@@ -83,8 +85,64 @@ const canDraw = computed(
         isYourTurn.value &&
         !state.value?.interaction &&
         !nopeWindow.value &&
-        alive.value,
+        alive.value &&
+        !drawPending.value,
 );
+
+// --- drag to draw ----------------------------------------------------------
+
+/** The uid the drag delivered, held just long enough for HandFan to flip it. */
+const flipUid = ref<string | null>(null);
+const handArea = useTemplateRef<HTMLElement>("handArea");
+let flipTimer: ReturnType<typeof setTimeout> | undefined;
+/** The hand as it stood when you let go, to spot what the draw delivered. */
+let handAtDrop = new Set<string>();
+
+const drawDrag = useDrawDrag({
+    canDraw: () => canDraw.value,
+    dropRect: () => handArea.value?.getBoundingClientRect() ?? null,
+    onDrop: () => {
+        handAtDrop = new Set(hand.value.map((c) => c.uid));
+        drawPending.value = true;
+        send({ type: "draw-card" });
+    },
+});
+
+/**
+ * The reply to a drop. A new uid in your hand is the happy path; anything else —
+ * an Exploding Kitten (which goes to limbo and opens the defuse prompt, never
+ * the hand), a rejected command — simply clears the ghost. Diffing against the
+ * hand we held at drop time is what tells the two apart.
+ */
+function settleDraw(): void {
+    if (!drawPending.value) return;
+    drawPending.value = false;
+    drawDrag.resolve();
+    const arrived = hand.value.find((c) => !handAtDrop.has(c.uid));
+    if (!arrived) return;
+    flipUid.value = arrived.uid;
+    clearTimeout(flipTimer);
+    flipTimer = setTimeout(() => (flipUid.value = null), 400);
+}
+
+// The next snapshot is the answer, whatever it contains. An `error` arrives on
+// its own with no snapshot behind it, so it needs its own release.
+watch(state, () => settleDraw());
+watch(error, (message) => {
+    if (message) settleDraw();
+});
+// The composable gives up on a silent server after a few seconds. Follow it back
+// to idle, or a lost reply would leave the deck disabled for the rest of the game.
+watch(drawDrag.phase, (phase) => {
+    if (phase === "idle") drawPending.value = false;
+});
+// The turn clock can expire mid-drag, at which point the server draws for you.
+// Let go of a card that is no longer yours to place.
+watch(isYourTurn, (mine) => {
+    if (!mine) drawDrag.cancel();
+});
+
+onBeforeUnmount(() => clearTimeout(flipTimer));
 
 /** Choosing a target puts the table into a "pick a seat" mode. */
 const pickingTarget = computed(
@@ -117,7 +175,9 @@ const currentPlayerColor = computed(() =>
 const bannerHint = computed(() => {
     if (intent.value.reason) return intent.value.reason;
     if (pickingTarget.value) return "Now pick a player above.";
-    if (isYourTurn.value) return "Play cards, or draw to end your turn.";
+    if (drawDrag.dragging.value) return "Drop it on your hand to draw.";
+    if (isYourTurn.value)
+        return "Play cards, or drag the deck into your hand to end your turn.";
     return "";
 });
 
@@ -347,7 +407,9 @@ function cancelQuit() {
                         :can-draw="canDraw"
                         :deadline="state.turnDeadline"
                         :peek="you?.peek ?? null"
+                        :dragging="drawDrag.dragging.value"
                         @draw="draw"
+                        @draw-pointer-down="drawDrag.start"
                     />
                 </div>
 
@@ -389,17 +451,12 @@ function cancelQuit() {
                                 Play {{ selectedUids.length || "" }}
                             </button>
 
-                            <div class="row split">
-                                <button
-                                    :disabled="!selectedUids.length"
-                                    @click="selectedUids = []"
-                                >
-                                    Clear
-                                </button>
-                                <button :disabled="!canDraw" @click="draw">
-                                    Draw
-                                </button>
-                            </div>
+                            <button
+                                :disabled="!selectedUids.length"
+                                @click="selectedUids = []"
+                            >
+                                Clear
+                            </button>
                         </template>
                     </TurnBanner>
                 </div>
@@ -416,12 +473,17 @@ function cancelQuit() {
                     />
                 </div>
 
-                <div class="hand-area">
+                <div
+                    ref="handArea"
+                    class="hand-area"
+                    :class="{ 'drop-active': drawDrag.overDropZone.value }"
+                >
                     <HandFan
                         v-if="youAreSeated && alive && !isOver"
                         :hand="hand"
                         :selected="selectedUids"
                         :disabled="!isYourTurn && !hasNope"
+                        :flip-uid="flipUid"
                         @toggle="toggle"
                     />
                     <p v-else-if="!youAreSeated" class="watching">
@@ -432,6 +494,14 @@ function cancelQuit() {
                         You exploded 💥 — stick around and watch the rest burn.
                     </p>
                 </div>
+
+                <DrawGhost
+                    v-if="drawDrag.ghostVisible.value"
+                    :phase="drawDrag.phase.value"
+                    :x="drawDrag.x.value"
+                    :y="drawDrag.y.value"
+                    :reduced-motion="drawDrag.reducedMotion"
+                />
 
                 <Transition name="slide">
                     <NopeBar
@@ -698,21 +768,26 @@ function cancelQuit() {
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    border-radius: 22px;
+    border: 2px dashed transparent;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+/* The drop target for a draw. Same warm accent as the deck's own glow, so it
+   reads as "this is where that card goes". */
+.hand-area.drop-active {
+    border-color: rgb(255 194 26 / 70%);
+    background: rgb(255 194 26 / 8%);
+    box-shadow: inset 0 0 34px rgb(255 140 40 / 30%);
 }
 
 .watching {
     margin: 0 0 1.5rem;
     color: var(--text-dim);
     text-align: center;
-}
-
-.split {
-    gap: 0.45rem;
-}
-
-.split :deep(button),
-.split button {
-    flex: 1;
 }
 
 /* The Nope window is urgent, so it floats over the piles. */

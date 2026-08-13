@@ -130,6 +130,21 @@ describe('the table stage', () => {
     expect(wrapper.findAll('.hand-area .slot')).toHaveLength(3)
   })
 
+  it('offers no button that draws — the deck has to be dragged onto the hand', async () => {
+    fixture = playing()
+    const wrapper = await mount()
+
+    const controls = wrapper.get('.controls').text()
+    expect(controls).toContain('Clear')
+    expect(controls).not.toContain('Draw')
+
+    // The hand only lights up as a target once a card is over it.
+    expect(wrapper.get('.hand-area').classes()).not.toContain('drop-active')
+    // And pressing the deck starts a gesture rather than drawing outright.
+    await wrapper.get('.deck').trigger('pointerdown')
+    expect(wrapper.find('.ghost').exists()).toBe(false)
+  })
+
   it('lets the banner speak for whoever is on the clock', async () => {
     fixture = playing()
     const yours = await mount()

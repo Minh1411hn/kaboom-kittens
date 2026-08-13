@@ -5,6 +5,8 @@ const props = defineProps<{
   hand: Card[]
   selected: string[]
   disabled?: boolean
+  /** The card you just dragged off the deck — it flips over as it lands. */
+  flipUid?: string | null
 }>()
 
 defineEmits<{ toggle: [uid: string] }>()
@@ -34,6 +36,7 @@ const overlap = computed(() => {
       v-for="(card, index) in hand"
       :key="card.uid"
       class="slot"
+      :class="{ 'flip-in': card.uid === flipUid }"
       :style="{ marginLeft: index === 0 ? '0' : `-${overlap}px` }"
     >
       <button class="pick" @click="$emit('toggle', card.uid)">
@@ -64,6 +67,27 @@ const overlap = computed(() => {
 
 .slot:hover {
   z-index: 5;
+}
+
+/*
+ * The tail end of the drag: the ghost you were holding was face down, so the
+ * real card turns over as it settles into the fan. The `perspective()` function
+ * goes inside the transform — the `perspective` property only affects children,
+ * and the element animating here is the slot itself.
+ */
+.slot.flip-in {
+  z-index: 6;
+  animation: card-flip-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes card-flip-in {
+  from {
+    transform: perspective(700px) translateY(-40px) rotateY(180deg);
+  }
+
+  to {
+    transform: none;
+  }
 }
 
 .pick {
