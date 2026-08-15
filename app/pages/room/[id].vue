@@ -303,6 +303,17 @@ const showAlterFutureModal = computed(() =>
     ),
 );
 
+// Same idea for choosing where the defused kitten goes back into the deck —
+// its own dialog (DeckPositionModal) instead of InteractionModal's generic
+// prompt renderer. This kind carries no `cards`, so gate on `isForYou`
+// instead.
+const showDeckPositionModal = computed(() =>
+    Boolean(
+        state.value?.interaction?.kind === "choose-deck-position" &&
+        state.value.interaction.isForYou,
+    ),
+);
+
 // --- actions ---------------------------------------------------------------
 
 function toggle(uid: string) {
@@ -360,6 +371,8 @@ const submitInteraction = (response: InteractionResponse) => {
 };
 const onAlterFutureSubmit = (uids: string[]) =>
     submitInteraction({ type: "order", uids });
+const onDeckPositionSubmit = (index: number) =>
+    submitInteraction({ type: "position", index });
 
 function playNope() {
     const nope = hand.value.find((c) => c.id === "nope");
@@ -694,7 +707,7 @@ function cancelQuit() {
             </div>
 
             <InteractionModal
-                v-if="state?.interaction && state.interaction.kind !== 'reorder-cards'"
+                v-if="state?.interaction && !['reorder-cards', 'choose-deck-position'].includes(state.interaction.kind)"
                 :interaction="state.interaction"
                 :hand="hand"
                 :players="state.players"
@@ -712,6 +725,12 @@ function cancelQuit() {
                 v-if="showPeekModal"
                 :cards="you?.peek ?? []"
                 @close="peekDismissed = true"
+            />
+
+            <DeckPositionModal
+                v-if="showDeckPositionModal"
+                :interaction="state!.interaction!"
+                @submit="onDeckPositionSubmit"
             />
 
             <TargetSelectModal

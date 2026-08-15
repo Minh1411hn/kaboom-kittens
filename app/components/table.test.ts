@@ -10,6 +10,7 @@ import type {
 import artManifest from "#shared/generated/card-art.json";
 import CardImage from "./CardImage.vue";
 import CardArrivalFlyer from "./CardArrivalFlyer.vue";
+import DeckPositionModal from "./DeckPositionModal.vue";
 import HandFan from "./HandFan.vue";
 import InteractionModal from "./InteractionModal.vue";
 import NopeBar from "./NopeBar.vue";
@@ -533,34 +534,80 @@ describe("InteractionModal", () => {
     expect(wrapper.text()).toContain("Waiting for Whiskers");
     expect(wrapper.findAll(".choice")).toHaveLength(0);
   });
+});
 
-  it("submits a deck position for a defused kitten", async () => {
-    const wrapper = await mountSuspended(InteractionModal, {
-      props: {
-        interaction: {
-          ...base,
-          kind: "choose-deck-position",
-          cardId: "defuse",
-          prompt: "Secretly put the Exploding Kitten back into the deck",
-          maxPosition: 20,
-        },
-        hand: [],
-        players: [player()],
-      },
+describe("DeckPositionModal", () => {
+  const base = {
+    id: "i1",
+    kind: "choose-deck-position" as const,
+    cardId: "defuse" as const,
+    requiredFrom: ["p1"],
+    prompt: "Secretly put the Exploding Kitten back into the deck",
+    deadline: Date.now() + 30000,
+    isForYou: true,
+    answered: [] as string[],
+  };
+
+  it("disables Confirm until a position is chosen", async () => {
+    const wrapper = await mountSuspended(DeckPositionModal, {
+      props: { interaction: { ...base, maxPosition: 20 } },
     });
-    expect(wrapper.text()).toContain("the very top");
+    const confirm = wrapper.findAll("button").at(-1)!;
+    expect(confirm.attributes("disabled")).toBeDefined();
+  });
 
-    // "Bottom" is one of the quick buttons.
+  it("maps numbered button N to index N-1", async () => {
+    const wrapper = await mountSuspended(DeckPositionModal, {
+      props: { interaction: { ...base, maxPosition: 20 } },
+    });
+    const btn3 = wrapper.findAll("button").find((b) => b.text() === "3")!;
+    await btn3.trigger("click");
+    await wrapper.findAll("button").at(-1)!.trigger("click");
+    expect(wrapper.emitted("submit")?.[0]).toEqual([2]);
+  });
+
+  it("submits the bottom position", async () => {
+    const wrapper = await mountSuspended(DeckPositionModal, {
+      props: { interaction: { ...base, maxPosition: 20 } },
+    });
     const bottom = wrapper
       .findAll("button")
-      .find((b) => b.text() === "Bottom")!;
+      .find((b) => b.text() === "Đặt ở cuối")!;
     await bottom.trigger("click");
-    expect(wrapper.text()).toContain("the very bottom");
+    expect(wrapper.text()).toContain("Dưới cùng");
 
     await wrapper.findAll("button").at(-1)!.trigger("click");
-    expect(wrapper.emitted("submit")?.[0]).toEqual([
-      { type: "position", index: 20 },
-    ]);
+    expect(wrapper.emitted("submit")?.[0]).toEqual([20]);
+  });
+
+  it("random picks a position in range and still requires Confirm", async () => {
+    const wrapper = await mountSuspended(DeckPositionModal, {
+      props: { interaction: { ...base, maxPosition: 20 } },
+    });
+    const random = wrapper
+      .findAll("button")
+      .find((b) => b.text().includes("RANDOM"))!;
+    await random.trigger("click");
+    // Still needs an explicit Confirm — clicking RANDOM only previews.
+    expect(wrapper.emitted("submit")).toBeUndefined();
+
+    await wrapper.findAll("button").at(-1)!.trigger("click");
+    const [index] = wrapper.emitted("submit")![0] as [number];
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(index).toBeLessThanOrEqual(20);
+  });
+
+  it("hides numbered buttons beyond maxPosition", async () => {
+    const wrapper = await mountSuspended(DeckPositionModal, {
+      props: { interaction: { ...base, maxPosition: 2 } },
+    });
+    const labels = wrapper.findAll("button").map((b) => b.text());
+    expect(labels).toContain("1");
+    expect(labels).toContain("2");
+    expect(labels).not.toContain("3");
+    expect(labels).not.toContain("4");
+    expect(labels).not.toContain("5");
+    expect(labels).toContain("Đặt ở cuối");
   });
 });
 
