@@ -17,7 +17,6 @@ function alterTheFuture(id: 'alter-the-future-3x' | 'alter-the-future-5x', count
       const top = state.drawPile.slice(0, count)
       if (!top.length) return []
       return [
-        { t: 'PEEK', playerId: player.id, count },
         {
           t: 'REQUEST_INTERACTION',
           interaction: {

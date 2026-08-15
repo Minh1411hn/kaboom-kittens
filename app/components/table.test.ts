@@ -15,6 +15,7 @@ import InteractionModal from "./InteractionModal.vue";
 import NopeBar from "./NopeBar.vue";
 import PlayerSeat from "./PlayerSeat.vue";
 import TableCenter from "./TableCenter.vue";
+import SeeFutureModal from "./SeeFutureModal.vue";
 import TargetSelectModal from "./TargetSelectModal.vue";
 import TurnBanner from "./TurnBanner.vue";
 
@@ -316,7 +317,7 @@ describe("TableCenter", () => {
     expect(wrapper.emitted("draw")).toHaveLength(1);
   });
 
-  it("shows a peek only to the player who looked", async () => {
+  it("renders direction and card counts", async () => {
     const wrapper = await mountSuspended(TableCenter, {
       props: {
         drawCount: 10,
@@ -325,13 +326,44 @@ describe("TableCenter", () => {
         direction: -1,
         canDraw: false,
         deadline: null,
-        peek: [card("skip", "p1"), card("defuse", "p2")],
       },
     });
-    expect(wrapper.text()).toContain("You see, from the top");
-    expect(wrapper.findAll(".peek-cards .card")).toHaveLength(2);
-    // Direction arrow flips with the turn order.
     expect(wrapper.get(".direction").text()).toBe("↺");
+    expect(wrapper.text()).toContain("10 cards left");
+  });
+});
+
+describe("SeeFutureModal", () => {
+  it("renders peeked cards in order", async () => {
+    const wrapper = await mountSuspended(SeeFutureModal, {
+      props: {
+        cards: [card("skip", "p1"), card("defuse", "p2")],
+      },
+    });
+    expect(wrapper.text()).toContain("Nhìn thấu tương lai");
+    expect(wrapper.text()).toContain("Top #1 (Trên cùng)");
+    expect(wrapper.text()).toContain("#2");
+    expect(wrapper.findAll(".card")).toHaveLength(2);
+  });
+
+  it("emits close when clicking the X close button", async () => {
+    const wrapper = await mountSuspended(SeeFutureModal, {
+      props: {
+        cards: [card("skip", "p1")],
+      },
+    });
+    await wrapper.get(".close-btn").trigger("click");
+    expect(wrapper.emitted("close")).toHaveLength(1);
+  });
+
+  it("emits close when clicking the footer action button", async () => {
+    const wrapper = await mountSuspended(SeeFutureModal, {
+      props: {
+        cards: [card("skip", "p1")],
+      },
+    });
+    await wrapper.get(".dialog-footer button").trigger("click");
+    expect(wrapper.emitted("close")).toHaveLength(1);
   });
 });
 

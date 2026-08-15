@@ -8,7 +8,7 @@ const props = defineProps<{
   direction: 1 | -1
   canDraw: boolean
   deadline: number | null
-  peek: Card[] | null
+  peek?: Card[] | null
   /** The ghost is out, so the top of the stack should read as lifted off. */
   dragging?: boolean
 }>()
@@ -70,22 +70,6 @@ const back = cardBackUrl()
       </div>
       <span class="ribbon quiet">Discard · {{ discardCount }}</span>
     </div>
-
-    <Transition name="peek">
-      <div v-if="peek?.length" class="peek panel">
-        <span class="muted">You see, from the top:</span>
-        <div class="peek-cards">
-          <CardImage
-            v-for="(card, i) in peek"
-            :key="card.uid"
-            :card-id="card.id"
-            :uid="card.uid"
-            width="82px"
-            :title="`#${i + 1}`"
-          />
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -263,31 +247,5 @@ const back = cardBackUrl()
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-}
-
-.peek {
-  position: absolute;
-  top: calc(100% + 0.8rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-  z-index: 3;
-}
-
-.peek-cards {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.peek-enter-active,
-.peek-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.peek-enter-from,
-.peek-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
 }
 </style>

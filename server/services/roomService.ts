@@ -1,7 +1,7 @@
 import type { Peer } from 'crossws'
 import type { Command, GameState } from '#shared/types/game'
 import type { ServerMessage } from '#shared/protocol/messages'
-import { addPlayer, DEFAULT_CONFIG, reduce, removePlayer, setConnected, type EngineConfig } from '../game/engine'
+import { addPlayer, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby, setConnected, type EngineConfig } from '../game/engine'
 import { projectStateFor } from '../game/projection'
 import {
   loadState,
@@ -147,9 +147,16 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
  */
 export async function kickPlayer(roomId: string, targetPlayerId: string): Promise<string | undefined> {
   const error = await mutateRoom(roomId, (state) => {
-    if (state.status !== 'lobby') return 'Players can only be removed from the waiting room.'
+    if (state.status !== 'lobby' && state.status !== 'over') return 'Players can only be removed from the waiting room.'
     if (!state.players.some((p) => p.id === targetPlayerId)) return 'That player is not in this room.'
     removePlayer(state, targetPlayerId)
+    
+    if (state.status === 'over') {
+      const remaining = state.players.filter((p) => p.connected)
+      if (remaining.length && remaining.every((p) => p.ready)) {
+        resetToLobby(state, Date.now())
+      }
+    }
   })
   if (error) return error
 

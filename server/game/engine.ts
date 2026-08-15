@@ -107,6 +107,13 @@ export function setConnected(state: GameState, id: string, connected: boolean, n
   if (!player) return
   player.connected = connected
   player.disconnectedAt = connected ? null : now
+
+  if (!connected && state.status === 'over') {
+    const remaining = state.players.filter((p) => p.connected)
+    if (remaining.length && remaining.every((p) => p.ready)) {
+      resetToLobby(state, now)
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -278,7 +285,7 @@ function startGame(state: GameState, now: number, config: EngineConfig): string 
 }
 
 /** Resets a finished game back to the waiting room, keeping the same roster/seats. */
-function resetToLobby(state: GameState, now: number): void {
+export function resetToLobby(state: GameState, now: number): void {
   state.status = 'lobby'
   state.drawPile = []
   state.discardPile = []

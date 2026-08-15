@@ -68,7 +68,11 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
       const card = effect.from === 'top' ? state.drawPile.shift() : state.drawPile.pop()
       if (!card) return
       // Peeked knowledge is stale the moment the top of the deck changes.
-      state.peeks[player.id] = (state.peeks[player.id] ?? []).slice(effect.from === 'top' ? 1 : 0)
+      if (effect.from === 'top') {
+        for (const pid of Object.keys(state.peeks)) {
+          state.peeks[pid] = state.peeks[pid]!.slice(1)
+        }
+      }
 
       if (card.id === 'exploding-kitten') {
         state.limbo.push(card)

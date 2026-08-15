@@ -29,6 +29,7 @@ const namedCardId = ref<CardId | null>(null);
 const logOpen = ref(false);
 const confirmingQuit = ref(false);
 const targetModalOpen = ref(false);
+const peekDismissed = ref(false);
 const arrivingCards = ref<Card[]>([]);
 /** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
 const drawPending = ref(false);
@@ -50,9 +51,15 @@ const isYourTurn = computed(() =>
 const isHost = computed(() =>
     Boolean(you.value && hostId.value === you.value.id),
 );
-const inLobby = computed(() => state.value?.status === "lobby");
+const inLobby = computed(
+    () =>
+        state.value?.status === "lobby" ||
+        (state.value?.status === "over" && youAreReady.value),
+);
 const isPlaying = computed(() => state.value?.status === "playing");
-const isOver = computed(() => state.value?.status === "over");
+const isOver = computed(
+    () => state.value?.status === "over" && !youAreReady.value,
+);
 const youAreSeated = computed(() =>
     Boolean(state.value?.players.some((p) => p.id === you.value?.id)),
 );
@@ -71,6 +78,12 @@ const others = computed(() =>
     (state.value?.players ?? []).filter((p) => p.id !== you.value?.id),
 );
 const youAreReady = computed(() => Boolean(selfPlayer.value?.ready));
+const readyCount = computed(
+    () => state.value?.players.filter((p) => p.ready).length ?? 0,
+);
+const connectedCount = computed(
+    () => state.value?.players.filter((p) => p.connected).length ?? 0,
+);
 
 const intent = usePlayIntent(selectedCards, state, isYourTurn);
 
@@ -252,6 +265,33 @@ watch(selectedUids, () => {
     namedCardId.value = null;
 });
 
+watch(
+    () => you.value?.peek,
+    (newPeek, oldPeek) => {
+        if (newPeek && newPeek.length > 0) {
+            const newKey = newPeek.map((c) => c.uid).join(",");
+            const oldKey = oldPeek?.map((c) => c.uid).join(",");
+            // If the deck was drawn from, the new peek is just a suffix of the old peek.
+            // In this case, we shouldn't pop up the modal again.
+            if (newKey !== oldKey && (!oldKey || !oldKey.endsWith(newKey))) {
+                peekDismissed.value = false;
+            }
+        } else {
+            peekDismissed.value = false;
+        }
+    },
+    { deep: true },
+);
+
+const showPeekModal = computed(() =>
+    Boolean(
+        you.value?.peek?.length &&
+        !peekDismissed.value &&
+        alive.value &&
+        !isOver.value,
+    ),
+);
+
 // --- actions ---------------------------------------------------------------
 
 function toggle(uid: string) {
@@ -423,13 +463,13 @@ function cancelQuit() {
                     <button
                         v-if="isHost"
                         class="primary start-btn"
-                        :disabled="state.players.length < 2"
+                        :disabled="state.players.length < 2 || state.status === 'over'"
                         @click="startGame"
                     >
-                        Start the game
+                        {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Start the game' }}
                     </button>
                     <p v-else class="muted">
-                        Waiting for the host to press Play.
+                        {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Waiting for the host to press Play.' }}
                     </p>
                 </div>
             </section>
@@ -465,7 +505,6 @@ function cancelQuit() {
                         :direction="state.turn.direction"
                         :can-draw="canDraw"
                         :deadline="state.turnDeadline"
-                        :peek="you?.peek ?? null"
                         :dragging="drawDrag.dragging.value"
                         @draw="draw"
                         @draw-pointer-down="drawDrag.start"
@@ -596,17 +635,33 @@ function cancelQuit() {
                                     :turns-remaining="0"
                                 />
                             </div>
-                            <button
-                                class="primary"
-                                :disabled="youAreReady"
-                                @click="returnToLobby"
-                            >
-                                {{
-                                    youAreReady
-                                        ? "Đang chờ người chơi khác…"
-                                        : "Quay về phòng chờ"
-                                }}
-                            </button>
+                            <div v-if="youAreSeated" class="row">
+                                <button
+                                    class="secondary"
+                                    @click="leaveToLobby"
+                                >
+                                    Rời phòng
+                                </button>
+                                <button
+                                    class="primary"
+                                    :disabled="youAreReady"
+                                    @click="returnToLobby"
+                                >
+                                    {{
+                                        youAreReady
+                                            ? `Đang chờ người chơi khác (${readyCount}/${connectedCount})…`
+                                            : "Sẵn sàng ván mới"
+                                    }}
+                                </button>
+                            </div>
+                            <div v-else class="row">
+                                <button
+                                    class="primary"
+                                    @click="leaveToLobby"
+                                >
+                                    Rời phòng
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </Transition>
@@ -631,6 +686,12 @@ function cancelQuit() {
                 :hand="hand"
                 :players="state.players"
                 @submit="submitInteraction"
+            />
+
+            <SeeFutureModal
+                v-if="showPeekModal"
+                :cards="you?.peek ?? []"
+                @close="peekDismissed = true"
             />
 
             <TargetSelectModal
