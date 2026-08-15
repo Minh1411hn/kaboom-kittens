@@ -594,6 +594,101 @@ describe('quit game', () => {
   })
 })
 
+describe('return to lobby', () => {
+  /**
+   * Runs quit-game until one player remains, then restores everyone's
+   * `connected` flag. Quitting also disconnects (it is a real leave), but a
+   * normal in-game elimination (e.g. exploding) does not — these tests care
+   * about the ready-up gating, not the elimination path, so they need a
+   * finished game where every original player is still "at the table".
+   */
+  function ended(playerCount: number, seed = 42): GameState {
+    let state = started(playerCount, seed)
+    while (state.status === 'playing') {
+      state = run(state, { type: 'quit-game', playerId: currentPlayer(state)!.id })
+    }
+    state.players.forEach((p) => (p.connected = true))
+    return state
+  }
+
+  it('refuses before the game is over', () => {
+    const state = started(3)
+    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'p0' })).toMatch(/not over/i)
+  })
+
+  it('refuses for a player not in the game', () => {
+    const state = ended(3)
+    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'nobody' })).toMatch(
+      /not in this game/i,
+    )
+  })
+
+  it('marks a player ready idempotently, without transitioning on a single click', () => {
+    const state = ended(3)
+    const after = run(state, { type: 'return-to-lobby', playerId: 'p0' })
+    expect(after.status).toBe('over')
+    expect(playerById(after, 'p0')!.ready).toBe(true)
+    expect(playerById(after, 'p1')!.ready).toBe(false)
+    expect(playerById(after, 'p2')!.ready).toBe(false)
+
+    // Clicking again is a no-op, not an error.
+    const again = run(after, { type: 'return-to-lobby', playerId: 'p0' })
+    expect(again.status).toBe('over')
+  })
+
+  it('transitions the whole room to lobby once every connected player is ready', () => {
+    let state = ended(3)
+    state = run(state, { type: 'return-to-lobby', playerId: 'p0' })
+    state = run(state, { type: 'return-to-lobby', playerId: 'p1' })
+    expect(state.status).toBe('over')
+
+    const seating = state.players.map((p) => ({ id: p.id, seat: p.seat }))
+    state = run(state, { type: 'return-to-lobby', playerId: 'p2' })
+
+    expect(state.status).toBe('lobby')
+    expect(state.winnerId).toBeNull()
+    expect(state.drawPile).toHaveLength(0)
+    expect(state.discardPile).toHaveLength(0)
+    expect(state.actionStack).toHaveLength(0)
+    expect(state.interaction).toBeNull()
+    expect(state.nopeWindow).toBeNull()
+    for (const player of state.players) {
+      expect(player.hand).toHaveLength(0)
+      expect(player.alive).toBe(true)
+      expect(player.ready).toBe(false)
+    }
+    expect(state.players.map((p) => ({ id: p.id, seat: p.seat }))).toEqual(seating)
+  })
+
+  it('a disconnected player does not block the reset', () => {
+    let state = ended(3)
+    playerById(state, 'p2')!.connected = false
+
+    state = run(state, { type: 'return-to-lobby', playerId: 'p0' })
+    expect(state.status).toBe('over')
+    state = run(state, { type: 'return-to-lobby', playerId: 'p1' })
+
+    expect(state.status).toBe('lobby')
+  })
+
+  it('deals a different shuffle on the round-two start-game', () => {
+    let state = ended(3)
+    state = run(state, { type: 'return-to-lobby', playerId: 'p0' })
+    state = run(state, { type: 'return-to-lobby', playerId: 'p1' })
+    state = run(state, { type: 'return-to-lobby', playerId: 'p2' })
+    expect(state.status).toBe('lobby')
+
+    state = run(state, { type: 'start-game', playerId: 'p0' })
+    const roundTwoDraw = state.drawPile.map((c) => c.id)
+
+    const roundOneDraw = started(3).drawPile.map((c) => c.id)
+
+    // Same seed, but rngState carried forward through round one — a reset to
+    // `state.seed` here would deal the identical shuffle as round one.
+    expect(roundTwoDraw).not.toEqual(roundOneDraw)
+  })
+})
+
 describe('cat combos', () => {
   it('a matching pair steals a random card', () => {
     const state = started(3)

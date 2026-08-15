@@ -82,6 +82,7 @@ export function addPlayer(state: GameState, id: string, nickname: string): strin
     alive: true,
     connected: true,
     disconnectedAt: null,
+    ready: false,
   })
   return null
 }
@@ -213,6 +214,18 @@ function dispatch(
       checkGameOver(state, env.now)
       return undefined
     }
+
+    case 'return-to-lobby': {
+      if (state.status !== 'over') return 'The game is not over yet.'
+      const player = playerById(state, command.playerId)
+      if (!player) return 'You are not in this game.'
+      player.ready = true
+      const connected = state.players.filter((p) => p.connected)
+      if (connected.length && connected.every((p) => p.ready)) {
+        resetToLobby(state, env.now)
+      }
+      return undefined
+    }
   }
 }
 
@@ -225,12 +238,12 @@ function startGame(state: GameState, now: number, config: EngineConfig): string 
   if (state.players.length < MIN_PLAYERS) return `You need at least ${MIN_PLAYERS} players.`
 
   const playerCount = state.players.length
-  state.rngState = state.seed
   const pile = buildDealPile(state, playerCount)
 
   state.players.forEach((player, index) => {
     player.seat = index
     player.alive = true
+    player.ready = false
     player.hand = pile.splice(0, HAND_SIZE)
     player.hand.push(makeCard('defuse'))
   })
@@ -262,6 +275,35 @@ function startGame(state: GameState, now: number, config: EngineConfig): string 
     logEvent(state, { type: 'turn-changed', playerId: first.id, message: `${first.nickname} goes first.` }, now)
   }
   return undefined
+}
+
+/** Resets a finished game back to the waiting room, keeping the same roster/seats. */
+function resetToLobby(state: GameState, now: number): void {
+  state.status = 'lobby'
+  state.drawPile = []
+  state.discardPile = []
+  state.turn = { seat: 0, direction: 1, turnsRemaining: 1 }
+  state.actionStack = []
+  state.nopeWindow = null
+  state.interaction = null
+  state.peeks = {}
+  state.limbo = []
+  state.turnDeadline = null
+  state.winnerId = null
+  state.players.forEach((p) => {
+    p.hand = []
+    p.alive = true
+    p.ready = false
+    // id, nickname, seat, connected, disconnectedAt kept — same roster, same seats.
+  })
+  logEvent(
+    state,
+    {
+      type: 'returned-to-lobby',
+      message: 'Back to the waiting room — same roster, ready for another round.',
+    },
+    now,
+  )
 }
 
 function playCard(

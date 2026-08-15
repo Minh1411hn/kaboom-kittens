@@ -31,6 +31,7 @@ const player = (overrides: Partial<PublicPlayer> = {}): PublicPlayer => ({
   handCount: 5,
   alive: true,
   connected: true,
+  ready: false,
   ...overrides,
 });
 

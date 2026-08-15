@@ -71,6 +71,14 @@ const back = cardBackUrl();
             <span v-if="!player.connected" title="Disconnected">🔌</span>
         </span>
 
+        <span
+            v-if="player.ready"
+            class="ready-badge"
+            title="Ready for the next round"
+        >
+            ✅ Ready
+        </span>
+
         <span class="disc-wrap">
             <span class="avatar" :style="discStyle">{{
                 player.alive ? initials : "💀"
@@ -207,6 +215,13 @@ const back = cardBackUrl();
     font-size: 0.7rem;
     letter-spacing: 0.3px;
     color: var(--text-dim);
+    text-shadow: 0 1px 2px rgb(30 12 0 / 60%);
+}
+
+.ready-badge {
+    font-size: 0.68rem;
+    letter-spacing: 0.3px;
+    color: var(--good);
     text-shadow: 0 1px 2px rgb(30 12 0 / 60%);
 }
 

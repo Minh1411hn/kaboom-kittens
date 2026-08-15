@@ -40,6 +40,7 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
       handCount: p.hand.length,
       alive: p.alive,
       connected: p.connected,
+      ready: p.ready,
     })),
     drawCount: state.drawPile.length,
     discardTop: state.discardPile[0] ? { ...state.discardPile[0] } : null,

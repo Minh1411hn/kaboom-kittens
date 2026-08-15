@@ -68,6 +68,7 @@ const selfPlayer = computed(
 const others = computed(() =>
     (state.value?.players ?? []).filter((p) => p.id !== you.value?.id),
 );
+const youAreReady = computed(() => Boolean(selfPlayer.value?.ready));
 
 const intent = usePlayIntent(selectedCards, state, isYourTurn);
 
@@ -279,6 +280,14 @@ async function leaveToLobby() {
     await navigateTo("/");
 }
 
+function returnToLobby() {
+    send({ type: "return-to-lobby" });
+}
+
+function kickPlayer(targetPlayerId: string) {
+    send({ type: "kick-player", targetPlayerId });
+}
+
 function askToQuit() {
     confirmingQuit.value = true;
 }
@@ -343,15 +352,27 @@ function cancelQuit() {
                 <h2 class="lobby-heading">Waiting for players</h2>
 
                 <div class="lobby-seats">
-                    <PlayerSeat
+                    <div
                         v-for="player in state.players"
                         :key="player.id"
-                        :player="player"
-                        :is-current="false"
-                        :is-host="player.id === hostId"
-                        :is-you="player.id === you?.id"
-                        :turns-remaining="0"
-                    />
+                        class="lobby-seat-wrap"
+                    >
+                        <PlayerSeat
+                            :player="player"
+                            :is-current="false"
+                            :is-host="player.id === hostId"
+                            :is-you="player.id === you?.id"
+                            :turns-remaining="0"
+                        />
+                        <button
+                            v-if="isHost && player.id !== you?.id"
+                            class="kick-btn"
+                            title="Remove from room"
+                            @click="kickPlayer(player.id)"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 <p class="muted">
@@ -530,8 +551,27 @@ function cancelQuit() {
                                     winner ? `${winner} wins! 🏆` : "Game over"
                                 }}
                             </h2>
-                            <button class="primary" @click="leaveToLobby">
-                                Back to the lobby
+                            <div class="lobby-seats">
+                                <PlayerSeat
+                                    v-for="player in state.players"
+                                    :key="player.id"
+                                    :player="player"
+                                    :is-current="false"
+                                    :is-host="player.id === hostId"
+                                    :is-you="player.id === you?.id"
+                                    :turns-remaining="0"
+                                />
+                            </div>
+                            <button
+                                class="primary"
+                                :disabled="youAreReady"
+                                @click="returnToLobby"
+                            >
+                                {{
+                                    youAreReady
+                                        ? "Đang chờ người chơi khác…"
+                                        : "Quay về phòng chờ"
+                                }}
                             </button>
                         </div>
                     </div>
@@ -713,6 +753,32 @@ function cancelQuit() {
     gap: 0.9rem;
     justify-content: center;
     padding: 0.5rem 0;
+}
+
+.lobby-seat-wrap {
+    position: relative;
+}
+
+.kick-btn {
+    position: absolute;
+    top: -0.15rem;
+    right: -0.15rem;
+    z-index: 1;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    line-height: 1;
+    background: rgb(20 8 0 / 70%);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
+}
+
+.kick-btn:hover {
+    background: var(--bad);
 }
 
 /* ------------------------------------------------------------ the table */

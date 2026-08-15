@@ -127,6 +127,8 @@ export interface Player {
   connected: boolean
   /** Epoch ms of the disconnect, for the reconnect grace period. */
   disconnectedAt: number | null
+  /** Confirmed "return to the waiting room" after a finished game. Reset on start-game. */
+  ready: boolean
 }
 
 export interface TurnState {
@@ -226,6 +228,7 @@ export interface GameEvent {
     | 'player-attacked'
     | 'direction-reversed'
     | 'game-over'
+    | 'returned-to-lobby'
   playerId?: string
   targetId?: string
   cardId?: CardId
@@ -240,7 +243,7 @@ export interface GameEvent {
 
 export type GameStatus = 'lobby' | 'playing' | 'over'
 
-export const STATE_VERSION = 1
+export const STATE_VERSION = 2
 
 export interface GameState {
   version: number
@@ -290,6 +293,7 @@ export type Command =
   | { type: 'timeout-turn'; now: number }
   | { type: 'timeout-interaction'; now: number }
   | { type: 'quit-game'; playerId: string; now: number }
+  | { type: 'return-to-lobby'; playerId: string; now: number }
 
 // ---------------------------------------------------------------------------
 // Redacted view sent to clients
@@ -302,6 +306,7 @@ export interface PublicPlayer {
   handCount: number
   alive: boolean
   connected: boolean
+  ready: boolean
 }
 
 export interface PublicGameState {

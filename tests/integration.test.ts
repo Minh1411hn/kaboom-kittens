@@ -67,6 +67,51 @@ async function makeRoom(nicknames: string[]) {
 
 const current = (state: PublicGameState) => state.currentPlayerId
 
+/** Plays out a started game by always drawing (and answering prompts) until it ends. */
+async function playUntilOver(players: TestClient[]): Promise<void> {
+  for (let step = 0; step < 400; step++) {
+    const view = players[0]!.state!
+    if (view.status === 'over') break
+
+    const interaction = view.interaction
+    if (interaction) {
+      const responder = players.find((p) => interaction.requiredFrom.includes(p.playerId))
+      if (responder) {
+        const own = responder.state!.interaction!
+        const response =
+          own.kind === 'choose-deck-position'
+            ? ({ type: 'position', index: 0 } as const)
+            : own.kind === 'reorder-cards'
+              ? ({ type: 'order', uids: (own.cards ?? []).map((c) => c.uid) } as const)
+              : ({
+                  type: 'card',
+                  uid: (own.cards ?? responder.state!.you!.hand)[0]!.uid,
+                } as const)
+        responder.send({
+          type: 'submit-interaction',
+          interactionId: own.id,
+          response,
+        })
+        await sleep(40)
+        continue
+      }
+    }
+
+    if (view.nopeWindow) {
+      await sleep(80)
+      continue
+    }
+
+    const turn = players.find((p) => p.playerId === current(view))
+    if (!turn) {
+      await sleep(40)
+      continue
+    }
+    turn.send({ type: 'draw-card' })
+    await sleep(40)
+  }
+}
+
 /**
  * Every card uid anywhere in a payload, collected structurally. A substring
  * search over the JSON gives false positives — a short uid can appear inside
@@ -106,47 +151,7 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     }
 
     // Play it out by always drawing (and answering any prompt) until it ends.
-    for (let step = 0; step < 400; step++) {
-      const view = players[0]!.state!
-      if (view.status === 'over') break
-
-      const interaction = view.interaction
-      if (interaction) {
-        const responder = players.find((p) => interaction.requiredFrom.includes(p.playerId))
-        if (responder) {
-          const own = responder.state!.interaction!
-          const response =
-            own.kind === 'choose-deck-position'
-              ? ({ type: 'position', index: 0 } as const)
-              : own.kind === 'reorder-cards'
-                ? ({ type: 'order', uids: (own.cards ?? []).map((c) => c.uid) } as const)
-                : ({
-                    type: 'card',
-                    uid: (own.cards ?? responder.state!.you!.hand)[0]!.uid,
-                  } as const)
-          responder.send({
-            type: 'submit-interaction',
-            interactionId: own.id,
-            response,
-          })
-          await sleep(40)
-          continue
-        }
-      }
-
-      if (view.nopeWindow) {
-        await sleep(80)
-        continue
-      }
-
-      const turn = players.find((p) => p.playerId === current(view))
-      if (!turn) {
-        await sleep(40)
-        continue
-      }
-      turn.send({ type: 'draw-card' })
-      await sleep(40)
-    }
+    await playUntilOver(players)
 
     const final = players[0]!.state!
     expect(final.status).toBe('over')
@@ -218,5 +223,72 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
 
     expect(back.state!.you!.hand.map((c) => c.uid).sort()).toEqual(handBefore)
     expect(back.state!.players.find((p) => p.id === back.playerId)!.alive).toBe(true)
+  }, 30_000)
+
+  it('returns the whole table to the waiting room once everyone is ready, and deals a fresh round', async () => {
+    const { players, host } = await makeRoom(['Marie', 'Niels', 'Rosalind'])
+
+    host.send({ type: 'start-game' })
+    for (const player of players) {
+      await player.waitForState((state) => state.status === 'playing', 5000, 'the game to start')
+    }
+    await playUntilOver(players)
+    for (const player of players) {
+      await player.waitForState((state) => state.status === 'over', 5000, 'the game to end')
+    }
+
+    // Two of three ready up: the room stays on the results screen.
+    players[0]!.send({ type: 'return-to-lobby' })
+    players[1]!.send({ type: 'return-to-lobby' })
+    for (const player of players) {
+      await player.waitForState(
+        (state) => state.players.find((p) => p.id === players[0]!.playerId)?.ready === true,
+        5000,
+        "seeing the first player's ready flag",
+      )
+    }
+    expect(players[0]!.state!.status).toBe('over')
+
+    // The last player readies up: everyone lands back in the lobby together.
+    players[2]!.send({ type: 'return-to-lobby' })
+    for (const player of players) {
+      await player.waitForState((state) => state.status === 'lobby', 5000, 'the room to reset')
+      expect(player.state!.players).toHaveLength(3)
+      expect(player.state!.players.every((p) => p.handCount === 0 && !p.ready)).toBe(true)
+      expect(player.state!.winnerId).toBeNull()
+    }
+
+    // A second round deals fresh hands to the same roster.
+    host.send({ type: 'start-game' })
+    for (const player of players) {
+      await player.waitForState((state) => state.status === 'playing', 5000, 'round two to start')
+      expect(player.state!.you!.hand).toHaveLength(8)
+    }
+  }, 60_000)
+
+  it('lets the host remove a player from the waiting room, and lets them rejoin', async () => {
+    const { roomId, players, host } = await makeRoom(['Rita', 'Barbara', 'Grace'])
+    const target = players[1]!
+    const bystander = players[2]!
+
+    // Only the host can kick.
+    bystander.send({ type: 'kick-player', targetPlayerId: target.playerId })
+    await bystander.waitFor((message) => message.type === 'error')
+    expect(bystander.errors.join(' ')).toMatch(/only the host/i)
+
+    host.send({ type: 'kick-player', targetPlayerId: target.playerId })
+    await target.waitFor((message) => message.type === 'kicked', 5000, 'the kick notice')
+    await bystander.waitForState((state) => state.players.length === 2, 5000, 'the roster to shrink')
+    expect(bystander.state!.players.some((p) => p.id === target.playerId)).toBe(false)
+
+    // Kicking is not a ban: the same player can rejoin normally.
+    const rejoined = new TestClient(BASE_URL, target.nickname)
+    rejoined.cookie = target.cookie
+    rejoined.playerId = target.playerId
+    clients.push(rejoined)
+    await rejoined.connect()
+    rejoined.send({ type: 'join', roomId })
+    await rejoined.waitForState((state) => Boolean(state.you), 5000, 'a snapshot after rejoining')
+    expect(rejoined.state!.players.some((p) => p.id === target.playerId)).toBe(true)
   }, 30_000)
 })

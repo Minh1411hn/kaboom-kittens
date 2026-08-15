@@ -15,6 +15,7 @@ import {
   applyCommand,
   broadcastRoom,
   joinRoom,
+  kickPlayer,
   leaveRoom,
   markConnection,
   sendSnapshot,
@@ -209,6 +210,23 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
 
     case 'quit-game':
       return runCommand(peer, { type: 'quit-game', playerId: context.playerId, now })
+
+    case 'return-to-lobby':
+      return runCommand(peer, { type: 'return-to-lobby', playerId: context.playerId, now })
+
+    case 'kick-player': {
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Join a room first.')
+      const meta = await getRoomMeta(context.roomId)
+      if (meta?.hostId !== context.playerId) {
+        return fail(peer, 'not-host', 'Only the host can remove players.')
+      }
+      if (message.targetPlayerId === context.playerId) {
+        return fail(peer, 'cant-kick-self', 'You cannot remove yourself.')
+      }
+      const error = await kickPlayer(context.roomId, message.targetPlayerId)
+      if (error) return fail(peer, 'kick-failed', error)
+      return broadcastRoom(context.roomId)
+    }
 
     case 'submit-interaction':
       return runCommand(peer, {
