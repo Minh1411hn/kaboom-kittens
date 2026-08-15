@@ -139,7 +139,7 @@ describe('the table stage', () => {
     expect(controls).toContain('Clear')
     expect(controls).not.toContain('Draw')
 
-    // The hand only lights up as a target once a card is over it.
+    // The hand only lights up as a target while a card is being dragged.
     expect(wrapper.get('.hand-area').classes()).not.toContain('drop-active')
     // And pressing the deck starts a gesture rather than drawing outright.
     await wrapper.get('.deck').trigger('pointerdown')

@@ -476,7 +476,7 @@ function cancelQuit() {
                 <div
                     ref="handArea"
                     class="hand-area"
-                    :class="{ 'drop-active': drawDrag.overDropZone.value }"
+                    :class="{ 'drop-active': drawDrag.dragging.value }"
                 >
                     <HandFan
                         v-if="youAreSeated && alive && !isOver"
