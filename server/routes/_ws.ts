@@ -76,7 +76,7 @@ export default defineWebSocketHandler({
       } catch (error) {
         // Without this the socket would sit open forever with no welcome.
         console.error('[ws] open failed:', error)
-        fail(peer, 'open-failed', 'Could not start the session. Reload the page.')
+        fail(peer, 'open-failed', 'Không thể khởi tạo phiên kết nối. Vui lòng tải lại trang.')
         peer.close(1011, 'open-failed')
       }
     })()
@@ -88,28 +88,28 @@ export default defineWebSocketHandler({
   async message(peer, message) {
     if (!peerContext(peer)) await awaitOpen(peer)
     const context = peerContext(peer)
-    if (!context) return fail(peer, 'no-session', 'Your session expired — reload the page.')
+    if (!context) return fail(peer, 'no-session', 'Phiên đăng nhập đã hết hạn — vui lòng tải lại trang.')
 
     let raw: unknown
     try {
       raw = JSON.parse(message.text())
     } catch {
-      return fail(peer, 'bad-json', 'Malformed message.')
+      return fail(peer, 'bad-json', 'Tin nhắn không hợp lệ.')
     }
 
     const parsed = parseClientMessage(raw)
     if (!parsed.success) {
-      return fail(peer, 'bad-message', parsed.error.issues[0]?.message ?? 'Unrecognised message.')
+      return fail(peer, 'bad-message', parsed.error.issues[0]?.message ?? 'Tin nhắn không đúng định dạng.')
     }
     if (parsed.data.type !== 'ping' && !allow(peer)) {
-      return fail(peer, 'rate-limited', 'Slow down a moment.')
+      return fail(peer, 'rate-limited', 'Thao tác quá nhanh, vui lòng chờ trong giây lát.')
     }
 
     try {
       await handle(peer, parsed.data)
     } catch (error) {
       console.error('[ws] handler failed:', error)
-      fail(peer, 'server-error', 'Something went wrong handling that.')
+      fail(peer, 'server-error', 'Đã xảy ra lỗi khi xử lý yêu cầu.')
     }
   },
 
@@ -142,7 +142,7 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
 
     case 'join': {
       const meta = await getRoomMeta(message.roomId)
-      if (!meta) return fail(peer, 'no-room', 'That room does not exist any more.')
+      if (!meta) return fail(peer, 'no-room', 'Phòng chơi đó không còn tồn tại.')
 
       const error = await joinRoom(message.roomId, context.playerId, context.nickname)
       if (error) return fail(peer, 'join-failed', error)
@@ -163,7 +163,7 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
     }
 
     case 'chat': {
-      if (!context.roomId) return fail(peer, 'not-in-room', 'Join a room first.')
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
       const chat = {
         id: `${now}-${context.playerId.slice(0, 8)}`,
         playerId: context.playerId,
@@ -179,10 +179,10 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
     }
 
     case 'start-game': {
-      if (!context.roomId) return fail(peer, 'not-in-room', 'Join a room first.')
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
       const meta = await getRoomMeta(context.roomId)
       if (meta?.hostId !== context.playerId) {
-        return fail(peer, 'not-host', 'Only the host can start the game.')
+        return fail(peer, 'not-host', 'Chỉ chủ phòng mới có thể bắt đầu ván đấu.')
       }
       return report(peer, await applyCommand(context.roomId, {
         type: 'start-game',
@@ -215,13 +215,13 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       return runCommand(peer, { type: 'return-to-lobby', playerId: context.playerId, now })
 
     case 'kick-player': {
-      if (!context.roomId) return fail(peer, 'not-in-room', 'Join a room first.')
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
       const meta = await getRoomMeta(context.roomId)
       if (meta?.hostId !== context.playerId) {
-        return fail(peer, 'not-host', 'Only the host can remove players.')
+        return fail(peer, 'not-host', 'Chỉ chủ phòng mới có quyền mời người chơi ra ngoài.')
       }
       if (message.targetPlayerId === context.playerId) {
-        return fail(peer, 'cant-kick-self', 'You cannot remove yourself.')
+        return fail(peer, 'cant-kick-self', 'Bạn không thể tự mời chính mình ra khỏi phòng.')
       }
       const error = await kickPlayer(context.roomId, message.targetPlayerId)
       if (error) return fail(peer, 'kick-failed', error)
@@ -241,7 +241,7 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
 
 async function runCommand(peer: Peer, command: Command): Promise<void> {
   const context = peerContext(peer)
-  if (!context?.roomId) return fail(peer, 'not-in-room', 'Join a room first.')
+  if (!context?.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
   report(peer, await applyCommand(context.roomId, command))
 }
 

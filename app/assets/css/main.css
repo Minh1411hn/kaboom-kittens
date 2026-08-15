@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap');
+
 /*
  * The whole visual system lives here plus one `<style scoped>` block per
  * component. Everything below :root is expressed in these tokens — reskinning
@@ -50,8 +52,8 @@
   --shadow: 0 10px 26px rgb(28 12 0 / 55%);
   --shadow-sm: 0 3px 8px rgb(28 12 0 / 40%);
 
-  --font-display: 'Arial Narrow', 'Haettenschweiler', Impact, 'Trebuchet MS', system-ui, sans-serif;
-  --font-body: 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Oswald', system-ui, sans-serif;
+  --font-body: 'Oswald', system-ui, sans-serif;
 
   color-scheme: dark;
 

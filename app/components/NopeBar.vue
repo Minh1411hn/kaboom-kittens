@@ -21,10 +21,10 @@ const summary = computed(() => {
   const base = props.stack[0]
   if (!base) return ''
   const nopes = props.stack.length - 1
-  const action = base.combo ? 'a cat combo' : cardName(base.cardId)
-  if (!nopes) return `${nameOf(base.playerId)} played ${action}.`
-  const verdict = nopes % 2 === 1 ? 'It is Noped' : 'The Nopes cancel out'
-  return `${nameOf(base.playerId)} played ${action} · ${nopes} Nope${nopes === 1 ? '' : 's'} · ${verdict}.`
+  const action = base.combo ? 'combo mèo' : cardName(base.cardId)
+  if (!nopes) return `${nameOf(base.playerId)} đã đánh ${action}.`
+  const verdict = nopes % 2 === 1 ? 'Bị Nope chặn lại' : 'Các lá Nope triệt tiêu nhau'
+  return `${nameOf(base.playerId)} đánh ${action} · ${nopes} lần Nope · ${verdict}.`
 })
 </script>
 
@@ -44,7 +44,7 @@ const summary = computed(() => {
 
       <div class="text">
         <strong>{{ summary }}</strong>
-        <span class="muted">{{ remaining }}s to respond</span>
+        <span class="muted">{{ remaining }}s để phản hồi</span>
       </div>
 
       <div class="actions">
@@ -56,9 +56,9 @@ const summary = computed(() => {
           NOPE!
         </button>
         <button v-if="hasNope && !youPlayedTop" :disabled="passed" @click="$emit('pass')">
-          {{ passed ? 'Passed' : 'Pass' }}
+          {{ passed ? 'Đã bỏ qua' : 'Bỏ qua' }}
         </button>
-        <span v-else class="muted small">Waiting…</span>
+        <span v-else class="muted small">Đang chờ…</span>
       </div>
     </div>
   </div>
@@ -101,7 +101,7 @@ const summary = computed(() => {
 }
 
 .stack :deep(.card:hover) {
-  transform: scale(1.5) translateY(-8px);
+  transform: scale(1.35) translateY(-8px);
   z-index: 10;
   position: relative;
 }

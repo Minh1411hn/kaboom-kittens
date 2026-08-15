@@ -33,8 +33,8 @@ export const targetedAttack2x: CardDefinition = {
   requiresTarget: true,
   canPlay: ({ state, player, action }) => {
     const target = action.targetPlayerId ? playerById(state, action.targetPlayerId) : undefined
-    if (!target || !target.alive) return 'Pick a player who is still in the game.'
-    if (target.id === player.id) return 'You cannot target yourself.'
+    if (!target || !target.alive) return 'Hãy chọn một người chơi vẫn còn trong ván.'
+    if (target.id === player.id) return 'Bạn không thể chọn chính mình.'
     return true
   },
   resolve: ({ state, action }) => [

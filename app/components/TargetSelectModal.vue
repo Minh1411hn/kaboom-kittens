@@ -121,7 +121,7 @@ function confirm() {
             <span v-if="selectedTargetId === p.id" class="check-icon" aria-hidden="true">✓</span>
           </button>
         </div>
-        <p v-else class="empty-notice">Không có đối thủ nào khả dụng để cướp bài.</p>
+        <p v-else class="empty-notice">Không có đối thủ nào khả dụng để chọn.</p>
       </div>
 
       <!-- Demand specific card section for Triple Cat combo -->
@@ -162,7 +162,17 @@ function confirm() {
           :disabled="!canConfirm"
           @click="confirm"
         >
-          {{ isCatTriple ? 'Đòi bài' : 'Cướp bài' }}
+          {{
+            isCatTriple
+              ? 'Đòi bài'
+              : isCatPair
+                ? 'Cướp bài'
+                : isTargetedAttack
+                  ? 'Tấn công'
+                  : isFavor
+                    ? 'Yêu cầu'
+                    : 'Xác nhận'
+          }}
         </button>
       </footer>
     </section>
@@ -366,7 +376,7 @@ function confirm() {
 
 .card-choice-btn:hover {
   background: rgba(80, 32, 18, 0.8);
-  transform: translateY(-3px) scale(1.5);
+  transform: translateY(-3px) scale(1.35);
   z-index: 10;
 }
 
@@ -378,7 +388,7 @@ function confirm() {
 }
 
 .card-choice-btn.selected:hover {
-  transform: translateY(-4px) scale(1.5);
+  transform: translateY(-4px) scale(1.35);
   z-index: 10;
 }
 

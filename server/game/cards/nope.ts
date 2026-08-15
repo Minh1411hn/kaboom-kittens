@@ -13,9 +13,9 @@ export const nope: CardDefinition = {
 
   canPlay: ({ state, player }) => {
     const top = state.actionStack[state.actionStack.length - 1]
-    if (!top) return 'There is nothing to Nope right now.'
-    if (!top.nopeable) return 'That action cannot be Noped.'
-    if (top.playerId === player.id) return 'You cannot Nope your own card.'
+    if (!top) return 'Hiện tại không có hành động nào để Nope.'
+    if (!top.nopeable) return 'Hành động đó không thể bị Nope.'
+    if (top.playerId === player.id) return 'Bạn không thể tự Nope lá bài của chính mình.'
     return true
   },
 

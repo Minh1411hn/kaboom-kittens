@@ -19,7 +19,7 @@ async function submit() {
     emit('done')
   } catch (caught) {
     const message = (caught as { statusMessage?: string; message?: string })
-    error.value = message.statusMessage ?? message.message ?? 'That nickname was rejected.'
+    error.value = message.statusMessage ?? message.message ?? 'Biệt danh không hợp lệ hoặc đã bị từ chối.'
   } finally {
     busy.value = false
   }
@@ -29,15 +29,15 @@ async function submit() {
 <template>
   <form class="gate panel" @submit.prevent="submit">
     <h1>🙀 Kaboom Kitten</h1>
-    <p class="muted">Online Exploding Kittens for 2–10 players. Pick a nickname to begin.</p>
+    <p class="muted">Mèo Cảm Tử online dành cho 2–10 người chơi. Hãy chọn biệt danh để bắt đầu.</p>
 
     <label class="stack">
-      <span class="muted">Nickname</span>
+      <span class="muted">Biệt danh</span>
       <input
         v-model="value"
         maxlength="16"
         autocomplete="nickname"
-        placeholder="Whiskers"
+        placeholder="Hoàng Thượng"
         autofocus
       />
     </label>
@@ -46,7 +46,7 @@ async function submit() {
 
     <PlaqueButton
       type="submit"
-      :title="busy ? 'Just a sec…' : 'Enter the lobby'"
+      :title="busy ? 'Đang xử lý…' : 'Vào sảnh chờ'"
       icon="🐾"
       variant="primary"
       chevron

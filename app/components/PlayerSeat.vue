@@ -68,15 +68,15 @@ const back = cardBackUrl();
     >
         <span class="name">
             {{ player.nickname }}
-            <span v-if="!player.connected" title="Disconnected">🔌</span>
+            <span v-if="!player.connected" title="Mất kết nối">🔌</span>
         </span>
 
         <span
             v-if="player.ready"
             class="ready-badge"
-            title="Ready for the next round"
+            title="Đã sẵn sàng cho ván mới"
         >
-            ✅ Ready
+            ✅ Sẵn sàng
         </span>
 
         <span class="disc-wrap">
@@ -103,9 +103,9 @@ const back = cardBackUrl();
         </span>
 
         <span class="meta">
-            {{ player.handCount }} card{{ player.handCount === 1 ? "" : "s" }}
+            {{ player.handCount }} lá bài
             <template v-if="isCurrent && turnsRemaining > 1">
-                · {{ turnsRemaining }} turns left</template
+                · còn {{ turnsRemaining }} lượt</template
             >
         </span>
     </button>
@@ -226,7 +226,7 @@ const back = cardBackUrl();
 }
 
 .seat.you .name::after {
-    content: " (you)";
+    content: " (bạn)";
     color: var(--text-dim);
     font-weight: normal;
 }

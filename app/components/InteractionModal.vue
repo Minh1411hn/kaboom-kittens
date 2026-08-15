@@ -63,16 +63,16 @@ const canSubmit = computed(() => Boolean(chosenUid.value))
             :selected="chosenUid === card.uid"
           />
         </button>
-        <p v-if="!choices.length" class="muted">Nothing to choose from.</p>
+        <p v-if="!choices.length" class="muted">Không có lá bài nào để chọn.</p>
       </div>
 
-      <button class="primary" :disabled="!canSubmit" @click="submit">Confirm</button>
+      <button class="primary" :disabled="!canSubmit" @click="submit">Xác nhận</button>
     </section>
 
     <!-- Bystanders just see who everyone is waiting on -->
     <section v-else class="dialog panel waiting">
       <h2>{{ interaction.prompt }}</h2>
-      <p class="muted">Waiting for {{ waitingOn.join(', ') || '…' }}</p>
+      <p class="muted">Đang chờ {{ waitingOn.join(', ') || '…' }} chọn bài…</p>
       <div class="spinner" />
     </section>
   </div>
@@ -131,7 +131,7 @@ const canSubmit = computed(() => Boolean(chosenUid.value))
 }
 
 .choice:hover :deep(.card) {
-  transform: translateY(-6px) scale(1.5);
+  transform: translateY(-6px) scale(1.35);
   z-index: 10;
 }
 

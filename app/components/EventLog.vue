@@ -58,12 +58,12 @@ function say() {
         </template>
         <template v-else>{{ entry.text }}</template>
       </p>
-      <p v-if="!entries.length" class="muted">The table is quiet.</p>
+      <p v-if="!entries.length" class="muted">Bàn chơi đang yên ắng.</p>
     </div>
 
     <form class="say" @submit.prevent="say">
-      <input v-model="draft" maxlength="200" placeholder="Say something…" />
-      <button :disabled="!draft.trim()">Send</button>
+      <input v-model="draft" maxlength="200" placeholder="Nhập tin nhắn…" />
+      <button :disabled="!draft.trim()">Gửi</button>
     </form>
   </aside>
 </template>
@@ -93,7 +93,8 @@ function say() {
 /* Colours are ink-on-parchment here, not text-on-wood. */
 .entry {
   margin: 0;
-  color: var(--ink-dim);
+  color: #4a3824;
+  font-weight: 500;
   line-height: 1.35;
 }
 

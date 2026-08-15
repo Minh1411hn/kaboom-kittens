@@ -115,7 +115,7 @@ const overlap = computed(() => {
         />
       </button>
     </div>
-    <p v-if="!slots.length" class="empty">No cards left.</p>
+    <p v-if="!slots.length" class="empty">Không còn lá bài nào trên tay.</p>
   </div>
 </template>
 
@@ -215,14 +215,14 @@ const overlap = computed(() => {
 }
 
 .pick:hover :deep(.card) {
-  transform: translateY(-22px) scale(1.5);
+  transform: translateY(-22px) scale(1.35);
   transform-origin: bottom center;
   box-shadow: 0 16px 30px rgb(20 8 0 / 55%);
   z-index: 50;
 }
 
 .pick:hover :deep(.card.selected) {
-  transform: translateY(-28px) scale(1.5);
+  transform: translateY(-28px) scale(1.35);
   transform-origin: bottom center;
   z-index: 50;
 }

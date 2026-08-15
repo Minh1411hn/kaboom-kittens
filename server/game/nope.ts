@@ -51,8 +51,8 @@ export function resolveActionStack(state: GameState, env: EffectEnv): void {
         count: nopeCount,
         message:
           nopeCount === 1
-            ? `${player.nickname}'s ${CARD_BY_ID[base.cardId].name} was Noped!`
-            : `${player.nickname}'s ${CARD_BY_ID[base.cardId].name} was Noped (${nopeCount} Nopes deep)!`,
+            ? `${player.nickname} bị Nope chặn lá ${CARD_BY_ID[base.cardId].name}!`
+            : `${player.nickname} bị Nope chặn lá ${CARD_BY_ID[base.cardId].name} (qua ${nopeCount} lần Nope chồng lên nhau)!`,
       },
       env.now,
     )
@@ -67,7 +67,7 @@ export function resolveActionStack(state: GameState, env: EffectEnv): void {
         playerId: base.playerId,
         cardId: base.cardId,
         count: nopeCount,
-        message: `The Nopes cancelled out — ${CARD_BY_ID[base.cardId].name} goes through!`,
+        message: `Các lá Nope đã tự triệt tiêu nhau — ${CARD_BY_ID[base.cardId].name} được kích hoạt thành công!`,
       },
       env.now,
     )

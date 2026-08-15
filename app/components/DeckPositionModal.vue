@@ -98,7 +98,7 @@ function submit() {
                     :class="{ selected: pickedByRandom }"
                     @click="pickRandom"
                 >
-                    🎲 RANDOM
+                    🎲 NGẪU NHIÊN
                 </button>
             </div>
 

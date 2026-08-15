@@ -13,8 +13,8 @@ withDefaults(
         cancelLabel?: string;
     }>(),
     {
-        confirmLabel: "Confirm",
-        cancelLabel: "Cancel",
+        confirmLabel: "Xác nhận",
+        cancelLabel: "Hủy",
     },
 );
 

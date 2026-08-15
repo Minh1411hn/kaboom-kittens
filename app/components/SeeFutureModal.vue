@@ -164,7 +164,8 @@ useSortable(choicesEl, order, {
 .subtitle {
     margin: 0.35rem 0 0;
     font-size: 0.95rem;
-    color: var(--text-dim);
+    color: #4a3622;
+    font-weight: 500;
 }
 
 /* Số cột luôn khớp số lá bài đang hiển thị (3 hoặc 5) — CSS Grid không tự
@@ -225,7 +226,7 @@ useSortable(choicesEl, order, {
 }
 
 .card-wrapper:hover {
-    transform: translateY(-4px) scale(1.5);
+    transform: translateY(-4px) scale(1.35);
     z-index: 10;
 }
 
@@ -238,16 +239,17 @@ useSortable(choicesEl, order, {
 
 .card-rank {
     font-family: var(--font-display);
-    font-size: 0.8rem;
-    color: var(--accent, #f5771c);
+    font-size: 0.82rem;
+    color: #a5201a;
     letter-spacing: 0.5px;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .card-label {
     width: 100%;
     font-size: 0.85rem;
-    color: var(--text-dim);
+    color: #2c2117;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

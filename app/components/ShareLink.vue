@@ -23,8 +23,8 @@ async function copy() {
 
 <template>
   <div class="share">
-    <input :value="link" readonly aria-label="Room link" @focus="($event.target as HTMLInputElement).select()" />
-    <button @click="copy">{{ copied ? 'Copied ✓' : 'Copy link' }}</button>
+    <input :value="link" readonly aria-label="Liên kết phòng" @focus="($event.target as HTMLInputElement).select()" />
+    <button @click="copy">{{ copied ? 'Đã sao chép ✓' : 'Sao chép link' }}</button>
   </div>
 </template>
 

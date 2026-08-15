@@ -12,7 +12,7 @@ export const defuse: CardDefinition = {
   id: 'defuse',
   playWindow: 'own-turn',
   nopeable: false,
-  canPlay: () => 'Defuse plays itself when you draw an Exploding Kitten.',
+  canPlay: () => 'Defuse sẽ tự động kích hoạt khi bạn rút phải Exploding Kitten.',
   resolve: () => [],
 
   onInteractionComplete: ({ interaction }): Effect[] => {
@@ -36,6 +36,6 @@ export const explodingKitten: CardDefinition = {
   id: 'exploding-kitten',
   playWindow: 'own-turn',
   nopeable: false,
-  canPlay: () => 'You cannot play an Exploding Kitten.',
+  canPlay: () => 'Bạn không thể tự ý đánh lá Exploding Kitten.',
   resolve: () => [],
 }

@@ -14,9 +14,9 @@ export const comboSchema = z.enum(['pair', 'triple', 'five-different'])
 export const nicknameSchema = z
   .string()
   .trim()
-  .min(2, 'Nickname must be at least 2 characters.')
-  .max(16, 'Nickname must be at most 16 characters.')
-  .regex(/^[\p{L}\p{N} _'-]+$/u, 'Nicknames can only use letters, numbers, spaces, - and _.')
+  .min(2, 'Biệt danh phải có ít nhất 2 ký tự.')
+  .max(16, 'Biệt danh tối đa 16 ký tự.')
+  .regex(/^[\p{L}\p{N} _'-]+$/u, 'Biệt danh chỉ được dùng chữ cái, chữ số, khoảng trắng, - và _.')
 
 export const roomNameSchema = z.string().trim().min(2).max(32)
 

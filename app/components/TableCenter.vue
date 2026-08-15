@@ -31,7 +31,7 @@ const back = cardBackUrl()
     <div class="signpost">
       <div
         class="direction"
-        :title="`Play goes ${direction === 1 ? 'clockwise' : 'anticlockwise'}`"
+        :title="`Lượt đi theo chiều ${direction === 1 ? 'thuận chiều kim đồng hồ' : 'ngược chiều kim đồng hồ'}`"
       >
         {{ direction === 1 ? '↻' : '↺' }}
       </div>
@@ -45,8 +45,8 @@ const back = cardBackUrl()
         class="deck"
         :class="{ dragging }"
         :disabled="!canDraw"
-        :title="canDraw ? 'Drag the top card into your hand' : ''"
-        :aria-label="`Draw pile, ${drawCount} cards left. Drag the top card into your hand, or press Enter to draw.`"
+        :title="canDraw ? 'Kéo lá bài trên cùng về tay của bạn để rút bài' : ''"
+        :aria-label="`Chồng bài rút, còn ${drawCount} lá. Kéo lá bài trên cùng về tay bạn, hoặc nhấn phím Cách / Enter để rút bài.`"
         @pointerdown="$emit('drawPointerDown', $event)"
         @keydown.enter.prevent="$emit('draw')"
         @keydown.space.prevent="$emit('draw')"
@@ -55,7 +55,7 @@ const back = cardBackUrl()
           <img :src="back" alt="" draggable="false" />
         </span>
       </button>
-      <span class="ribbon">{{ drawCount }} cards left</span>
+      <span class="ribbon">Còn {{ drawCount }} lá</span>
     </div>
 
     <div class="pile">
@@ -66,9 +66,9 @@ const back = cardBackUrl()
           :uid="discardTop.uid"
           width="140px"
         />
-        <div v-else class="empty">empty</div>
+        <div v-else class="empty">Trống</div>
       </div>
-      <span class="ribbon quiet">Discard · {{ discardCount }}</span>
+      <span class="ribbon quiet">Bài đã đánh · {{ discardCount }}</span>
     </div>
   </div>
 </template>
@@ -238,7 +238,7 @@ const back = cardBackUrl()
 }
 
 .discard:hover {
-  transform: scale(1.5);
+  transform: scale(1.35);
   z-index: 10;
   position: relative;
 }

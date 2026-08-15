@@ -25,7 +25,7 @@ const src = computed(() =>
   props.faceDown || !props.cardId ? cardBackUrl() : cardArtUrl(props.cardId, props.uid),
 )
 const label = computed(() =>
-  props.faceDown || !props.cardId ? 'Face-down card' : cardName(props.cardId),
+  props.faceDown || !props.cardId ? 'Lá bài úp' : cardName(props.cardId),
 )
 const title = computed(() => {
   if (props.reason) return props.reason

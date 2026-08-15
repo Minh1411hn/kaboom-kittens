@@ -60,7 +60,7 @@ export async function mutateRoom(
 ): Promise<string | undefined> {
   const result = await withRoomLock(roomId, async () => {
     const state = await loadState(roomId)
-    if (!state) return { error: 'This room no longer exists.' }
+    if (!state) return { error: 'Phòng chơi này không còn tồn tại.' }
     const error = mutate(state)
     if (error) return { error }
     await saveState(state)
@@ -147,8 +147,8 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
  */
 export async function kickPlayer(roomId: string, targetPlayerId: string): Promise<string | undefined> {
   const error = await mutateRoom(roomId, (state) => {
-    if (state.status !== 'lobby' && state.status !== 'over') return 'Players can only be removed from the waiting room.'
-    if (!state.players.some((p) => p.id === targetPlayerId)) return 'That player is not in this room.'
+    if (state.status !== 'lobby' && state.status !== 'over') return 'Chỉ có thể mời người chơi ra khỏi phòng khi ở phòng chờ.'
+    if (!state.players.some((p) => p.id === targetPlayerId)) return 'Người chơi đó không có trong phòng này.'
     removePlayer(state, targetPlayerId)
     
     if (state.status === 'over') {
@@ -161,7 +161,7 @@ export async function kickPlayer(roomId: string, targetPlayerId: string): Promis
   if (error) return error
 
   const target = peersInRoom(roomId).find((l) => l.context.playerId === targetPlayerId)
-  if (target) send(target.peer, { type: 'kicked', reason: 'The host removed you from the room.' })
+  if (target) send(target.peer, { type: 'kicked', reason: 'Chủ phòng đã mời bạn ra khỏi phòng chơi.' })
   return undefined
 }
 
@@ -177,7 +177,7 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   const [state, meta] = await Promise.all([loadState(roomId), getRoomMeta(roomId)])
   if (!state) {
     for (const { peer } of listeners) {
-      send(peer, { type: 'kicked', reason: 'This room has closed.' })
+      send(peer, { type: 'kicked', reason: 'Phòng chơi này đã bị đóng.' })
     }
     return
   }
@@ -194,14 +194,14 @@ export function snapshotFor(state: GameState, meta: RoomMeta | null, viewerId: s
     type: 'snapshot',
     state: projected,
     hostId: meta?.hostId ?? '',
-    roomName: meta?.name ?? 'Room',
+    roomName: meta?.name ?? 'Phòng chơi',
   }
 }
 
 export async function sendSnapshot(peer: Peer, roomId: string, viewerId: string): Promise<void> {
   const [state, meta] = await Promise.all([loadState(roomId), getRoomMeta(roomId)])
   if (!state) {
-    send(peer, { type: 'kicked', reason: 'This room no longer exists.' })
+    send(peer, { type: 'kicked', reason: 'Phòng chơi này không còn tồn tại.' })
     return
   }
   send(peer, snapshotFor(state, meta, viewerId))

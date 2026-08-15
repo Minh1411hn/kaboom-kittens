@@ -41,7 +41,7 @@ async function createRoom() {
     } catch (caught) {
         error.value =
             (caught as { statusMessage?: string }).statusMessage ??
-            "Could not create the room.";
+            "Không thể tạo phòng chơi.";
     } finally {
         creating.value = false;
     }
@@ -53,9 +53,9 @@ const openRooms = computed(() =>
 
 function since(at: number): string {
     const minutes = Math.round((Date.now() - at) / 60000);
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    return `${Math.round(minutes / 60)}h ago`;
+    if (minutes < 1) return "vừa xong";
+    if (minutes < 60) return `${minutes} phút trước`;
+    return `${Math.round(minutes / 60)} giờ trước`;
 }
 </script>
 
@@ -78,12 +78,12 @@ function since(at: number): string {
                 </div>
                 <div class="row status-row">
                     <span class="muted"
-                        >Playing as <strong>{{ nickname }}</strong></span
+                        >Đang chơi với tên <strong>{{ nickname }}</strong></span
                     >
                     <span
                         class="dot"
                         :class="status"
-                        :title="`Socket ${status}`"
+                        :title="`Trạng thái kết nối: ${status}`"
                     />
                 </div>
             </header>
@@ -96,29 +96,29 @@ function since(at: number): string {
                     :disabled="creating"
                     @click="createRoom"
                 >
-                    Start a new game
+                    Bắt đầu ván mới
                 </button>
             </div>
 
             <section class="panel">
-                <h2>Open rooms</h2>
+                <h2>Phòng đang mở</h2>
                 <p v-if="!openRooms.length" class="muted">
-                    Nothing going on yet. Create a room and share the link.
+                    Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!
                 </p>
                 <ul v-else class="rooms">
                     <li v-for="room in openRooms" :key="room.id" class="room">
                         <div class="room-main">
                             <strong>{{ room.name }}</strong>
                             <span class="muted small">
-                                host {{ room.hostNickname }} ·
+                                Chủ phòng: {{ room.hostNickname }} ·
                                 {{ since(room.createdAt) }}
                             </span>
                         </div>
                         <span class="badge" :class="room.status">
                             {{
                                 room.status === "playing"
-                                    ? "in game"
-                                    : "waiting"
+                                    ? "Đang chơi"
+                                    : "Đang chờ"
                             }}
                         </span>
                         <span
@@ -137,7 +137,7 @@ function since(at: number): string {
                                 "
                             >
                                 {{
-                                    room.status === "playing" ? "Watch" : "Join"
+                                    room.status === "playing" ? "Xem" : "Tham gia"
                                 }}
                             </button>
                         </NuxtLink>

@@ -5,14 +5,14 @@
     {
       "id": "exploding-kitten",
       "name": "Exploding Kitten",
-      "label": "Kaboom",
+      "label": "Bùng nổ",
       "category": "kitten",
       "deck": {
         "formula": "players-minus-1"
       },
       "color": "#c0392b",
       "emoji": "💥",
-      "text": "You explode unless you play a Defuse.",
+      "text": "Bạn sẽ nổ tung trừ khi có lá Defuse để gỡ bom.",
       "play": {
         "solo": false
       }
@@ -20,14 +20,14 @@
     {
       "id": "defuse",
       "name": "Defuse",
-      "label": "Save yourself",
+      "label": "Gỡ bom",
       "category": "defuse",
       "deck": {
         "formula": "defuse"
       },
       "color": "#27ae60",
       "emoji": "🛡️",
-      "text": "Stops an Exploding Kitten. Put the kitten back anywhere in the deck.",
+      "text": "Vô hiệu hóa Exploding Kitten. Đặt lại mèo nổ vào bất kỳ vị trí nào trong chồng bài rút.",
       "play": {
         "solo": false
       }
@@ -35,14 +35,14 @@
     {
       "id": "nope",
       "name": "Nope",
-      "label": "Stop that",
+      "label": "Chặn đứng",
       "category": "action",
       "deck": {
         "base": 5
       },
       "color": "#e74c3c",
       "emoji": "⛔",
-      "text": "Stop any action except a Defuse or an Exploding Kitten. Can be Noped.",
+      "text": "Chặn đứng mọi hành động ngoại trừ Defuse hoặc Exploding Kitten. Có thể bị Nope đè.",
       "play": {
         "solo": true,
         "anytime": true
@@ -51,14 +51,14 @@
     {
       "id": "attack-2x",
       "name": "Attack 2x",
-      "label": "Attack",
+      "label": "Tấn công",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#d35400",
       "emoji": "⚔️",
-      "text": "End your turn(s) without drawing. The next player takes 2 turns.",
+      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Người chơi kế tiếp phải đi 2 lượt.",
       "play": {
         "solo": true
       }
@@ -66,14 +66,14 @@
     {
       "id": "targeted-attack-2x",
       "name": "Targeted Attack 2x",
-      "label": "Pick a victim",
+      "label": "Chọn nạn nhân",
       "category": "action",
       "deck": {
         "base": 3
       },
       "color": "#e67e22",
       "emoji": "🎯",
-      "text": "End your turn(s) without drawing. A player of your choice takes 2 turns.",
+      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Chọn 1 người chơi bất kỳ phải đi 2 lượt.",
       "play": {
         "solo": true,
         "target": true
@@ -82,14 +82,14 @@
     {
       "id": "personal-attack-3x",
       "name": "Personal Attack 3x",
-      "label": "Take 3 turns",
+      "label": "Đi 3 lượt",
       "category": "action",
       "deck": {
         "base": 3
       },
       "color": "#8e44ad",
       "emoji": "🔥",
-      "text": "End your turn without drawing, then take 3 turns yourself.",
+      "text": "Kết thúc lượt hiện tại không cần rút bài, sau đó tự mình thực hiện thêm 3 lượt.",
       "play": {
         "solo": true
       }
@@ -97,14 +97,14 @@
     {
       "id": "skip",
       "name": "Skip",
-      "label": "End your turn",
+      "label": "Bỏ qua",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#16a085",
       "emoji": "⏭️",
-      "text": "End your turn without drawing a card.",
+      "text": "Kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
       }
@@ -112,14 +112,14 @@
     {
       "id": "reverse",
       "name": "Reverse",
-      "label": "Turn it around",
+      "label": "Đảo chiều",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#2980b9",
       "emoji": "🔄",
-      "text": "Reverse the order of play and end your turn without drawing.",
+      "text": "Đảo ngược chiều đánh và kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
       }
@@ -127,14 +127,14 @@
     {
       "id": "shuffle",
       "name": "Shuffle",
-      "label": "Mix the deck",
+      "label": "Xào bài",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#2c3e50",
       "emoji": "🎲",
-      "text": "Shuffle the draw pile.",
+      "text": "Xào lại toàn bộ chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -142,14 +142,14 @@
     {
       "id": "favor",
       "name": "Favor",
-      "label": "Demand a card",
+      "label": "Xin đểu",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#c2185b",
       "emoji": "🤲",
-      "text": "A player of your choice gives you a card of their choosing.",
+      "text": "Chọn 1 người chơi; người đó phải tự chọn 1 lá bài trên tay để đưa cho bạn.",
       "play": {
         "solo": true,
         "target": true
@@ -158,14 +158,14 @@
     {
       "id": "draw-from-the-bottom",
       "name": "Draw From the Bottom",
-      "label": "From the bottom",
+      "label": "Rút từ đáy",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#795548",
       "emoji": "⬇️",
-      "text": "End your turn by drawing the bottom card of the draw pile.",
+      "text": "Kết thúc lượt của bạn bằng cách rút lá bài ở dưới đáy chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -173,14 +173,14 @@
     {
       "id": "see-the-future-3x",
       "name": "See the Future 3x",
-      "label": "Peek at 3",
+      "label": "Xem trước 3 lá",
       "category": "action",
       "deck": {
         "base": 5
       },
       "color": "#7b1fa2",
       "emoji": "🔮",
-      "text": "Privately view the top 3 cards of the draw pile.",
+      "text": "Bí mật xem trước 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -188,7 +188,7 @@
     {
       "id": "see-the-future-5x",
       "name": "See the Future 5x",
-      "label": "Peek at 5",
+      "label": "Xem trước 5 lá",
       "category": "action",
       "deck": {
         "base": 2,
@@ -196,7 +196,7 @@
       },
       "color": "#6a1b9a",
       "emoji": "🔮",
-      "text": "Privately view the top 5 cards of the draw pile.",
+      "text": "Bí mật xem trước 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -204,14 +204,14 @@
     {
       "id": "alter-the-future-3x",
       "name": "Alter the Future 3x",
-      "label": "Reorder 3",
+      "label": "Sắp xếp 3 lá",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#3949ab",
       "emoji": "🔀",
-      "text": "Privately view and rearrange the top 3 cards of the draw pile.",
+      "text": "Bí mật xem và sắp xếp lại thứ tự 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -219,7 +219,7 @@
     {
       "id": "alter-the-future-5x",
       "name": "Alter the Future 5x",
-      "label": "Reorder 5",
+      "label": "Sắp xếp 5 lá",
       "category": "action",
       "deck": {
         "base": 2,
@@ -227,7 +227,7 @@
       },
       "color": "#283593",
       "emoji": "🔀",
-      "text": "Privately view and rearrange the top 5 cards of the draw pile.",
+      "text": "Bí mật xem và sắp xếp lại thứ tự 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
@@ -235,7 +235,7 @@
     {
       "id": "garbage-collection",
       "name": "Garbage Collection",
-      "label": "Everyone pays up",
+      "label": "Thu gom rác",
       "category": "action",
       "deck": {
         "base": 2,
@@ -243,7 +243,7 @@
       },
       "color": "#546e7a",
       "emoji": "🗑️",
-      "text": "Every player puts 1 card into a pile. Shuffle it and deal the cards back out.",
+      "text": "Mọi người chơi bỏ 1 lá bài vào tụ. Tụ bài được xào đều rồi chia lại cho mọi người.",
       "play": {
         "solo": true
       }
@@ -251,7 +251,7 @@
     {
       "id": "tacocat",
       "name": "Tacocat",
-      "label": "Annoy",
+      "label": "Mèo Tacocat",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
@@ -259,7 +259,7 @@
       },
       "color": "#f39c12",
       "emoji": "🌮",
-      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
@@ -267,7 +267,7 @@
     {
       "id": "cattermelon",
       "name": "Cattermelon",
-      "label": "Annoy",
+      "label": "Mèo Dưa Hấu",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
@@ -275,7 +275,7 @@
       },
       "color": "#2ecc71",
       "emoji": "🍉",
-      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
@@ -283,7 +283,7 @@
     {
       "id": "hairy-potato-cat",
       "name": "Hairy Potato Cat",
-      "label": "Annoy",
+      "label": "Mèo Khoai Tây",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
@@ -291,7 +291,7 @@
       },
       "color": "#a1887f",
       "emoji": "🥔",
-      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
@@ -299,7 +299,7 @@
     {
       "id": "rainbow-ralphing-cat",
       "name": "Rainbow Ralphing Cat",
-      "label": "Annoy",
+      "label": "Mèo Cầu Vồng",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
@@ -307,7 +307,7 @@
       },
       "color": "#00bcd4",
       "emoji": "🌈",
-      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
@@ -315,7 +315,7 @@
     {
       "id": "beard-cat",
       "name": "Beard Cat",
-      "label": "Annoy",
+      "label": "Mèo Râu Rậm",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
@@ -323,7 +323,7 @@
       },
       "color": "#5d4037",
       "emoji": "🧔",
-      "text": "No power on its own. Play 2, 3 or 5 matching cards as a combo.",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
@@ -331,14 +331,14 @@
     {
       "id": "feral-cat",
       "name": "Feral Cat",
-      "label": "Any cat",
+      "label": "Mèo Hoang Đa Năng",
       "category": "cat",
       "deck": {
         "base": 4
       },
       "color": "#ff5722",
       "emoji": "🐈",
-      "text": "Use as any Cat Card in a combo.",
+      "text": "Dùng thay thế cho bất kỳ lá bài Mèo nào để ghép combo.",
       "play": {
         "solo": false
       }

@@ -78,7 +78,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
         state.limbo.push(card)
         logEvent(
           state,
-          { type: 'kitten-drawn', playerId: player.id, cardId: card.id, message: `${player.nickname} drew an Exploding Kitten!` },
+          { type: 'kitten-drawn', playerId: player.id, cardId: card.id, message: `${player.nickname} đã rút phải Exploding Kitten! 💥` },
           now,
         )
         const defuse = player.hand.find((c) => c.id === 'defuse')
@@ -88,7 +88,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           state.discardPile.unshift(defuse)
           logEvent(
             state,
-            { type: 'kitten-defused', playerId: player.id, cardId: 'defuse', message: `${player.nickname} defused it!` },
+            { type: 'kitten-defused', playerId: player.id, cardId: 'defuse', message: `${player.nickname} đã sử dụng Defuse để gỡ bom!` },
             now,
           )
           applyEffect(
@@ -100,7 +100,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
                 cardId: 'defuse',
                 requiredFrom: [player.id],
                 context: { kittenUid: card.uid, endTurnAfter: true },
-                prompt: 'Secretly put the Exploding Kitten back into the deck',
+                prompt: 'Bí mật đặt lại Exploding Kitten vào chồng bài rút',
                 maxPosition: state.drawPile.length,
               },
             },
@@ -116,7 +116,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
       player.hand.push(card)
       logEvent(
         state,
-        { type: 'card-drawn', playerId: player.id, message: `${player.nickname} drew a card.` },
+        { type: 'card-drawn', playerId: player.id, message: `${player.nickname} đã rút 1 lá bài.` },
         now,
       )
       endTurnAfterDraw(state, now)
@@ -135,7 +135,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           type: 'card-stolen',
           playerId: to.id,
           targetId: from.id,
-          message: `${to.nickname} stole a random card from ${from.nickname}.`,
+          message: `${to.nickname} đã cướp 1 lá bài ngẫu nhiên từ ${from.nickname}.`,
         },
         now,
       )
@@ -154,7 +154,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           playerId: effect.fromPlayerId,
           targetId: effect.toPlayerId,
           cardId: card.id,
-          message: `${name(state, effect.fromPlayerId)} gave ${CARD_BY_ID[card.id].name} to ${name(state, effect.toPlayerId)}.`,
+          message: `${name(state, effect.fromPlayerId)} đã đưa ${CARD_BY_ID[card.id].name} cho ${name(state, effect.toPlayerId)}.`,
         },
         now,
       )
@@ -174,7 +174,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
             playerId: to.id,
             targetId: from.id,
             cardId: effect.cardId,
-            message: `${from.nickname} had no ${CARD_BY_ID[effect.cardId].name}.`,
+            message: `${from.nickname} không có lá ${CARD_BY_ID[effect.cardId].name} nào.`,
           },
           now,
         )
@@ -201,7 +201,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           type: 'card-taken-from-discard',
           playerId: player.id,
           cardId: card.id,
-          message: `${player.nickname} took ${CARD_BY_ID[card.id].name} from the discard pile.`,
+          message: `${player.nickname} đã lấy lá ${CARD_BY_ID[card.id].name} từ chồng bài đã đánh.`,
         },
         now,
       )
@@ -211,7 +211,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
     case 'SHUFFLE_DRAW': {
       shuffle(state, state.drawPile)
       state.peeks = {}
-      logEvent(state, { type: 'deck-shuffled', message: 'The draw pile was shuffled.' }, now)
+      logEvent(state, { type: 'deck-shuffled', message: 'Chồng bài rút đã được xào lại.' }, now)
       return
     }
 
@@ -224,7 +224,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
       }
       state.drawPile.unshift(...picked)
       state.peeks = {}
-      logEvent(state, { type: 'future-altered', count: picked.length, message: 'The top of the deck was rearranged.' }, now)
+      logEvent(state, { type: 'future-altered', count: picked.length, message: 'Thứ tự các lá bài trên đầu chồng bài rút đã bị thay đổi.' }, now)
       return
     }
 
@@ -246,7 +246,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           type: 'future-seen',
           playerId: effect.playerId,
           count: Math.min(effect.count, state.drawPile.length),
-          message: `${name(state, effect.playerId)} peeked at the future.`,
+          message: `${name(state, effect.playerId)} đã nhìn trước tương lai.`,
         },
         now,
       )
@@ -276,7 +276,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           type: 'player-attacked',
           targetId: target.id,
           count: state.turn.turnsRemaining,
-          message: `${target.nickname} must take ${state.turn.turnsRemaining} turns.`,
+          message: `${target.nickname} bị tấn công và phải thực hiện ${state.turn.turnsRemaining} lượt.`,
         },
         now,
       )
@@ -292,7 +292,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
 
     case 'REVERSE': {
       state.turn.direction = state.turn.direction === 1 ? -1 : 1
-      logEvent(state, { type: 'direction-reversed', message: 'The order of play reversed.' }, now)
+      logEvent(state, { type: 'direction-reversed', message: 'Chiều chơi đã bị đảo ngược.' }, now)
       return
     }
 
@@ -307,7 +307,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
       delete state.peeks[player.id]
       logEvent(
         state,
-        { type: 'player-exploded', playerId: player.id, message: `${player.nickname} exploded! 💥` },
+        { type: 'player-exploded', playerId: player.id, message: `${player.nickname} đã bị nổ tung! 💥` },
         now,
       )
       checkGameOver(state, now)
@@ -340,7 +340,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
             cardId: 'garbage-collection',
             requiredFrom: contributors.map((p) => p.id),
             context: { starterId: effect.starterId },
-            prompt: 'Choose 1 card to throw into the garbage',
+            prompt: 'Chọn 1 lá bài để bỏ vào tụ rác',
           },
         },
         env,
@@ -375,7 +375,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
           type: 'garbage-collected',
           playerId: effect.starterId,
           count: pile.length,
-          message: `${name(state, effect.starterId)} called a Garbage Collection — ${pile.length} cards were shuffled and dealt back.`,
+          message: `${name(state, effect.starterId)} đã kích hoạt Garbage Collection — ${pile.length} lá bài được gom lại, xào đều và chia lại.`,
         },
         now,
       )
@@ -423,7 +423,7 @@ function afterTurnChange(state: GameState, now: number): void {
         type: 'turn-changed',
         playerId: player.id,
         count: state.turn.turnsRemaining,
-        message: `It is ${player.nickname}'s turn.`,
+        message: `Đến lượt của ${player.nickname}.`,
       },
       now,
     )
@@ -445,8 +445,8 @@ export function checkGameOver(state: GameState, now: number): void {
       type: 'game-over',
       playerId: state.winnerId ?? undefined,
       message: state.winnerId
-        ? `${playerById(state, state.winnerId)?.nickname} is the last kitten standing! 🏆`
-        : 'Game over.',
+        ? `${playerById(state, state.winnerId)?.nickname} là chú mèo sống sót cuối cùng! 🏆`
+        : 'Trò chơi kết thúc.',
     },
     now,
   )

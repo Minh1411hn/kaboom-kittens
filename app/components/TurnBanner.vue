@@ -19,7 +19,7 @@ const { remaining, fraction } = useCountdown(() => props.deadline)
 const back = cardBackUrl()
 
 const headline = computed(() =>
-  props.isYourTurn ? "It's your turn!" : `Waiting for ${props.currentPlayerName}`,
+  props.isYourTurn ? 'Đến lượt của bạn!' : `Đang chờ ${props.currentPlayerName} đi…`,
 )
 </script>
 
@@ -154,7 +154,8 @@ const headline = computed(() =>
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.3;
-  color: var(--ink-dim);
+  color: #4d3824;
+  font-weight: 500;
   min-height: 1.1em;
 }
 
