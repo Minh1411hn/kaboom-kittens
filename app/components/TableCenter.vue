@@ -64,7 +64,7 @@ const back = cardBackUrl()
           v-if="discardTop"
           :card-id="discardTop.id"
           :uid="discardTop.uid"
-          width="136px"
+          width="140px"
         />
         <div v-else class="empty">empty</div>
       </div>
@@ -253,7 +253,7 @@ const back = cardBackUrl()
 }
 
 .empty {
-  width: 136px;
+  width: 140px;
   aspect-ratio: var(--card-ratio);
   border: 3px dashed rgb(255 255 255 / 25%);
   border-radius: var(--card-radius);

@@ -125,8 +125,9 @@ describe('the table stage', () => {
 
     expect(wrapper.get('.ribbon').text()).toBe('14 cards left')
     expect(wrapper.text()).toContain('Discard · 2')
-    // The discard top is framed, so its catalog label is on the table.
-    expect(wrapper.get('.discard .card-title').text()).toBe('Defuse')
+    // The discard top prints no text — its name only reaches the DOM as the
+    // artwork's alt, which is what a screen reader reads out.
+    expect(wrapper.get('.discard img').attributes('alt')).toBe('Defuse')
     expect(wrapper.findAll('.hand-area .slot')).toHaveLength(3)
   })
 

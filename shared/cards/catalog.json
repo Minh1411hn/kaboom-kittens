@@ -253,6 +253,7 @@
       "name": "Tacocat",
       "label": "Annoy",
       "category": "cat",
+      "art": "normal-cat",
       "deck": {
         "base": 4
       },
@@ -268,6 +269,7 @@
       "name": "Cattermelon",
       "label": "Annoy",
       "category": "cat",
+      "art": "normal-cat",
       "deck": {
         "base": 4
       },
@@ -283,6 +285,7 @@
       "name": "Hairy Potato Cat",
       "label": "Annoy",
       "category": "cat",
+      "art": "normal-cat",
       "deck": {
         "base": 4
       },
@@ -298,6 +301,7 @@
       "name": "Rainbow Ralphing Cat",
       "label": "Annoy",
       "category": "cat",
+      "art": "normal-cat",
       "deck": {
         "base": 4
       },
@@ -313,6 +317,7 @@
       "name": "Beard Cat",
       "label": "Annoy",
       "category": "cat",
+      "art": "normal-cat",
       "deck": {
         "base": 4
       },

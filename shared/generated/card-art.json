@@ -1,96 +1,100 @@
 {
   "alter-the-future-3x": [
-    "/cards/alter-the-future-3x/1.svg",
-    "/cards/alter-the-future-3x/ATF.Manatee.png"
+    "/cards/alter-the-future-3x/artworks/art62.png",
+    "/cards/alter-the-future-3x/artworks/art63.png",
+    "/cards/alter-the-future-3x/artworks/art64.png",
+    "/cards/alter-the-future-3x/artworks/art65.png"
   ],
   "alter-the-future-5x": [
-    "/cards/alter-the-future-5x/1.svg",
-    "/cards/alter-the-future-5x/ATF.PurplePickle.png",
-    "/cards/alter-the-future-5x/ATF.Tesla.png"
+    "/cards/alter-the-future-5x/artworks/art61.png"
   ],
   "attack-2x": [
-    "/cards/attack-2x/1.svg"
-  ],
-  "beard-cat": [
-    "/cards/beard-cat/1.svg"
+    "/cards/attack-2x/artworks/art59.png",
+    "/cards/attack-2x/artworks/art60.png"
   ],
   "card-back": [
-    "/cards/card-back/1.svg",
-    "/cards/card-back/Cardback.png"
-  ],
-  "cattermelon": [
-    "/cards/cattermelon/1.svg"
+    "/cards/card-back/artworks/art04.png"
   ],
   "defuse": [
-    "/cards/defuse/1.svg",
-    "/cards/defuse/Defuse.Banjo.png",
-    "/cards/defuse/defuse.catnip.png",
-    "/cards/defuse/defuse.laser.png"
+    "/cards/defuse/artworks/art41.png",
+    "/cards/defuse/artworks/art42.png",
+    "/cards/defuse/artworks/art43.png",
+    "/cards/defuse/artworks/art44.png",
+    "/cards/defuse/artworks/art45.png",
+    "/cards/defuse/artworks/art46.png",
+    "/cards/defuse/artworks/art47.png",
+    "/cards/defuse/artworks/art48.png"
   ],
   "draw-from-the-bottom": [
-    "/cards/draw-from-the-bottom/1.svg",
-    "/cards/draw-from-the-bottom/DFB.png"
+    "/cards/draw-from-the-bottom/artworks/art40.png"
   ],
   "exploding-kitten": [
-    "/cards/exploding-kitten/1.svg",
-    "/cards/exploding-kitten/bomb.kitten.png",
-    "/cards/exploding-kitten/bomb.kitten.streaking.png",
-    "/cards/exploding-kitten/bomb.kitten.warning.png",
-    "/cards/exploding-kitten/bomb.kitten2.png"
+    "/cards/exploding-kitten/artworks/art34.png",
+    "/cards/exploding-kitten/artworks/art35.png",
+    "/cards/exploding-kitten/artworks/art36.png",
+    "/cards/exploding-kitten/artworks/art37.png",
+    "/cards/exploding-kitten/artworks/art38.png",
+    "/cards/exploding-kitten/artworks/art39.png"
   ],
   "favor": [
-    "/cards/favor/1.svg"
+    "/cards/favor/artworks/art31.png",
+    "/cards/favor/artworks/art32.png",
+    "/cards/favor/artworks/art33.png"
   ],
   "feral-cat": [
-    "/cards/feral-cat/1.svg"
+    "/cards/feral-cat/artworks/art30.png"
   ],
   "garbage-collection": [
-    "/cards/garbage-collection/1.svg",
-    "/cards/garbage-collection/GarbageCollection.png"
-  ],
-  "hairy-potato-cat": [
-    "/cards/hairy-potato-cat/1.svg"
+    "/cards/garbage-collection/artworks/art29.png"
   ],
   "nope": [
-    "/cards/nope/1.svg"
+    "/cards/nope/artworks/art26.png",
+    "/cards/nope/artworks/art27.png",
+    "/cards/nope/artworks/art28.png"
+  ],
+  "normal-cat": [
+    "/cards/normal-cat/artworks/art49.png",
+    "/cards/normal-cat/artworks/art50.png",
+    "/cards/normal-cat/artworks/art51.png",
+    "/cards/normal-cat/artworks/art52.png",
+    "/cards/normal-cat/artworks/art53.png",
+    "/cards/normal-cat/artworks/art54.png",
+    "/cards/normal-cat/artworks/art55.png",
+    "/cards/normal-cat/artworks/art56.png",
+    "/cards/normal-cat/artworks/art57.png",
+    "/cards/normal-cat/artworks/art58.png"
   ],
   "personal-attack-3x": [
-    "/cards/personal-attack-3x/1.svg",
-    "/cards/personal-attack-3x/SelfSlap3B.png",
-    "/cards/personal-attack-3x/SelfSlap3C.png"
-  ],
-  "rainbow-ralphing-cat": [
-    "/cards/rainbow-ralphing-cat/1.svg"
+    "/cards/personal-attack-3x/artworks/art10.png",
+    "/cards/personal-attack-3x/artworks/art18.png",
+    "/cards/personal-attack-3x/artworks/art25.png"
   ],
   "reverse": [
-    "/cards/reverse/1.svg",
-    "/cards/reverse/Reverse.Backwards.png",
-    "/cards/reverse/Reverse.SirScratch.png"
+    "/cards/reverse/artworks/art09.png",
+    "/cards/reverse/artworks/art17.png",
+    "/cards/reverse/artworks/art24.png"
   ],
   "see-the-future-3x": [
-    "/cards/see-the-future-3x/1.svg",
-    "/cards/see-the-future-3x/STF.Mantis3.png",
-    "/cards/see-the-future-3x/STF.Pigacorn3.png"
+    "/cards/see-the-future-3x/artworks/art08.png",
+    "/cards/see-the-future-3x/artworks/art16.png",
+    "/cards/see-the-future-3x/artworks/art23.png"
   ],
   "see-the-future-5x": [
-    "/cards/see-the-future-5x/1.svg",
-    "/cards/see-the-future-5x/STF.Angler5.png",
-    "/cards/see-the-future-5x/STF.Bear5.png"
+    "/cards/see-the-future-5x/artworks/art22.png"
   ],
   "shuffle": [
-    "/cards/shuffle/1.svg",
-    "/cards/shuffle/Shuffle.Litterbox.png"
+    "/cards/shuffle/artworks/art06.png",
+    "/cards/shuffle/artworks/art14.png",
+    "/cards/shuffle/artworks/art21.png"
   ],
   "skip": [
-    "/cards/skip/1.svg",
-    "/cards/skip/Skip.Bunnyraptor.png",
-    "/cards/skip/Skip.Nap.png",
-    "/cards/skip/Skip.Sprint.png"
-  ],
-  "tacocat": [
-    "/cards/tacocat/1.svg"
+    "/cards/skip/artworks/art05.png",
+    "/cards/skip/artworks/art13.png",
+    "/cards/skip/artworks/art20.png"
   ],
   "targeted-attack-2x": [
-    "/cards/targeted-attack-2x/1.svg"
+    "/cards/targeted-attack-2x/artworks/art01.png",
+    "/cards/targeted-attack-2x/artworks/art03.png",
+    "/cards/targeted-attack-2x/artworks/art11.png"
   ]
 }

@@ -182,8 +182,8 @@ const back = cardBackUrl();
 }
 
 .mini {
-    width: 17px;
-    height: 24px;
+    width: 18px;
+    aspect-ratio: var(--card-ratio);
     border-radius: 3px;
     object-fit: cover;
     box-shadow: 0 1px 2px rgb(0 0 0 / 45%);

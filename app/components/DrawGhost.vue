@@ -65,7 +65,7 @@ const eased = computed(
    the right size for the fan. */
 .ghost.dragging,
 .ghost.awaiting {
-  width: 136px;
+  width: 140px;
   border-radius: var(--card-radius);
 }
 

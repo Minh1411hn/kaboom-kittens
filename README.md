@@ -49,29 +49,39 @@ under `vitest.config.ts` as separate projects.
 
 ## Card artwork
 
-Placeholder art is generated so the game is playable out of the box. To use real
-card scans, drop image files into the matching folder and regenerate the manifest:
+An artwork file is a **whole printed card face at 140x195** — border, title and
+rules text are part of the image. `app/components/CardImage.vue` draws no chrome
+of its own, so nothing prints twice. Drop files into the card's `artworks/`
+folder and regenerate the manifest:
 
 ```
-public/cards/attack-2x/1.jpg      # any of png, jpg, jpeg, webp, avif, svg
-public/cards/attack-2x/2.jpg      # extra files = extra artwork variants
+public/cards/attack-2x/artworks/anything.png   # png, jpg, jpeg, webp or avif
+public/cards/attack-2x/artworks/whatever.jpg   # extra files = extra variants
 ```
 
 ```bash
 npm run gen:manifest
 ```
 
+Filenames are free-form; only the folder name matters. The generator warns about
+any file that is not 140x195 and about any card with no artwork at all.
+
 Each card keeps one variant for the whole game (chosen by hashing the card's
-uid), and every client shows the same one. `npm run gen:placeholders` never
-overwrites a folder that already has artwork.
+uid), and every client shows the same one.
 
-The 22 card folders plus `card-back` are listed in `shared/cards/catalog.json`.
-Note that the five Cat Cards get their own folders — they are distinct types for
-combo matching:
+There are 19 folders: 17 card ids, the shared `normal-cat` pool, and
+`card-back`. The five named Cat Cards stay distinct types for combo matching but
+share one artwork pool via the `art` field in `shared/cards/catalog.json`:
 
 ```
-tacocat/  cattermelon/  hairy-potato-cat/  rainbow-ralphing-cat/  beard-cat/  feral-cat/
+normal-cat/    tacocat, cattermelon, hairy-potato-cat, rainbow-ralphing-cat, beard-cat
+feral-cat/     its own folder — it is the wildcard, so it should look different
 ```
+
+Each of the five takes a different picture out of `normal-cat/artworks/` by
+catalog order, and keeps it. Two cats of a kind therefore always look alike and
+two cats of different kinds never do — which is how a player spots a combo. Put
+at least five pictures in the pool or the slots wrap and two cats collide.
 
 ## Adding a new card type
 
@@ -85,7 +95,8 @@ the UI never know any card by name.
    returns `Effect[]`, and prompts are declarative `InteractionSpec`s the client
    renders generically.
 4. Register it in `server/game/cards/index.ts`.
-5. Drop artwork in `public/cards/<id>/`.
+5. Drop 140x195 artwork in `public/cards/<id>/artworks/` and rerun
+   `npm run gen:manifest`.
 
 Only a genuinely new mechanic needs more than that: one new `Effect` variant in
 `server/game/effects.ts` plus its case. `server/game/catalog.test.ts` fails the

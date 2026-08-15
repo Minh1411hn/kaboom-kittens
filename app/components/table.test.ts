@@ -7,6 +7,7 @@ import type {
   PublicGameState,
   PublicPlayer,
 } from "#shared/types/game";
+import artManifest from "#shared/generated/card-art.json";
 import CardImage from "./CardImage.vue";
 import HandFan from "./HandFan.vue";
 import InteractionModal from "./InteractionModal.vue";
@@ -36,13 +37,13 @@ const player = (overrides: Partial<PublicPlayer> = {}): PublicPlayer => ({
 describe("CardImage", () => {
   it("shows a card face with its name and rules text", async () => {
     const wrapper = await mountSuspended(CardImage, {
-      props: { cardId: "attack-2x", uid: "c1" },
+      props: { cardId: "skip", uid: "c1" },
     });
     const img = wrapper.get("img");
-    expect(img.attributes("src")).toContain("/cards/attack-2x/");
-    expect(img.attributes("alt")).toBe("Attack 2x");
+    expect(img.attributes("src")).toContain("/cards/skip/artworks/");
+    expect(img.attributes("alt")).toBe("Skip");
     expect(wrapper.get(".card").attributes("title")).toContain(
-      "next player takes 2 turns",
+      "End your turn without drawing a card",
     );
   });
 
@@ -56,46 +57,66 @@ describe("CardImage", () => {
 
   it("keeps the same artwork variant for a given card", async () => {
     const first = await mountSuspended(CardImage, {
-      props: { cardId: "nope", uid: "abc" },
+      props: { cardId: "defuse", uid: "abc" },
     });
     const second = await mountSuspended(CardImage, {
-      props: { cardId: "nope", uid: "abc" },
+      props: { cardId: "defuse", uid: "abc" },
     });
     expect(first.get("img").attributes("src")).toBe(
       second.get("img").attributes("src"),
     );
   });
 
-  it("frames a face-up card with its catalog label and title", async () => {
-    // Favor's label ("Demand a card") differs from its name, so this proves
-    // both catalog fields reach the frame rather than one being echoed twice.
+  it("renders the artwork full-bleed, with no chrome of its own", async () => {
+    // The 140x195 art already prints the frame, title and rules text, so the
+    // component must add nothing — a second title would print over the first.
     const wrapper = await mountSuspended(CardImage, {
-      props: { cardId: "favor", uid: "f1" },
+      props: { cardId: "reverse", uid: "r1" },
     });
-    expect(wrapper.get(".card").classes()).toContain("framed");
-    expect(wrapper.get(".card-label").text()).toBe("Demand a card");
-    expect(wrapper.get(".card-title").text()).toBe("Favor");
-    // The border colour comes from the catalog, not a per-card stylesheet.
-    expect(wrapper.get(".card").attributes("style")).toContain("#c2185b");
+    expect(wrapper.findAll("img")).toHaveLength(1);
+    expect(wrapper.text()).toBe("");
   });
 
   it("prints no identity at all on a back", async () => {
     const wrapper = await mountSuspended(CardImage, {
       props: { cardId: "exploding-kitten", uid: "c9", faceDown: true },
     });
-    expect(wrapper.get(".card").classes()).toContain("plain");
-    expect(wrapper.find(".card-head").exists()).toBe(false);
     // "Kaboom" is the kitten's label — leaking it would give the back away.
     expect(wrapper.text()).not.toContain("Kaboom");
     expect(wrapper.text()).not.toContain("Exploding Kitten");
   });
+});
 
-  it("drops the frame when asked for a plain image", async () => {
-    const wrapper = await mountSuspended(CardImage, {
-      props: { cardId: "skip", uid: "s1", variant: "plain" },
+describe("shared cat artwork", () => {
+  // The five named cats read one pool, `public/cards/normal-cat/artworks/`.
+  // Matching for a combo is done by eye, so two cats of a kind must look alike
+  // and two cats of different kinds must not.
+  it("gives every copy of one cat the same face", async () => {
+    const first = await mountSuspended(CardImage, {
+      props: { cardId: "tacocat", uid: "t1" },
     });
-    expect(wrapper.find(".card-head").exists()).toBe(false);
-    expect(wrapper.get("img").attributes("src")).toContain("/cards/skip/");
+    const second = await mountSuspended(CardImage, {
+      props: { cardId: "tacocat", uid: "t2" },
+    });
+    expect(first.get("img").attributes("src")).toBe(
+      second.get("img").attributes("src"),
+    );
+  });
+
+  it("gives two different cats different faces", async () => {
+    const taco = await mountSuspended(CardImage, {
+      props: { cardId: "tacocat", uid: "t1" },
+    });
+    const melon = await mountSuspended(CardImage, {
+      props: { cardId: "cattermelon", uid: "m1" },
+    });
+    // Skipped until normal-cat/artworks/ holds at least 5 pictures — with a
+    // smaller pool the slots wrap and two cats legitimately share a face.
+    const pool = (artManifest as Record<string, string[]>)["normal-cat"];
+    if ((pool?.length ?? 0) < 5) return;
+    expect(taco.get("img").attributes("src")).not.toBe(
+      melon.get("img").attributes("src"),
+    );
   });
 });
 

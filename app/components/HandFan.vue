@@ -11,7 +11,7 @@ const props = defineProps<{
 
 defineEmits<{ toggle: [uid: string] }>()
 
-const CARD_W = 136
+const CARD_W = 140
 /** Roughly the width of the hand area on the table grid. */
 const FAN_W = 1120
 

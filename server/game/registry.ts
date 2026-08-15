@@ -20,7 +20,7 @@ import type { Effect } from './effects'
  *   2. add the id to the CardId union in shared/types/game.ts
  *   3. create server/game/cards/<id>.ts exporting a CardDefinition
  *   4. register it in server/game/cards/index.ts
- *   5. drop artwork into public/cards/<id>/
+ *   5. drop 140x195 artwork into public/cards/<id>/artworks/
  * Only a genuinely new mechanic needs more: one new Effect variant + its case.
  */
 export interface CardDefinition {

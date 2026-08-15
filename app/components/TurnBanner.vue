@@ -130,7 +130,7 @@ const headline = computed(() =>
 
 .card-glyph {
   width: 26px;
-  height: 34px;
+  aspect-ratio: var(--card-ratio);
   border-radius: 4px;
   object-fit: cover;
   box-shadow: 0 2px 4px rgb(0 0 0 / 35%);

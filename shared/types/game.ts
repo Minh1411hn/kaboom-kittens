@@ -67,6 +67,13 @@ export interface CatalogEntry {
    */
   label: string
   category: CardCategory
+  /**
+   * Artwork folder when it is not the card's own id. The five named cat cards
+   * share one pool under `public/cards/normal-cat/artworks/`, and each id is
+   * pinned to a different picture in it. Presentation only — the engine never
+   * reads this, and `useCardArt.ts` is its sole consumer.
+   */
+  art?: string
   deck: { base?: number; min?: number; formula?: 'players-minus-1' | 'defuse' }
   color: string
   emoji: string

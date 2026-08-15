@@ -25,13 +25,9 @@
   --ink: #2c2117;
   --ink-dim: #7a6a56;
 
-  /* Cards are white paper with a colored border. */
-  --card-paper: #fff;
-  --card-ink: #1d1d1f;
-  --card-ink-dim: #8a8a90;
+  /* Cards are whole printed faces — the artwork carries its own frame. */
   --card-radius: 14px;
-  --card-border: 4px;
-  --card-ratio: 128 / 136;
+  --card-ratio: 140 / 195;
 
   /* The draw pile's red-to-orange heat. */
   --deck-hot: #e8352e;

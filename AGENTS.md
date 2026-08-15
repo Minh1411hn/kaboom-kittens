@@ -41,7 +41,8 @@ itself when nothing answers. Bring up `docker compose up -d` first if you actual
 
 `npm run build` runs `gen:art` first. `shared/generated/card-art.json` is generated but committed —
 regenerate with `docker compose exec web npm run gen:manifest` after adding files under
-`public/cards/<id>/`.
+`public/cards/<id>/artworks/`. Artwork is the whole card face at 140x195 — `CardImage.vue` draws
+no frame of its own.
 
 This checkout's `.env` uses Redis port **6380** (6379 is taken by another project on this machine).
 

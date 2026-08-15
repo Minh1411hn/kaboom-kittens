@@ -1,8 +1,25 @@
 import manifest from '#shared/generated/card-art.json'
-import { CARD_BY_ID, type CardId } from '#shared/types/game'
+import { CARD_BY_ID, CARD_CATALOG, type CardId } from '#shared/types/game'
 
 const art = manifest as Record<string, string[]>
-const FALLBACK = '/cards/card-back/1.svg'
+const FALLBACK = '/cards/card-back/artworks/Cardback.png'
+
+/** The artwork folder a card reads from — its own id unless it shares a pool. */
+function artSlug(cardId: CardId | 'card-back'): string {
+  return CARD_BY_ID[cardId as CardId]?.art ?? cardId
+}
+
+/**
+ * Where a card sits in a pool it shares with other cards. The five named cat
+ * cards all point at `normal-cat`, so each one takes a different picture out of
+ * that folder by catalog order — two Tacocats always look alike, and a Tacocat
+ * never looks like a Cattermelon.
+ */
+const sharedSlot = new Map<CardId, number>()
+for (const entry of CARD_CATALOG) {
+  const peers = CARD_CATALOG.filter((c) => (c.art ?? c.id) === (entry.art ?? entry.id))
+  if (peers.length > 1) sharedSlot.set(entry.id, peers.indexOf(entry))
+}
 
 /** Stable string hash, so a card keeps the same face for the whole game. */
 function hash(value: string): number {
@@ -15,13 +32,19 @@ function hash(value: string): number {
 }
 
 /**
- * Picks one of the artwork variants in `public/cards/<id>/`. Keyed by the
- * card's uid rather than at random, so a card does not change its face as it
- * moves between hands — and every client shows the same one.
+ * Picks one of the artwork variants in `public/cards/<slug>/artworks/`. A card
+ * with its own folder is keyed by uid rather than at random, so it does not
+ * change its face as it moves between hands — and every client shows the same
+ * one. A card sharing a folder ignores the uid instead: its slot in the pool is
+ * its identity, which is what makes a pair of cats recognisable as a pair.
  */
 export function cardArtUrl(cardId: CardId | 'card-back', uid?: string): string {
-  const variants = art[cardId]
+  const variants = art[artSlug(cardId)]
   if (!variants?.length) return art['card-back']?.[0] ?? FALLBACK
+
+  const slot = sharedSlot.get(cardId as CardId)
+  if (slot !== undefined) return variants[slot % variants.length]!
+
   if (variants.length === 1 || !uid) return variants[0]!
   return variants[hash(`${cardId}:${uid}`) % variants.length]!
 }
@@ -36,9 +59,4 @@ export function cardName(cardId: CardId): string {
 
 export function cardText(cardId: CardId): string {
   return CARD_BY_ID[cardId]?.text ?? ''
-}
-
-/** How many artwork variants exist, for the debug/gallery page. */
-export function artVariantCount(cardId: CardId | 'card-back'): number {
-  return art[cardId]?.length ?? 0
 }
