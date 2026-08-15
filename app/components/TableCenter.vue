@@ -23,6 +23,12 @@ defineEmits<{
 const { remaining } = useCountdown(() => props.deadline)
 
 const back = cardBackUrl()
+
+/** Where a card flying out of a hand should land — see `CardDepartureFlyer`. */
+const discardEl = useTemplateRef<HTMLElement>('discardEl')
+defineExpose({
+  discardRect: (): DOMRect | null => discardEl.value?.getBoundingClientRect() ?? null,
+})
 </script>
 
 <template>
@@ -59,7 +65,7 @@ const back = cardBackUrl()
     </div>
 
     <div class="pile">
-      <div class="discard">
+      <div ref="discardEl" class="discard">
         <CardImage
           v-if="discardTop"
           :card-id="discardTop.id"

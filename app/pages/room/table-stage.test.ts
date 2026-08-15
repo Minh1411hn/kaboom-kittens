@@ -1,7 +1,8 @@
 // @vitest-environment nuxt
-import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import { describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
-import type { Card, PublicGameState, PublicPlayer } from '#shared/types/game'
+import { ALL_CARD_IDS, HAND_SIZE, type Card, type CardId, type PublicGameState, type PublicPlayer } from '#shared/types/game'
 import type { ClientMessage } from '#shared/protocol/messages'
 import RoomPage from './[id].vue'
 
@@ -34,6 +35,9 @@ let fixture: PublicGameState | null = null
 /** Messages the mocked `send` has captured, reset on every mount. */
 let sent: ClientMessage[] = []
 
+/** Placeholder deck composition — these tests care about layout, not counts. */
+const deckCounts = Object.fromEntries(ALL_CARD_IDS.map((id) => [id, 3])) as Record<CardId, number>
+
 function playing(overrides: Partial<PublicGameState> = {}): PublicGameState {
   const players = [
     player({ id: 'p1', nickname: 'Whiskers', seat: 0 }),
@@ -49,6 +53,7 @@ function playing(overrides: Partial<PublicGameState> = {}): PublicGameState {
     discardCount: 2,
     discardPile: [card('defuse', 'd1')],
     turn: { seat: 0, direction: 1, turnsRemaining: 1 },
+    deck: { counts: deckCounts, overrides: {}, handSize: HAND_SIZE, total: 66 },
     currentPlayerId: 'p1',
     actionStack: [],
     nopeWindow: null,
@@ -241,6 +246,65 @@ describe('the table stage', () => {
 
     await seats[1]!.get('.kick-btn').trigger('click')
     expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
+  })
+
+  it('makes the deck-position dialog wait for the kitten ceremony', async () => {
+    fixture = playing()
+    const wrapper = await mount()
+    const state = useState<PublicGameState | null>('kk:state')
+
+    // A baseline snapshot, so the ceremony knows where the log stood before
+    // — and so it can see which card leaves the hand next.
+    state.value = playing({
+      you: {
+        id: 'p1',
+        hand: [card('skip', 'h1'), card('defuse', 'd1')],
+        peek: null,
+        isHost: true,
+      },
+      log: [{ seq: 1, at: 1, type: 'card-drawn', playerId: 'p2', message: '' }],
+    } as Partial<PublicGameState>)
+    await nextTick()
+
+    vi.useFakeTimers()
+    try {
+      // Now the real thing: kitten, Defuse and the prompt, all in one snapshot,
+      // exactly as the server sends them.
+      state.value = playing({
+        you: { id: 'p1', hand: [card('skip', 'h1')], peek: null, isHost: true },
+        interaction: {
+          id: 'i1',
+          kind: 'choose-deck-position',
+          cardId: 'defuse',
+          requiredFrom: ['p1'],
+          prompt: 'Secretly put the Exploding Kitten back into the deck',
+          deadline: Date.now() + 30000,
+          isForYou: true,
+          answered: [],
+          maxPosition: 14,
+        },
+        log: [
+          { seq: 1, at: 1, type: 'card-drawn', playerId: 'p2', message: '' },
+          { seq: 2, at: 2, type: 'kitten-drawn', playerId: 'p1', message: '' },
+          { seq: 3, at: 3, type: 'kitten-defused', playerId: 'p1', message: '' },
+        ],
+      } as Partial<PublicGameState>)
+      await nextTick()
+
+      // The kitten is centre stage; the dialog has not shown its face yet.
+      expect(wrapper.find('.reveal').exists()).toBe(true)
+      expect(wrapper.find('.slot.held').exists()).toBe(true)
+      expect(wrapper.text()).not.toContain('Secretly put the Exploding Kitten back')
+
+      // Long enough for the whole ceremony, including its safety ceiling.
+      vi.advanceTimersByTime(4000)
+      await nextTick()
+
+      expect(wrapper.find('.reveal').exists()).toBe(false)
+      expect(wrapper.text()).toContain('Secretly put the Exploding Kitten back')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('keeps the log tucked away until it is asked for', async () => {

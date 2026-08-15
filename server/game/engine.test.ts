@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   ALL_CARD_IDS,
+  DECK_COUNT_MAX,
+  HAND_SIZE,
   type Card,
   type CardId,
   type Command,
   type GameState,
 } from '#shared/types/game'
-import { addPlayer, createGame, DEFAULT_CONFIG, reduce } from './engine'
+import { addPlayer, createGame, DEFAULT_CONFIG, reduce, resetToLobby } from './engine'
 import { cardCount, deckComposition, explodingKittenCount, makeCard } from './deck'
 import { projectStateFor } from './projection'
 import { currentPlayer, playerById } from './turn'
@@ -118,11 +120,111 @@ describe('deck composition', () => {
   it('deals a full opening hand plus one Defuse to everyone', () => {
     const state = started(10)
     for (const player of state.players) {
-      expect(player.hand).toHaveLength(8)
+      expect(player.hand).toHaveLength(HAND_SIZE + 1)
       expect(player.hand.filter((c) => c.id === 'defuse')).toHaveLength(1)
       expect(player.hand.some((c) => c.id === 'exploding-kitten')).toBe(false)
     }
     expect(state.drawPile.filter((c) => c.id === 'exploding-kitten')).toHaveLength(9)
+  })
+})
+
+describe('deck overrides', () => {
+  /** Every card in the game, wherever it currently sits. */
+  function allCards(state: GameState): Card[] {
+    return [
+      ...state.drawPile,
+      ...state.discardPile,
+      ...state.limbo,
+      ...state.players.flatMap((p) => p.hand),
+    ]
+  }
+
+  it('leaves the scaling formulas untouched when nothing is overridden', () => {
+    for (let players = 2; players <= 10; players++) {
+      for (const id of ALL_CARD_IDS) {
+        expect(cardCount(id, players, {})).toBe(cardCount(id, players))
+      }
+    }
+  })
+
+  it('uses a pinned count verbatim, at any player count', () => {
+    expect(cardCount('exploding-kitten', 5, { 'exploding-kitten': 0 })).toBe(0)
+    expect(cardCount('nope', 2, { nope: 17 })).toBe(17)
+    expect(cardCount('nope', 10, { nope: 17 })).toBe(17)
+    // A card left out of the map still scales.
+    expect(deckComposition(10, { nope: 17 }).skip).toBe(cardCount('skip', 10))
+  })
+
+  it('builds the game from the pinned counts', () => {
+    let state = newGame(4)
+    state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 0, skip: 9 } })
+    state = run(state, { type: 'start-game', playerId: 'p0' })
+
+    const cards = allCards(state)
+    expect(cards.filter((c) => c.id === 'nope')).toHaveLength(0)
+    expect(cards.filter((c) => c.id === 'skip')).toHaveLength(9)
+  })
+
+  it('survives a return to the waiting room so it holds for every game in the room', () => {
+    let state = newGame(3)
+    state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 0 } })
+    state = run(state, { type: 'start-game', playerId: 'p0' })
+    resetToLobby(state, clock++)
+    expect(state.deckOverrides).toEqual({ nope: 0 })
+
+    state = run(state, { type: 'start-game', playerId: 'p0' })
+    expect(allCards(state).filter((c) => c.id === 'nope')).toHaveLength(0)
+  })
+
+  it('refuses to change the deck once the game is under way', () => {
+    const state = started(3)
+    expect(
+      expectRejected(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 0 } }),
+    ).toMatch(/phòng chờ/i)
+  })
+
+  it('rejects counts that are not sane integers, leaving the deck alone', () => {
+    const state = newGame(3)
+    for (const overrides of [{ nope: -1 }, { nope: 1.5 }, { nope: DECK_COUNT_MAX + 1 }]) {
+      expectRejected(state, { type: 'set-deck-overrides', playerId: 'p0', overrides })
+      expect(state.deckOverrides).toEqual({})
+    }
+  })
+
+  it('refuses to start when the pinned deck cannot fill everyone’s hand', () => {
+    // Zero of every dealable card leaves only kittens and defuses, which are
+    // both held back from the deal.
+    const overrides = Object.fromEntries(
+      ALL_CARD_IDS.filter((id) => id !== 'exploding-kitten' && id !== 'defuse').map((id) => [id, 0]),
+    )
+    let state = newGame(4)
+    state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides })
+    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(
+      new RegExp(String(4 * HAND_SIZE)),
+    )
+  })
+
+  it('still deals every player a Defuse when the host pins fewer than one each', () => {
+    let state = newGame(4)
+    state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { defuse: 1 } })
+    state = run(state, { type: 'start-game', playerId: 'p0' })
+    for (const player of state.players) {
+      expect(player.hand.filter((c) => c.id === 'defuse')).toHaveLength(1)
+    }
+    expect(state.drawPile.filter((c) => c.id === 'defuse')).toHaveLength(0)
+  })
+
+  it('shows the resolved composition to every viewer, host or not', () => {
+    let state = newGame(4)
+    state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 3 } })
+    const view = projectStateFor(state, 'p1')
+    expect(view.deck.counts.nope).toBe(3)
+    expect(view.deck.counts.skip).toBe(cardCount('skip', 4))
+    expect(view.deck.overrides).toEqual({ nope: 3 })
+    expect(view.deck.handSize).toBe(HAND_SIZE)
+    expect(view.deck.total).toBe(
+      Object.values(deckComposition(4, { nope: 3 })).reduce((n, c) => n + c, 0),
+    )
   })
 })
 
@@ -133,7 +235,7 @@ describe('turn order', () => {
     stackDraw(state, ['skip'])
     const after = run(state, { type: 'draw-card', playerId: first.id })
     expect(currentPlayer(after)!.id).not.toBe(first.id)
-    expect(playerById(after, first.id)!.hand).toHaveLength(9)
+    expect(playerById(after, first.id)!.hand).toHaveLength(HAND_SIZE + 2)
   })
 
   it('refuses a draw from anyone but the current player', () => {
@@ -1014,7 +1116,7 @@ describe('projection', () => {
       expect(visible.has(card.uid)).toBe(false)
     }
     expect(view.drawCount).toBe(state.drawPile.length)
-    expect(view.you!.hand).toHaveLength(8)
+    expect(view.you!.hand).toHaveLength(HAND_SIZE + 1)
   })
 
   it('hides an interaction’s private cards and context from bystanders', () => {

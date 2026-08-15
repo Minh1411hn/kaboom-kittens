@@ -10,7 +10,9 @@ import type {
 import artManifest from "#shared/generated/card-art.json";
 import CardImage from "./CardImage.vue";
 import CardArrivalFlyer from "./CardArrivalFlyer.vue";
+import CardDepartureFlyer from "./CardDepartureFlyer.vue";
 import DeckPositionModal from "./DeckPositionModal.vue";
+import KittenRevealOverlay from "./KittenRevealOverlay.vue";
 import HandFan from "./HandFan.vue";
 import InteractionModal from "./InteractionModal.vue";
 import NopeBar from "./NopeBar.vue";
@@ -285,6 +287,86 @@ describe("HandFan", () => {
     const slots = wrapper.findAll(".slot");
     expect(slots).toHaveLength(2);
     expect(slots[1]!.classes()).toContain("leaving");
+  });
+
+  it("freezes a departing card while the kitten ceremony holds it", async () => {
+    const hand = [card("skip", "a"), card("defuse", "b")];
+    const wrapper = await mountSuspended(HandFan, {
+      props: { hand, selected: [], holdLeave: true },
+    });
+
+    await wrapper.setProps({ hand: [card("skip", "a")] });
+    const slots = wrapper.findAll(".slot");
+    expect(slots).toHaveLength(2);
+    expect(slots[1]!.classes()).toContain("held");
+    expect(slots[1]!.classes()).not.toContain("leaving");
+
+    // Released: the departure flyer has the card, so the slot goes at once
+    // rather than replaying the lift-out on a card that already flew away.
+    await wrapper.setProps({ holdLeave: false });
+    expect(wrapper.findAll(".slot")).toHaveLength(1);
+  });
+
+  it("holds a card that had already started leaving, whichever prop lands first", async () => {
+    const hand = [card("skip", "a"), card("defuse", "b")];
+    const wrapper = await mountSuspended(HandFan, {
+      props: { hand, selected: [], holdLeave: false },
+    });
+
+    await wrapper.setProps({ hand: [card("skip", "a")] });
+    expect(wrapper.findAll(".slot")[1]!.classes()).toContain("leaving");
+
+    await wrapper.setProps({ holdLeave: true });
+    const slots = wrapper.findAll(".slot");
+    expect(slots[1]!.classes()).toContain("held");
+    expect(slots[1]!.classes()).not.toContain("leaving");
+  });
+});
+
+describe("KittenRevealOverlay", () => {
+  it("holds the kitten up with the drawer's name", async () => {
+    const wrapper = await mountSuspended(KittenRevealOverlay, {
+      props: { uid: "kitten-7", playerName: "Mittens", defused: true },
+    });
+    expect(wrapper.get("img").attributes("src")).toContain(
+      "/cards/exploding-kitten/artworks/",
+    );
+    expect(wrapper.text()).toContain("Mittens");
+    // Decoration only — it must never swallow a click meant for the table.
+    expect(wrapper.get(".reveal").attributes("aria-hidden")).toBe("true");
+  });
+});
+
+describe("CardDepartureFlyer", () => {
+  const rect = (left: number, top: number): DOMRect =>
+    ({ left, top, width: 140, height: 195 }) as DOMRect;
+
+  it("reports done immediately when it has nowhere to fly", async () => {
+    const wrapper = await mountSuspended(CardDepartureFlyer, {
+      props: { card: null, fromRect: null, measureTo: () => null },
+    });
+
+    await wrapper.setProps({ card: card("defuse", "d1"), fromRect: null });
+    expect(wrapper.emitted("done")).toHaveLength(1);
+    expect(wrapper.find(".flyer").exists()).toBe(false);
+  });
+
+  it("puts the clone where the card was before moving it", async () => {
+    const wrapper = await mountSuspended(CardDepartureFlyer, {
+      props: {
+        card: null,
+        fromRect: null,
+        measureTo: () => rect(600, 300),
+      },
+    });
+
+    await wrapper.setProps({
+      card: card("defuse", "d1"),
+      fromRect: rect(100, 500),
+    });
+    const style = wrapper.get(".flyer").attributes("style") ?? "";
+    expect(style).toContain("left: 170px");
+    expect(style).toContain("top: 597.5px");
   });
 });
 

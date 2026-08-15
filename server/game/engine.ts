@@ -5,6 +5,7 @@ import {
   type Card,
   type Command,
   type ComboKind,
+  type DeckOverrides,
   type GameEvent,
   type GameState,
   type InteractionKind,
@@ -14,7 +15,15 @@ import {
 } from '#shared/types/game'
 import { registerAllCards } from './cards'
 import { resolveComboInteraction, validateCombo } from './cards/cats'
-import { buildDealPile, finishDeck, makeCard, MAX_PLAYERS, MIN_PLAYERS } from './deck'
+import {
+  buildDealPile,
+  finishDeck,
+  makeCard,
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  validateDealable,
+  validateDeckOverrides,
+} from './deck'
 import { applyEffects, checkGameOver, type Effect, type EffectEnv } from './effects'
 import { eligibleNopers, resolveActionStack, windowCanCloseNow } from './nope'
 import { getCardDefinition } from './registry'
@@ -54,6 +63,7 @@ export function createGame(roomId: string, seed = createSeed()): GameState {
     status: 'lobby',
     seed,
     rngState: seed,
+    deckOverrides: {},
     players: [],
     drawPile: [],
     discardPile: [],
@@ -152,6 +162,9 @@ function dispatch(
     case 'start-game':
       return startGame(state, command.now, config)
 
+    case 'set-deck-overrides':
+      return setDeckOverrides(state, command.overrides)
+
     case 'play-card':
       return playCard(state, command, config, env)
 
@@ -240,12 +253,34 @@ function dispatch(
 // Command handlers
 // ---------------------------------------------------------------------------
 
+/**
+ * Host-only in practice — `_ws.ts` checks host identity before this ever runs,
+ * since the host lives in `RoomMeta` and the engine cannot see it. Kept as an
+ * engine command rather than a `mutateRoom` callback because the deck config
+ * decides the deal, so it has to be in the command log for a replay to match.
+ */
+function setDeckOverrides(state: GameState, overrides: DeckOverrides): string | undefined {
+  if (state.status !== 'lobby') return 'Chỉ có thể đổi bộ bài khi đang ở phòng chờ.'
+  const error = validateDeckOverrides(overrides)
+  if (error) return error
+  const next: DeckOverrides = {}
+  for (const [id, count] of Object.entries(overrides)) {
+    if (count != null) next[id as keyof DeckOverrides] = count
+  }
+  state.deckOverrides = next
+  return undefined
+}
+
 function startGame(state: GameState, now: number, config: EngineConfig): string | undefined {
   if (state.status !== 'lobby') return 'Trò chơi đã bắt đầu rồi.'
   if (state.players.length < MIN_PLAYERS) return `Cần ít nhất ${MIN_PLAYERS} người chơi để bắt đầu.`
 
   const playerCount = state.players.length
-  const pile = buildDealPile(state, playerCount)
+  const overrides = state.deckOverrides
+  const dealError = validateDealable(playerCount, overrides)
+  if (dealError) return dealError
+
+  const pile = buildDealPile(state, playerCount, overrides)
 
   state.players.forEach((player, index) => {
     player.seat = index
@@ -255,7 +290,7 @@ function startGame(state: GameState, now: number, config: EngineConfig): string 
     player.hand.push(makeCard('defuse'))
   })
 
-  state.drawPile = finishDeck(state, pile, playerCount, playerCount)
+  state.drawPile = finishDeck(state, pile, playerCount, playerCount, overrides)
   state.discardPile = []
   state.limbo = []
   state.peeks = {}
@@ -284,7 +319,11 @@ function startGame(state: GameState, now: number, config: EngineConfig): string 
   return undefined
 }
 
-/** Resets a finished game back to the waiting room, keeping the same roster/seats. */
+/**
+ * Resets a finished game back to the waiting room, keeping the same roster/seats.
+ * `deckOverrides` is deliberately left alone — the host configures the deck once
+ * and it holds for every game played in the room.
+ */
 export function resetToLobby(state: GameState, now: number): void {
   state.status = 'lobby'
   state.drawPile = []

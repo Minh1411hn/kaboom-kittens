@@ -93,6 +93,15 @@ export const CARD_BY_ID = Object.fromEntries(CARD_CATALOG.map((c) => [c.id, c]))
 >
 export const HAND_SIZE = catalog.handSize
 
+/**
+ * Absolute per-card counts the host pinned in the waiting room, overriding the
+ * player-count scaling in `deck.ts`. A card absent from this map still scales.
+ */
+export type DeckOverrides = Partial<Record<CardId, number>>
+
+/** Upper bound for a single card's count, so one number cannot blow up a room. */
+export const DECK_COUNT_MAX = 60
+
 /** Guards against catalog.json and the CardId union drifting apart. */
 export function assertCatalogMatchesUnion(): void {
   const inCatalog = new Set(CARD_CATALOG.map((c) => c.id))
@@ -243,7 +252,7 @@ export interface GameEvent {
 
 export type GameStatus = 'lobby' | 'playing' | 'over'
 
-export const STATE_VERSION = 2
+export const STATE_VERSION = 3
 
 export interface GameState {
   version: number
@@ -252,6 +261,9 @@ export interface GameState {
   /** mulberry32 state. Persisting it keeps the game deterministic + replayable. */
   rngState: number
   seed: number
+  /** Host-pinned card counts. Survives `resetToLobby`, so it holds for every
+   *  game played in this room. Empty means "scale everything by player count". */
+  deckOverrides: DeckOverrides
   players: Player[]
   /** Index 0 is the TOP of the draw pile. */
   drawPile: Card[]
@@ -277,6 +289,7 @@ export interface GameState {
 
 export type Command =
   | { type: 'start-game'; playerId: string; now: number }
+  | { type: 'set-deck-overrides'; playerId: string; overrides: DeckOverrides; now: number }
   | {
       type: 'play-card'
       playerId: string
@@ -320,6 +333,18 @@ export interface PublicGameState {
   /** Full discard pile: public information in the physical game. */
   discardPile: Card[]
   turn: TurnState
+  /** Composition of the next game, already resolved for the current roster.
+   *  Public information — the waiting room shows it to everyone. */
+  deck: {
+    /** Counts that will actually be used. */
+    counts: Record<CardId, number>
+    /** Which cards the host pinned by hand, so the UI can flag them. */
+    overrides: DeckOverrides
+    /** Random cards dealt per player; each also gets one guaranteed Defuse. */
+    handSize: number
+    /** Every card in the game, kittens and defuses included. */
+    total: number
+  }
   currentPlayerId: string | null
   actionStack: PendingAction[]
   nopeWindow: NopeWindow | null

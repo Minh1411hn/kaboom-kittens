@@ -191,6 +191,20 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       }))
     }
 
+    case 'set-deck-overrides': {
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
+      const meta = await getRoomMeta(context.roomId)
+      if (meta?.hostId !== context.playerId) {
+        return fail(peer, 'not-host', 'Chỉ chủ phòng mới có thể chỉnh bộ bài.')
+      }
+      return report(peer, await applyCommand(context.roomId, {
+        type: 'set-deck-overrides',
+        playerId: context.playerId,
+        overrides: message.overrides,
+        now,
+      }))
+    }
+
     case 'play-card':
       return runCommand(peer, {
         type: 'play-card',

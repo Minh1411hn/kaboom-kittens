@@ -5,6 +5,8 @@ interface SlotItem {
   uid: string
   card: Card
   isLeaving: boolean
+  /** Left the hand, but frozen in place while the kitten ceremony plays. */
+  isHeld: boolean
 }
 
 const props = defineProps<{
@@ -13,6 +15,13 @@ const props = defineProps<{
   disabled?: boolean
   /** The card you just dragged off the deck — it flips over as it lands. */
   flipUid?: string | null
+  /**
+   * A card that leaves the hand right now should sit still instead of lifting
+   * out. `useKittenCeremony` raises this so the Exploding Kitten reveal plays
+   * over an intact fan; when it drops, `CardDepartureFlyer` has taken the card
+   * over and the slot simply vanishes.
+   */
+  holdLeave?: boolean
 }>()
 
 defineEmits<{ toggle: [uid: string] }>()
@@ -23,6 +32,21 @@ const FAN_W = 1120
 
 const slots = ref<SlotItem[]>([])
 const leavingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const slotEls = new Map<string, HTMLElement>()
+
+function scheduleRemoval(uid: string): void {
+  clearTimeout(leavingTimers.get(uid))
+  const timer = setTimeout(() => {
+    slots.value = slots.value.filter((s) => s.uid !== uid)
+    leavingTimers.delete(uid)
+  }, 650)
+  leavingTimers.set(uid, timer)
+}
+
+function setSlotEl(uid: string, el: unknown): void {
+  if (el instanceof HTMLElement) slotEls.set(uid, el)
+  else slotEls.delete(uid)
+}
 
 watch(
   () => props.hand,
@@ -30,7 +54,7 @@ watch(
     const newUids = new Set(newHand.map((c) => c.uid))
 
     if (!oldHand || oldHand.length === 0) {
-      slots.value = newHand.map((c) => ({ uid: c.uid, card: c, isLeaving: false }))
+      slots.value = newHand.map((c) => ({ uid: c.uid, card: c, isLeaving: false, isHeld: false }))
       return
     }
 
@@ -39,6 +63,7 @@ watch(
       uid: c.uid,
       card: c,
       isLeaving: false,
+      isHeld: false,
     }))
 
     // Keep leaving cards in their old relative positions with leaving animation
@@ -47,20 +72,15 @@ watch(
       const leavingItem: SlotItem = {
         uid: leavingCard.uid,
         card: leavingCard,
-        isLeaving: true,
+        isLeaving: !props.holdLeave,
+        isHeld: Boolean(props.holdLeave),
       }
 
       const insertAt = oldIndex !== -1 ? Math.min(oldIndex, activeSlots.length) : activeSlots.length
       activeSlots.splice(insertAt, 0, leavingItem)
 
-      if (leavingTimers.has(leavingCard.uid)) {
-        clearTimeout(leavingTimers.get(leavingCard.uid))
-      }
-      const timer = setTimeout(() => {
-        slots.value = slots.value.filter((s) => s.uid !== leavingCard.uid)
-        leavingTimers.delete(leavingCard.uid)
-      }, 650)
-      leavingTimers.set(leavingCard.uid, timer)
+      if (leavingItem.isLeaving) scheduleRemoval(leavingCard.uid)
+      else clearTimeout(leavingTimers.get(leavingCard.uid))
     }
 
     slots.value = activeSlots
@@ -68,12 +88,44 @@ watch(
   { immediate: true, deep: true },
 )
 
+/*
+ * Held and leaving are the same slots seen at two different moments, and the
+ * flag can flip either before or after the hand prop lands. Reconciling here
+ * as well as in the diff above makes the order of the two irrelevant.
+ */
+watch(
+  () => props.holdLeave,
+  (hold) => {
+    if (hold) {
+      for (const slot of slots.value) {
+        if (!slot.isLeaving) continue
+        clearTimeout(leavingTimers.get(slot.uid))
+        leavingTimers.delete(slot.uid)
+        slot.isLeaving = false
+        slot.isHeld = true
+      }
+      return
+    }
+    // Released: the flyer is carrying the card now, so drop the slot outright
+    // rather than replaying the lift-out on a card that already flew away.
+    slots.value = slots.value.filter((s) => !s.isHeld)
+  },
+)
+
 onBeforeUnmount(() => {
   for (const timer of leavingTimers.values()) {
     clearTimeout(timer)
   }
   leavingTimers.clear()
+  slotEls.clear()
 })
+
+/** Where a card sits on screen, for animations that fly out of the fan. */
+function slotRect(uid: string): DOMRect | null {
+  return slotEls.get(uid)?.getBoundingClientRect() ?? null
+}
+
+defineExpose({ slotRect })
 
 /**
  * Fans the cards out from the centre. Up to a full opening hand the cards
@@ -95,17 +147,19 @@ const overlap = computed(() => {
     <div
       v-for="(item, index) in slots"
       :key="item.uid"
+      :ref="(el) => setSlotEl(item.uid, el)"
       class="slot"
       :class="{
         'flip-in': item.uid === flipUid,
         'leaving': item.isLeaving,
+        'held': item.isHeld,
       }"
       :style="{ marginLeft: index === 0 ? '0' : `-${overlap}px` }"
     >
       <button
         class="pick"
-        :disabled="item.isLeaving"
-        @click="!item.isLeaving && $emit('toggle', item.uid)"
+        :disabled="item.isLeaving || item.isHeld"
+        @click="!item.isLeaving && !item.isHeld && $emit('toggle', item.uid)"
       >
         <CardImage
           :card-id="item.card.id"
@@ -156,6 +210,28 @@ const overlap = computed(() => {
   z-index: 10;
   pointer-events: none;
   animation: card-lift-out 0.65s cubic-bezier(0.2, 0.85, 0.35, 1) forwards;
+}
+
+/*
+ * Held: the card has already left the hand on the server, but the Exploding
+ * Kitten reveal is playing, so it waits its turn with a green "about to save
+ * you" glow instead of animating out.
+ */
+.slot.held {
+  z-index: 9;
+  pointer-events: none;
+  animation: card-held-glow 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes card-held-glow {
+  from {
+    transform: translateY(-10px) scale(1.02);
+    filter: drop-shadow(0 0 10px rgba(120, 235, 160, 0.5));
+  }
+  to {
+    transform: translateY(-18px) scale(1.05);
+    filter: drop-shadow(0 0 22px rgba(120, 235, 160, 0.95));
+  }
 }
 
 @keyframes card-lift-out {

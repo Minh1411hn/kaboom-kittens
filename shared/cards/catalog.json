@@ -1,6 +1,6 @@
 {
-  "$comment": "Single source of truth for card DATA (identity, deck counts, presentation). Behaviour lives in server/game/cards/*.ts, keyed by the same id. Consumed by the engine, the UI and scripts/gen-card-placeholders.mjs.",
-  "handSize": 7,
+  "$comment": "Single source of truth for card DATA (identity, deck counts, presentation). Behaviour lives in server/game/cards/*.ts, keyed by the same id. Consumed by the engine, the UI and scripts/gen-card-placeholders.mjs. handSize is the number of RANDOM cards dealt to each player; startGame adds one guaranteed Defuse on top, so an opening hand is handSize + 1. Deck counts here are defaults — the room host can override any of them from the waiting room (GameState.deckOverrides).",
+  "handSize": 5,
   "cards": [
     {
       "id": "exploding-kitten",

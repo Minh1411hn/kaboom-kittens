@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest'
-import type { PublicGameState } from '#shared/types/game'
+import { HAND_SIZE, type PublicGameState } from '#shared/types/game'
 import { sleep, TestClient } from './client'
 
 /**
@@ -146,7 +146,7 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     const decks = new Set(players.map((p) => p.state!.drawCount))
     expect(decks.size).toBe(1)
     for (const player of players) {
-      expect(player.state!.you!.hand).toHaveLength(8)
+      expect(player.state!.you!.hand).toHaveLength(HAND_SIZE + 1)
       expect(player.state!.you!.hand.filter((c) => c.id === 'defuse')).toHaveLength(1)
     }
 
@@ -262,7 +262,7 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     host.send({ type: 'start-game' })
     for (const player of players) {
       await player.waitForState((state) => state.status === 'playing', 5000, 'round two to start')
-      expect(player.state!.you!.hand).toHaveLength(8)
+      expect(player.state!.you!.hand).toHaveLength(HAND_SIZE + 1)
     }
   }, 60_000)
 

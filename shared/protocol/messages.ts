@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ALL_CARD_IDS, type CardId, type PublicGameState } from '../types/game'
+import { ALL_CARD_IDS, DECK_COUNT_MAX, type CardId, type PublicGameState } from '../types/game'
 
 /**
  * Every byte crossing the socket is validated against these schemas, in both
@@ -36,6 +36,14 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('watch-lobby') }),
   z.object({ type: z.literal('chat'), text: z.string().trim().min(1).max(200) }),
   z.object({ type: z.literal('start-game') }),
+  // Host-only (enforced in _ws.ts). A card left out of `overrides` keeps
+  // scaling with the player count; anything present is an absolute count.
+  z.object({
+    type: z.literal('set-deck-overrides'),
+    // partialRecord, not record: a plain z.record over an enum key demands
+    // every card id be present, which is the opposite of what an override is.
+    overrides: z.partialRecord(cardIdSchema, z.number().int().min(0).max(DECK_COUNT_MAX)),
+  }),
   z.object({
     type: z.literal('play-card'),
     uids: z.array(z.string().max(64)).min(1).max(5),

@@ -113,7 +113,19 @@ Counts come from `catalog.json` and scale with the player count in
 | Defuse | `players + max(1, round(players / 4))` — 1 dealt each, rest in the deck |
 | everything else | `round(base × players / 5)`, clamped to its `min` |
 
-Opening hand is 7 cards plus 1 Defuse.
+Opening hand is 5 cards plus 1 Defuse, so 6 in total (`handSize` in
+`catalog.json`).
+
+Every count above is only a **default**. The room host can pin any card to an
+absolute number from the waiting room, and that number is used verbatim whatever
+the player count — cards left alone keep scaling. The overrides live in
+`GameState.deckOverrides`, so they survive `return-to-lobby` and hold for every
+game played in that room. The whole composition is public: `projectStateFor`
+ships it to every player as `state.deck`, and `DeckSettingsPanel.vue` renders it.
+
+The server only rejects counts that are not integers in `0..DECK_COUNT_MAX`, and
+a start whose dealable cards cannot fill everyone's hand. Balance is the host's
+call — zero Exploding Kittens is legal.
 
 ## Architecture
 

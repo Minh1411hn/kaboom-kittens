@@ -1,4 +1,5 @@
-import type { GameState, PublicGameState } from '#shared/types/game'
+import { HAND_SIZE, type GameState, type PublicGameState } from '#shared/types/game'
+import { deckComposition } from './deck'
 import { playerBySeat } from './turn'
 
 /**
@@ -30,6 +31,10 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
     }
   }
 
+  // Resolved against the roster as it stands, which is exactly what `startGame`
+  // will see. Public: the waiting room shows the composition to every player.
+  const counts = deckComposition(state.players.length, state.deckOverrides)
+
   return {
     roomId: state.roomId,
     status: state.status,
@@ -47,6 +52,12 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
     discardCount: state.discardPile.length,
     discardPile: state.discardPile.map((c) => ({ ...c })),
     turn: { ...state.turn },
+    deck: {
+      counts,
+      overrides: { ...state.deckOverrides },
+      handSize: HAND_SIZE,
+      total: Object.values(counts).reduce((n, c) => n + c, 0),
+    },
     currentPlayerId: state.status === 'playing' ? (current?.id ?? null) : null,
     actionStack: state.actionStack.map((a) => ({ ...a })),
     nopeWindow: state.nopeWindow ? { ...state.nopeWindow, passed: [...state.nopeWindow.passed] } : null,

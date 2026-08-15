@@ -53,16 +53,11 @@
     "/cards/nope/artworks/art28.png"
   ],
   "normal-cat": [
-    "/cards/normal-cat/artworks/art49.png",
-    "/cards/normal-cat/artworks/art50.png",
-    "/cards/normal-cat/artworks/art51.png",
-    "/cards/normal-cat/artworks/art52.png",
-    "/cards/normal-cat/artworks/art53.png",
-    "/cards/normal-cat/artworks/art54.png",
-    "/cards/normal-cat/artworks/art55.png",
-    "/cards/normal-cat/artworks/art56.png",
-    "/cards/normal-cat/artworks/art57.png",
-    "/cards/normal-cat/artworks/art58.png"
+    "/cards/normal-cat/artworks/01-tacocat.png",
+    "/cards/normal-cat/artworks/02-cattermelon.png",
+    "/cards/normal-cat/artworks/03-hairy-potato-cat.png",
+    "/cards/normal-cat/artworks/04-rainbow-ralphing-cat.png",
+    "/cards/normal-cat/artworks/05-beard-cat.png"
   ],
   "personal-attack-3x": [
     "/cards/personal-attack-3x/artworks/art10.png",

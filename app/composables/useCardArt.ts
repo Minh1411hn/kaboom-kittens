@@ -14,6 +14,13 @@ function artSlug(cardId: CardId | 'card-back'): string {
  * cards all point at `normal-cat`, so each one takes a different picture out of
  * that folder by catalog order — two Tacocats always look alike, and a Tacocat
  * never looks like a Cattermelon.
+ *
+ * This matches by POSITION, not by name, so a shared pool's files must be named
+ * `<NN>-<card id>.png` and numbered in catalog order. That convention is the
+ * only thing tying a picture to the card it depicts: the folder once held ten
+ * artworks in an unrelated order, and four of the five cats rendered a
+ * different card's face — printed title and all — for as long as it did.
+ * `useCardArt.test.ts` fails if the two orders ever drift apart again.
  */
 const sharedSlot = new Map<CardId, number>()
 for (const entry of CARD_CATALOG) {

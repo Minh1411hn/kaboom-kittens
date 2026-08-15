@@ -7,6 +7,10 @@
  *
  * A slug is usually a card id, but `catalog.json` may point a card at a shared
  * pool with an `art` field — the five named cat cards all read `normal-cat`.
+ * A shared pool is matched by POSITION (see `useCardArt.ts`), so name its files
+ * `<NN>-<card id>.png` numbered in catalog order, and keep the file count equal
+ * to the number of cards sharing it. An extra or misordered file shifts cards
+ * onto each other's faces.
  *
  * Artwork is the WHOLE card face at 140x195: frame, title and rules text are
  * printed into the image. `app/components/CardImage.vue` draws no chrome of its

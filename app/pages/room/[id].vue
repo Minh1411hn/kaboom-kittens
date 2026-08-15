@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Card, CardId, InteractionResponse } from "#shared/types/game";
+import type {
+    Card,
+    CardId,
+    DeckOverrides,
+    InteractionResponse,
+} from "#shared/types/game";
 import { CARD_CATALOG } from "#shared/types/game";
 
 const route = useRoute();
@@ -86,6 +91,23 @@ const connectedCount = computed(
 );
 
 const intent = usePlayIntent(selectedCards, state, isYourTurn);
+
+// --- the Exploding Kitten ceremony -----------------------------------------
+
+const handFan = useTemplateRef<{ slotRect: (uid: string) => DOMRect | null }>(
+    "handFan",
+);
+const tableCenter = useTemplateRef<{ discardRect: () => DOMRect | null }>(
+    "tableCenter",
+);
+
+const kitten = useKittenCeremony({
+    state,
+    youId: () => you.value?.id,
+    captureRect: (uid) => handFan.value?.slotRect(uid) ?? null,
+});
+
+const discardRect = () => tableCenter.value?.discardRect() ?? null;
 
 const nopeWindow = computed(() => state.value?.nopeWindow ?? null);
 const hasNope = computed(() => hand.value.some((c) => c.id === "nope"));
@@ -306,11 +328,14 @@ const showAlterFutureModal = computed(() =>
 // Same idea for choosing where the defused kitten goes back into the deck —
 // its own dialog (DeckPositionModal) instead of InteractionModal's generic
 // prompt renderer. This kind carries no `cards`, so gate on `isForYou`
-// instead.
+// instead. It also waits for the kitten ceremony (reveal, then the Defuse
+// flying to the discard) to finish, so the dialog is the last beat rather
+// than the only one you see.
 const showDeckPositionModal = computed(() =>
     Boolean(
         state.value?.interaction?.kind === "choose-deck-position" &&
-        state.value.interaction.isForYou,
+        state.value.interaction.isForYou &&
+        !kitten.blocking.value,
     ),
 );
 
@@ -364,6 +389,8 @@ function executePlay() {
 
 const draw = () => send({ type: "draw-card" });
 const startGame = () => send({ type: "start-game" });
+const setDeckOverrides = (overrides: DeckOverrides) =>
+    send({ type: "set-deck-overrides", overrides });
 const say = (text: string) => send({ type: "chat", text });
 const submitInteraction = (response: InteractionResponse) => {
     const id = state.value?.interaction?.id;
@@ -485,6 +512,12 @@ function cancelQuit() {
                 </p>
                 <ShareLink :room-id="roomId" />
 
+                <DeckSettingsPanel
+                    :deck="state.deck"
+                    :is-host="isHost"
+                    @update="setDeckOverrides"
+                />
+
                 <div class="start-game-container">
                     <button
                         v-if="isHost"
@@ -525,6 +558,7 @@ function cancelQuit() {
 
                 <div class="center-area">
                     <TableCenter
+                        ref="tableCenter"
                         :draw-count="state.drawCount"
                         :discard-top="state.discardTop"
                         :discard-count="state.discardCount"
@@ -600,10 +634,12 @@ function cancelQuit() {
                 >
                     <HandFan
                         v-if="youAreSeated && alive && !isOver"
+                        ref="handFan"
                         :hand="hand"
                         :selected="selectedUids"
                         :disabled="!isYourTurn && !hasNope"
                         :flip-uid="flipUid"
+                        :hold-leave="kitten.holdLeave.value"
                         @toggle="toggle"
                     />
                     <p v-else-if="!youAreSeated" class="watching">
@@ -751,6 +787,25 @@ function cancelQuit() {
                 :arriving-cards="arrivingCards"
                 :hand-area-rect="handAreaRect"
                 @landed="onCardLanded"
+            />
+
+            <!--
+              Drawing an Exploding Kitten, staged: the whole table sees the
+              reveal, then the drawer's Defuse flies to the discard, and only
+              then does DeckPositionModal above get its turn.
+            -->
+            <KittenRevealOverlay
+                v-if="kitten.revealSeq.value !== null"
+                :uid="`kitten-${kitten.revealSeq.value}`"
+                :player-name="kitten.revealPlayerName.value"
+                :defused="kitten.revealDefused.value"
+            />
+
+            <CardDepartureFlyer
+                :card="kitten.defuseCard.value"
+                :from-rect="kitten.defuseFromRect.value"
+                :measure-to="discardRect"
+                @done="kitten.onDefuseFlightDone"
             />
 
             <ConfirmDialog
