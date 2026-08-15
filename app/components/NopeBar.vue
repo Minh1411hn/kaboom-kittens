@@ -96,6 +96,16 @@ const summary = computed(() => {
   display: flex;
 }
 
+.stack :deep(.card) {
+  transition: transform 0.15s ease;
+}
+
+.stack :deep(.card:hover) {
+  transform: scale(1.5) translateY(-8px);
+  z-index: 10;
+  position: relative;
+}
+
 .stack :deep(.card:not(:first-child)) {
   margin-left: -26px;
 }

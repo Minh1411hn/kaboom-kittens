@@ -105,10 +105,12 @@ function cardName(id: string): string {
 .card-wrapper {
   border-radius: var(--card-radius);
   transition: transform 0.15s ease;
+  position: relative;
 }
 
 .card-wrapper:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.5);
+  z-index: 10;
 }
 
 .card-rank {

@@ -361,11 +361,13 @@ function confirm() {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
+  position: relative;
 }
 
 .card-choice-btn:hover {
   background: rgba(80, 32, 18, 0.8);
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.5);
+  z-index: 10;
 }
 
 .card-choice-btn.selected {
@@ -373,6 +375,11 @@ function confirm() {
   background: rgba(120, 50, 20, 0.9);
   box-shadow: 0 0 14px rgba(255, 194, 26, 0.4);
   transform: translateY(-4px);
+}
+
+.card-choice-btn.selected:hover {
+  transform: translateY(-4px) scale(1.5);
+  z-index: 10;
 }
 
 .card-title {

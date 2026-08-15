@@ -234,6 +234,13 @@ const back = cardBackUrl()
 .discard {
   display: grid;
   place-items: center;
+  transition: transform 0.15s ease;
+}
+
+.discard:hover {
+  transform: scale(1.5);
+  z-index: 10;
+  position: relative;
 }
 
 .empty {

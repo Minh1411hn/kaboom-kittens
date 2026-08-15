@@ -215,12 +215,16 @@ const overlap = computed(() => {
 }
 
 .pick:hover :deep(.card) {
-  transform: translateY(-22px);
+  transform: translateY(-22px) scale(1.5);
+  transform-origin: bottom center;
   box-shadow: 0 16px 30px rgb(20 8 0 / 55%);
+  z-index: 50;
 }
 
 .pick:hover :deep(.card.selected) {
-  transform: translateY(-28px);
+  transform: translateY(-28px) scale(1.5);
+  transform-origin: bottom center;
+  z-index: 50;
 }
 
 .hand.disabled .pick {

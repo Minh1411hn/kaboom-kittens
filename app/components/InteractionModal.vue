@@ -196,6 +196,7 @@ const markerLeft = computed(() =>
   background: none;
   box-shadow: none;
   border-radius: var(--card-radius);
+  position: relative;
 }
 
 .choice:hover:not(:disabled) {
@@ -207,7 +208,8 @@ const markerLeft = computed(() =>
 }
 
 .choice:hover :deep(.card) {
-  transform: translateY(-6px);
+  transform: translateY(-6px) scale(1.5);
+  z-index: 10;
 }
 
 .position {
@@ -286,6 +288,16 @@ const markerLeft = computed(() =>
   background: rgb(120 95 55 / 16%);
   border-radius: var(--radius);
   padding: 0.45rem 0.7rem;
+}
+
+.reorder-row :deep(.card) {
+  transition: transform 0.15s ease;
+}
+
+.reorder-row :deep(.card:hover) {
+  transform: scale(1.5);
+  z-index: 10;
+  position: relative;
 }
 
 .rank {
