@@ -9,11 +9,13 @@ import type {
 } from "#shared/types/game";
 import artManifest from "#shared/generated/card-art.json";
 import CardImage from "./CardImage.vue";
+import CardArrivalFlyer from "./CardArrivalFlyer.vue";
 import HandFan from "./HandFan.vue";
 import InteractionModal from "./InteractionModal.vue";
 import NopeBar from "./NopeBar.vue";
 import PlayerSeat from "./PlayerSeat.vue";
 import TableCenter from "./TableCenter.vue";
+import TargetSelectModal from "./TargetSelectModal.vue";
 import TurnBanner from "./TurnBanner.vue";
 
 /**
@@ -268,6 +270,19 @@ describe("HandFan", () => {
     const slots = wrapper.findAll(".slot");
     expect(slots[0]!.classes()).not.toContain("flip-in");
     expect(slots[1]!.classes()).toContain("flip-in");
+  });
+
+  it("marks departing cards with leaving class when hand changes", async () => {
+    const hand = [card("skip", "a"), card("nope", "b")];
+    const wrapper = await mountSuspended(HandFan, {
+      props: { hand, selected: [] },
+    });
+    expect(wrapper.findAll(".slot")).toHaveLength(2);
+
+    await wrapper.setProps({ hand: [card("skip", "a")] });
+    const slots = wrapper.findAll(".slot");
+    expect(slots).toHaveLength(2);
+    expect(slots[1]!.classes()).toContain("leaving");
   });
 });
 
@@ -632,3 +647,76 @@ describe("usePlayIntent", () => {
     );
   });
 });
+
+describe("TargetSelectModal", () => {
+  it("renders targetable players and allows confirming a steal", async () => {
+    const players = [
+      player({ id: "p1", nickname: "Whiskers" }),
+      player({ id: "p2", nickname: "Mittens", handCount: 4 }),
+      player({ id: "p3", nickname: "Boots", handCount: 0, alive: false }),
+    ];
+    const wrapper = await mountSuspended(TargetSelectModal, {
+      props: {
+        players,
+        youId: "p1",
+        combo: "pair",
+      },
+    });
+
+    expect(wrapper.text()).toContain("Cướp 1 lá bài ngẫu nhiên");
+    expect(wrapper.findAll(".target-card")).toHaveLength(1);
+    expect(wrapper.text()).toContain("Mittens");
+
+    const confirmBtn = wrapper.find("button.confirm-btn");
+    expect(confirmBtn.attributes("disabled")).toBeDefined();
+
+    await wrapper.find(".target-card").trigger("click");
+    expect(confirmBtn.attributes("disabled")).toBeUndefined();
+
+    await confirmBtn.trigger("click");
+    expect(wrapper.emitted("confirm")?.[0]).toEqual(["p2", undefined]);
+  });
+
+  it("shows demand options for triple combo and requires both target and card selection", async () => {
+    const players = [
+      player({ id: "p1", nickname: "Whiskers" }),
+      player({ id: "p2", nickname: "Mittens", handCount: 3 }),
+    ];
+    const wrapper = await mountSuspended(TargetSelectModal, {
+      props: {
+        players,
+        youId: "p1",
+        combo: "triple",
+        needsNamedCard: true,
+      },
+    });
+
+    expect(wrapper.text()).toContain("Đòi 1 lá bài cụ thể");
+    expect(wrapper.findAll(".card-choice-btn").length).toBeGreaterThan(5);
+
+    const confirmBtn = wrapper.find("button.confirm-btn");
+    expect(confirmBtn.attributes("disabled")).toBeDefined();
+
+    await wrapper.find(".target-card").trigger("click");
+    expect(confirmBtn.attributes("disabled")).toBeDefined();
+
+    await wrapper.findAll(".card-choice-btn")[0]!.trigger("click");
+    expect(confirmBtn.attributes("disabled")).toBeUndefined();
+
+    await confirmBtn.trigger("click");
+    expect(wrapper.emitted("confirm")).toHaveLength(1);
+  });
+});
+
+describe("CardArrivalFlyer", () => {
+  it("renders when arrivingCards are provided", async () => {
+    const arriving = [card("defuse", "c1")];
+    const wrapper = await mountSuspended(CardArrivalFlyer, {
+      props: {
+        arrivingCards: arriving,
+      },
+    });
+    expect(wrapper.find(".flyer-container").exists()).toBe(true);
+  });
+});
+

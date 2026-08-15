@@ -28,6 +28,8 @@ const targetId = ref<string | null>(null);
 const namedCardId = ref<CardId | null>(null);
 const logOpen = ref(false);
 const confirmingQuit = ref(false);
+const targetModalOpen = ref(false);
+const arrivingCards = ref<Card[]>([]);
 /** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
 const drawPending = ref(false);
 
@@ -95,6 +97,7 @@ const canDraw = computed(
 /** The uid the drag delivered, held just long enough for HandFan to flip it. */
 const flipUid = ref<string | null>(null);
 const handArea = useTemplateRef<HTMLElement>("handArea");
+const handAreaRect = computed(() => handArea.value?.getBoundingClientRect() ?? null);
 let flipTimer: ReturnType<typeof setTimeout> | undefined;
 /** The hand as it stood when you let go, to spot what the draw delivered. */
 let handAtDrop = new Set<string>();
@@ -109,21 +112,17 @@ const drawDrag = useDrawDrag({
     },
 });
 
-/**
- * The reply to a drop. A new uid in your hand is the happy path; anything else —
- * an Exploding Kitten (which goes to limbo and opens the defuse prompt, never
- * the hand), a rejected command — simply clears the ghost. Diffing against the
- * hand we held at drop time is what tells the two apart.
- */
 function settleDraw(): void {
     if (!drawPending.value) return;
     drawPending.value = false;
     drawDrag.resolve();
-    const arrived = hand.value.find((c) => !handAtDrop.has(c.uid));
-    if (!arrived) return;
-    flipUid.value = arrived.uid;
+}
+
+function onCardLanded(uid: string): void {
+    flipUid.value = uid;
     clearTimeout(flipTimer);
     flipTimer = setTimeout(() => (flipUid.value = null), 400);
+    arrivingCards.value = arrivingCards.value.filter((c) => c.uid !== uid);
 }
 
 // The next snapshot is the answer, whatever it contains. An `error` arrives on
@@ -221,10 +220,31 @@ onBeforeUnmount(() => {
     if (state.value) send({ type: "leave" });
 });
 
-// Selecting cards that leave your hand (stolen, played) must not linger.
+// Track cards leaving hand and detect newly arrived cards
+let knownHandUids = new Set<string>();
+let initializedHand = false;
+
 watch(hand, (cards) => {
     const uids = new Set(cards.map((c) => c.uid));
     selectedUids.value = selectedUids.value.filter((uid) => uids.has(uid));
+
+    if (!isPlaying.value) {
+        knownHandUids = new Set(cards.map((c) => c.uid));
+        initializedHand = false;
+        return;
+    }
+
+    if (!initializedHand) {
+        knownHandUids = new Set(cards.map((c) => c.uid));
+        initializedHand = true;
+        return;
+    }
+
+    const incoming = cards.filter((c) => !knownHandUids.has(c.uid));
+    if (incoming.length > 0) {
+        arrivingCards.value = incoming;
+    }
+    knownHandUids = new Set(cards.map((c) => c.uid));
 });
 
 watch(selectedUids, () => {
@@ -245,11 +265,29 @@ function pickTarget(id: string) {
     targetId.value = id;
 }
 
+function onTargetConfirmed(selectedTarget: string, demandedCard?: CardId) {
+    targetId.value = selectedTarget;
+    if (demandedCard) {
+        namedCardId.value = demandedCard;
+    }
+    targetModalOpen.value = false;
+    executePlay();
+}
+
 function play() {
     if (!intent.value.ok) return;
-    if (intent.value.needsTarget && !targetId.value) return;
-    if (intent.value.needsNamedCard && !namedCardId.value) return;
+    if (intent.value.needsTarget && !targetId.value) {
+        targetModalOpen.value = true;
+        return;
+    }
+    if (intent.value.needsNamedCard && !namedCardId.value) {
+        targetModalOpen.value = true;
+        return;
+    }
+    executePlay();
+}
 
+function executePlay() {
     send({
         type: "play-card",
         uids: [...selectedUids.value],
@@ -462,11 +500,7 @@ function cancelQuit() {
 
                             <button
                                 class="primary"
-                                :disabled="
-                                    !intent.ok ||
-                                    (intent.needsTarget && !targetId) ||
-                                    (intent.needsNamedCard && !namedCardId)
-                                "
+                                :disabled="!intent.ok"
                                 @click="play"
                             >
                                 Play {{ selectedUids.length || "" }}
@@ -597,6 +631,25 @@ function cancelQuit() {
                 :hand="hand"
                 :players="state.players"
                 @submit="submitInteraction"
+            />
+
+            <TargetSelectModal
+                v-if="targetModalOpen"
+                :players="state?.players ?? []"
+                :you-id="you?.id"
+                :combo="intent.combo"
+                :card-id="selectedCards[0]?.id"
+                :needs-named-card="intent.needsNamedCard"
+                :initial-target-id="targetId"
+                :initial-named-card-id="namedCardId"
+                @confirm="onTargetConfirmed"
+                @cancel="targetModalOpen = false"
+            />
+
+            <CardArrivalFlyer
+                :arriving-cards="arrivingCards"
+                :hand-area-rect="handAreaRect"
+                @landed="onCardLanded"
             />
 
             <ConfirmDialog
