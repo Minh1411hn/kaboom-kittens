@@ -16,7 +16,6 @@ const emit = defineEmits<{ submit: [response: InteractionResponse] }>()
 
 const chosenUid = ref<string | null>(null)
 const position = ref(0)
-const order = ref<Card[]>([])
 
 /** Which cards this prompt is asking about — own hand, or a supplied list. */
 const choices = computed<Card[]>(() => {
@@ -29,7 +28,6 @@ watch(
   () => {
     chosenUid.value = null
     position.value = 0
-    order.value = [...(props.interaction.cards ?? [])]
   },
   { immediate: true },
 )
@@ -42,21 +40,8 @@ const waitingOn = computed(() =>
     .map((id) => props.players.find((p) => p.id === id)?.nickname ?? '—'),
 )
 
-function move(index: number, delta: number) {
-  const next = index + delta
-  if (next < 0 || next >= order.value.length) return
-  const copy = [...order.value]
-  const [card] = copy.splice(index, 1)
-  copy.splice(next, 0, card!)
-  order.value = copy
-}
-
 function submit() {
   const kind = props.interaction.kind
-  if (kind === 'reorder-cards') {
-    emit('submit', { type: 'order', uids: order.value.map((c) => c.uid) })
-    return
-  }
   if (kind === 'choose-deck-position') {
     emit('submit', { type: 'position', index: position.value })
     return
@@ -65,7 +50,6 @@ function submit() {
 }
 
 const canSubmit = computed(() => {
-  if (props.interaction.kind === 'reorder-cards') return order.value.length > 0
   if (props.interaction.kind === 'choose-deck-position') return true
   return Boolean(chosenUid.value)
 })
@@ -88,7 +72,7 @@ const markerLeft = computed(() =>
       <h2>{{ interaction.prompt }}</h2>
 
       <!-- Pick a card: from your hand, someone's hand, or the discard pile -->
-      <div v-if="interaction.kind !== 'reorder-cards' && interaction.kind !== 'choose-deck-position'" class="choices">
+      <div v-if="interaction.kind !== 'choose-deck-position'" class="choices">
         <button
           v-for="card in choices"
           :key="card.uid"
@@ -106,7 +90,7 @@ const markerLeft = computed(() =>
       </div>
 
       <!-- Slide the defused kitten back into the deck -->
-      <div v-else-if="interaction.kind === 'choose-deck-position'" class="position">
+      <div v-else class="position">
         <!-- The deck seen edge-on, with the kitten about to be pushed in. -->
         <div class="deck-edge" aria-hidden="true">
           <span class="edge-end">Top</span>
@@ -127,20 +111,6 @@ const markerLeft = computed(() =>
           <button @click="position = maxPosition">Bottom</button>
         </div>
         <p class="muted small">Nobody else sees where you put it.</p>
-      </div>
-
-      <!-- Rearrange the top of the deck -->
-      <div v-else class="reorder">
-        <div v-for="(card, index) in order" :key="card.uid" class="reorder-row">
-          <span class="rank muted">{{ index === 0 ? 'top' : `#${index + 1}` }}</span>
-          <CardImage :card-id="card.id" :uid="card.uid" width="88px" />
-          <div class="reorder-buttons">
-            <button :disabled="index === 0" title="Move up" @click="move(index, -1)">▲</button>
-            <button :disabled="index === order.length - 1" title="Move down" @click="move(index, 1)">
-              ▼
-            </button>
-          </div>
-        </div>
       </div>
 
       <button class="primary" :disabled="!canSubmit" @click="submit">Confirm</button>
@@ -273,49 +243,6 @@ const markerLeft = computed(() =>
 .quick {
   display: flex;
   gap: 0.5rem;
-}
-
-.reorder {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.reorder-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: rgb(120 95 55 / 16%);
-  border-radius: var(--radius);
-  padding: 0.45rem 0.7rem;
-}
-
-.reorder-row :deep(.card) {
-  transition: transform 0.15s ease;
-}
-
-.reorder-row :deep(.card:hover) {
-  transform: scale(1.5);
-  z-index: 10;
-  position: relative;
-}
-
-.rank {
-  width: 42px;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.reorder-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 0.3rem;
-}
-
-.reorder-buttons button {
-  padding: 0.25rem 0.7rem;
 }
 
 .waiting {

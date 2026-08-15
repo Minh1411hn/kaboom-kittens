@@ -292,6 +292,17 @@ const showPeekModal = computed(() =>
     ),
 );
 
+// Alter the Future rides the generic interaction system, but gets its own
+// dialog (shared with See the Future) instead of InteractionModal's generic
+// prompt renderer. `cards` is only populated for the player who must answer,
+// so its presence already implies this interaction is for you.
+const showAlterFutureModal = computed(() =>
+    Boolean(
+        state.value?.interaction?.kind === "reorder-cards" &&
+        state.value.interaction.cards,
+    ),
+);
+
 // --- actions ---------------------------------------------------------------
 
 function toggle(uid: string) {
@@ -347,6 +358,8 @@ const submitInteraction = (response: InteractionResponse) => {
     const id = state.value?.interaction?.id;
     if (id) send({ type: "submit-interaction", interactionId: id, response });
 };
+const onAlterFutureSubmit = (uids: string[]) =>
+    submitInteraction({ type: "order", uids });
 
 function playNope() {
     const nope = hand.value.find((c) => c.id === "nope");
@@ -681,11 +694,18 @@ function cancelQuit() {
             </div>
 
             <InteractionModal
-                v-if="state?.interaction"
+                v-if="state?.interaction && state.interaction.kind !== 'reorder-cards'"
                 :interaction="state.interaction"
                 :hand="hand"
                 :players="state.players"
                 @submit="submitInteraction"
+            />
+
+            <SeeFutureModal
+                v-if="showAlterFutureModal"
+                :cards="state?.interaction?.cards ?? []"
+                editable
+                @submit="onAlterFutureSubmit"
             />
 
             <SeeFutureModal

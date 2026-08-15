@@ -18,15 +18,19 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^1.0.1",
+    "@vueuse/core": "^14.4.0",
+    "@vueuse/integrations": "^14.4.0",
     "ioredis": "^6.0.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.2",
+    "sortablejs": "^1.15.7",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.1.0",
+    "@types/sortablejs": "^1.15.9",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.6",

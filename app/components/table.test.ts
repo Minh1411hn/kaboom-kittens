@@ -365,6 +365,18 @@ describe("SeeFutureModal", () => {
     await wrapper.get(".dialog-footer button").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(1);
   });
+
+  it("in editable mode, has no close button and submits the current order", async () => {
+    const cards = [card("skip", "p1"), card("defuse", "p2")];
+    const wrapper = await mountSuspended(SeeFutureModal, {
+      props: { cards, editable: true },
+    });
+    expect(wrapper.text()).toContain("Sắp xếp lại tương lai");
+    expect(wrapper.find(".close-btn").exists()).toBe(false);
+
+    await wrapper.get(".dialog-footer button").trigger("click");
+    expect(wrapper.emitted("submit")?.[0]).toEqual([["p1", "p2"]]);
+  });
 });
 
 describe("TurnBanner", () => {
@@ -548,35 +560,6 @@ describe("InteractionModal", () => {
     await wrapper.findAll("button").at(-1)!.trigger("click");
     expect(wrapper.emitted("submit")?.[0]).toEqual([
       { type: "position", index: 20 },
-    ]);
-  });
-
-  it("reorders the top of the deck and submits the new order", async () => {
-    const cards = [
-      card("skip", "r1"),
-      card("favor", "r2"),
-      card("shuffle", "r3"),
-    ];
-    const wrapper = await mountSuspended(InteractionModal, {
-      props: {
-        interaction: {
-          ...base,
-          kind: "reorder-cards",
-          cardId: "alter-the-future-3x",
-          cards,
-        },
-        hand: [],
-        players: [player()],
-      },
-    });
-    // Move the third card up twice so it lands on top.
-    const rows = () => wrapper.findAll(".reorder-row");
-    await rows()[2]!.findAll("button")[0]!.trigger("click");
-    await rows()[1]!.findAll("button")[0]!.trigger("click");
-
-    await wrapper.findAll("button").at(-1)!.trigger("click");
-    expect(wrapper.emitted("submit")?.[0]).toEqual([
-      { type: "order", uids: ["r3", "r1", "r2"] },
     ]);
   });
 });
