@@ -479,57 +479,66 @@ function cancelQuit() {
             <p v-if="!state" class="panel muted">Đang tham gia phòng chơi…</p>
 
             <!-- ------------------------------------------------ pre-game lobby -->
-            <section v-else-if="inLobby" class="panel lobby">
-                <h2 class="lobby-heading">Phòng chờ người chơi</h2>
-
-                <div class="lobby-seats">
-                    <div
-                        v-for="player in state.players"
-                        :key="player.id"
-                        class="lobby-seat-wrap"
-                    >
-                        <PlayerSeat
-                            :player="player"
-                            :is-current="false"
-                            :is-host="player.id === hostId"
-                            :is-you="player.id === you?.id"
-                            :turns-remaining="0"
-                        />
-                        <button
-                            v-if="isHost && player.id !== you?.id"
-                            class="kick-btn"
-                            title="Mời ra khỏi phòng"
-                            @click="kickPlayer(player.id)"
-                        >
-                            ✕
-                        </button>
+            <section v-else-if="inLobby" class="lobby">
+                <div class="lobby-content">
+                    <div class="lobby-left panel">
+                        <h2 class="lobby-heading">Danh sách player</h2>
+                        <div class="lobby-seats vertical">
+                            <div
+                                v-for="player in state.players"
+                                :key="player.id"
+                                class="lobby-seat-wrap"
+                            >
+                                <PlayerSeat
+                                    :player="player"
+                                    :is-current="false"
+                                    :is-host="player.id === hostId"
+                                    :is-you="player.id === you?.id"
+                                    :turns-remaining="0"
+                                    layout="horizontal"
+                                />
+                                <button
+                                    v-if="isHost && player.id !== you?.id"
+                                    class="kick-btn"
+                                    title="Mời ra khỏi phòng"
+                                    @click="kickPlayer(player.id)"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <p class="muted">
-                    Đã có {{ state.players.length }}/10 người tham gia. Chia sẻ
-                    liên kết này để rủ bạn bè cùng chơi:
-                </p>
-                <ShareLink :room-id="roomId" />
-
-                <DeckSettingsPanel
-                    :deck="state.deck"
-                    :is-host="isHost"
-                    @update="setDeckOverrides"
-                />
-
-                <div class="start-game-container">
-                    <button
-                        v-if="isHost"
-                        class="primary start-btn"
-                        :disabled="state.players.length < 2 || state.status === 'over'"
-                        @click="startGame"
-                    >
-                        {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Bắt đầu ván đấu' }}
-                    </button>
-                    <p v-else class="muted">
-                        {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Đang chờ chủ phòng bắt đầu ván đấu…' }}
-                    </p>
+                    
+                    <div class="lobby-right panel">
+                        <h2 class="lobby-heading">Cài đặt phòng</h2>
+                        <div class="lobby-actions">
+                            <p class="muted">
+                                Đã có {{ state.players.length }}/10 người tham gia. Chia sẻ
+                                liên kết này để rủ bạn bè cùng chơi:
+                            </p>
+                            <ShareLink :room-id="roomId" />
+                            
+                            <div class="start-game-container">
+                                <button
+                                    v-if="isHost"
+                                    class="primary start-btn"
+                                    :disabled="state.players.length < 2 || state.status === 'over'"
+                                    @click="startGame"
+                                >
+                                    {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Bắt đầu ván đấu' }}
+                                </button>
+                                <p v-else class="muted">
+                                    {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Đang chờ chủ phòng bắt đầu ván đấu…' }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <DeckSettingsPanel
+                            :deck="state.deck"
+                            :is-host="isHost"
+                            @update="setDeckOverrides"
+                        />
+                    </div>
                 </div>
             </section>
 
@@ -956,6 +965,28 @@ function cancelQuit() {
     color: var(--accent);
 }
 
+.lobby-content {
+    display: flex;
+    gap: 2rem;
+}
+
+.lobby-left,
+.lobby-right {
+    flex: 1;
+}
+
+.lobby-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.lobby-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 .lobby-seats {
     display: flex;
     flex-wrap: wrap;
@@ -964,22 +995,30 @@ function cancelQuit() {
     padding: 0.5rem 0;
 }
 
+.lobby-seats.vertical {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+}
+
 .lobby-seat-wrap {
     position: relative;
+    width: 100%;
 }
 
 .kick-btn {
     position: absolute;
-    top: -0.15rem;
-    right: -0.15rem;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 1rem;
     z-index: 1;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     display: grid;
     place-items: center;
     border-radius: 50%;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     line-height: 1;
     background: rgb(20 8 0 / 70%);
     color: var(--text);
@@ -1106,7 +1145,7 @@ function cancelQuit() {
     right: 1rem;
     bottom: 1rem;
     z-index: 15;
-    width: min(340px, calc(100vw - 2rem));
+    width: min(360px, calc(100vw - 2rem));
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -1114,8 +1153,27 @@ function cancelQuit() {
 }
 
 .log-toggle {
-    font-size: 0.82rem;
-    padding: 0.4rem 0.9rem;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 0.45rem 1rem;
+    background: linear-gradient(180deg, #4a2810, #2c1607);
+    color: #fdf6e7;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.08s ease;
+}
+
+.log-toggle:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+.log-toggle:active {
+    transform: translateY(1px);
 }
 
 .slide-enter-active,

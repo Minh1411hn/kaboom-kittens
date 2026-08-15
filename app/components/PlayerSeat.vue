@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import type { PublicPlayer } from "#shared/types/game";
 
-const props = defineProps<{
-    player: PublicPlayer;
-    isCurrent: boolean;
-    isHost: boolean;
-    isYou: boolean;
-    turnsRemaining: number;
-    /** Highlighted as a legal target while the player is picking one. */
-    targetable?: boolean;
-    selected?: boolean;
-}>();
+const props = withDefaults(
+    defineProps<{
+        player: PublicPlayer;
+        isCurrent: boolean;
+        isHost: boolean;
+        isYou: boolean;
+        turnsRemaining: number;
+        /** Highlighted as a legal target while the player is picking one. */
+        targetable?: boolean;
+        selected?: boolean;
+        layout?: "horizontal" | "vertical";
+    }>(),
+    {
+        layout: "vertical",
+    }
+);
 
 defineEmits<{ pick: [id: string] }>();
 
@@ -62,6 +68,7 @@ const back = cardBackUrl();
             targetable,
             selected,
             offline: !player.connected,
+            horizontal: layout === 'horizontal',
         }"
         :disabled="!targetable"
         @click="targetable && $emit('pick', player.id)"
@@ -281,5 +288,33 @@ const back = cardBackUrl();
             0 0 0 5px rgb(255 194 26 / 55%),
             0 0 16px rgb(255 194 26 / 40%);
     }
+}
+
+.seat.horizontal {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    gap: 1rem;
+}
+
+.seat.horizontal .disc-wrap {
+    order: 1;
+}
+
+.seat.horizontal .name {
+    order: 2;
+    flex: 1;
+    text-align: left;
+    max-width: none;
+}
+
+.seat.horizontal .ready-badge {
+    order: 3;
+}
+
+.seat.horizontal .meta {
+    order: 4;
 }
 </style>

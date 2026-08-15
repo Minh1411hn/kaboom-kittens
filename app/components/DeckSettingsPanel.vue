@@ -32,6 +32,10 @@ const counts = computed<Record<CardId, number>>(() => {
 
 const overrides = computed<DeckOverrides>(() => draft.value ?? props.deck.overrides)
 
+const bomDefuseGroup = computed(() => CARD_CATALOG.filter(c => c.category === 'kitten' || c.category === 'defuse'))
+const actionGroup = computed(() => CARD_CATALOG.filter(c => c.category === 'action'))
+const catGroup = computed(() => CARD_CATALOG.filter(c => c.category === 'cat'))
+
 const total = computed(() =>
   CARD_CATALOG.reduce((n, entry) => n + (counts.value[entry.id] ?? 0), 0),
 )
@@ -107,62 +111,148 @@ onBeforeUnmount(() => {
         ⚠️ Không đủ bài để chia — hãy tăng số lượng các lá thường lên.
       </p>
 
-      <ul class="card-rows">
-        <li v-for="entry in CARD_CATALOG" :key="entry.id" class="card-row">
-          <!--
-            The real artwork, not the catalog emoji: a card face is entirely
-            artwork, so the picture is the only thing a player can recognise a
-            card by. The five named cats share one art pool and differ only by
-            which picture they are pinned to, which no emoji or name conveys.
-          -->
-          <CardImage :card-id="entry.id" width="30px" class="thumb" />
-          <span class="name" :title="`${entry.name} — ${entry.text}`">
-            {{ entry.label }}
-            <span
-              v-if="overrides[entry.id] != null"
-              class="pinned"
-              title="Chủ phòng đã chốt số lượng này"
-              >đã chỉnh</span
-            >
-          </span>
+      <div class="card-groups">
+        <div class="card-group">
+          <h3 class="group-title">Bom + Defuse</h3>
+          <ul class="card-rows">
+            <li v-for="entry in bomDefuseGroup" :key="entry.id" class="card-row">
+              <CardImage :card-id="entry.id" width="30px" class="thumb" />
+              <span class="name" :title="`${entry.name} — ${entry.text}`">
+                {{ entry.name }}
+                <span
+                  v-if="overrides[entry.id] != null"
+                  class="pinned"
+                  title="Chủ phòng đã chốt số lượng này"
+                  >đã chỉnh</span
+                >
+              </span>
+              <template v-if="isHost">
+                <div class="stepper">
+                  <button
+                    :aria-label="`Bớt một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) <= 0"
+                    @click="bump(entry.id, -1)"
+                  >−</button>
+                  <input
+                    type="number"
+                    min="0"
+                    :max="DECK_COUNT_MAX"
+                    :value="counts[entry.id] ?? 0"
+                    :aria-label="`Số lá ${entry.name}`"
+                    @change="setCount(entry.id, Number(($event.target as HTMLInputElement).value))"
+                  />
+                  <button
+                    :aria-label="`Thêm một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
+                    @click="bump(entry.id, 1)"
+                  >+</button>
+                </div>
+                <button
+                  class="reset-one"
+                  :disabled="overrides[entry.id] == null"
+                  title="Trả lá này về số lượng mặc định"
+                  @click="clearOne(entry.id)"
+                >↺</button>
+              </template>
+              <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="card-group">
+          <h3 class="group-title">Chức năng</h3>
+          <ul class="card-rows">
+            <li v-for="entry in actionGroup" :key="entry.id" class="card-row">
+              <CardImage :card-id="entry.id" width="30px" class="thumb" />
+              <span class="name" :title="`${entry.name} — ${entry.text}`">
+                {{ entry.name }}
+                <span
+                  v-if="overrides[entry.id] != null"
+                  class="pinned"
+                  title="Chủ phòng đã chốt số lượng này"
+                  >đã chỉnh</span
+                >
+              </span>
+              <template v-if="isHost">
+                <div class="stepper">
+                  <button
+                    :aria-label="`Bớt một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) <= 0"
+                    @click="bump(entry.id, -1)"
+                  >−</button>
+                  <input
+                    type="number"
+                    min="0"
+                    :max="DECK_COUNT_MAX"
+                    :value="counts[entry.id] ?? 0"
+                    :aria-label="`Số lá ${entry.name}`"
+                    @change="setCount(entry.id, Number(($event.target as HTMLInputElement).value))"
+                  />
+                  <button
+                    :aria-label="`Thêm một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
+                    @click="bump(entry.id, 1)"
+                  >+</button>
+                </div>
+                <button
+                  class="reset-one"
+                  :disabled="overrides[entry.id] == null"
+                  title="Trả lá này về số lượng mặc định"
+                  @click="clearOne(entry.id)"
+                >↺</button>
+              </template>
+              <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
+            </li>
+          </ul>
+        </div>
 
-          <template v-if="isHost">
-            <div class="stepper">
-              <button
-                :aria-label="`Bớt một lá ${entry.label}`"
-                :disabled="(counts[entry.id] ?? 0) <= 0"
-                @click="bump(entry.id, -1)"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min="0"
-                :max="DECK_COUNT_MAX"
-                :value="counts[entry.id] ?? 0"
-                :aria-label="`Số lá ${entry.label}`"
-                @change="setCount(entry.id, Number(($event.target as HTMLInputElement).value))"
-              />
-              <button
-                :aria-label="`Thêm một lá ${entry.label}`"
-                :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
-                @click="bump(entry.id, 1)"
-              >
-                +
-              </button>
-            </div>
-            <button
-              class="reset-one"
-              :disabled="overrides[entry.id] == null"
-              title="Trả lá này về số lượng mặc định"
-              @click="clearOne(entry.id)"
-            >
-              ↺
-            </button>
-          </template>
-          <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
-        </li>
-      </ul>
+        <div class="card-group">
+          <h3 class="group-title">Normal Cat</h3>
+          <ul class="card-rows">
+            <li v-for="entry in catGroup" :key="entry.id" class="card-row">
+              <CardImage :card-id="entry.id" width="30px" class="thumb" />
+              <span class="name" :title="`${entry.name} — ${entry.text}`">
+                {{ entry.name }}
+                <span
+                  v-if="overrides[entry.id] != null"
+                  class="pinned"
+                  title="Chủ phòng đã chốt số lượng này"
+                  >đã chỉnh</span
+                >
+              </span>
+              <template v-if="isHost">
+                <div class="stepper">
+                  <button
+                    :aria-label="`Bớt một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) <= 0"
+                    @click="bump(entry.id, -1)"
+                  >−</button>
+                  <input
+                    type="number"
+                    min="0"
+                    :max="DECK_COUNT_MAX"
+                    :value="counts[entry.id] ?? 0"
+                    :aria-label="`Số lá ${entry.name}`"
+                    @change="setCount(entry.id, Number(($event.target as HTMLInputElement).value))"
+                  />
+                  <button
+                    :aria-label="`Thêm một lá ${entry.name}`"
+                    :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
+                    @click="bump(entry.id, 1)"
+                  >+</button>
+                </div>
+                <button
+                  class="reset-one"
+                  :disabled="overrides[entry.id] == null"
+                  title="Trả lá này về số lượng mặc định"
+                  @click="clearOne(entry.id)"
+                >↺</button>
+              </template>
+              <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
       <footer v-if="isHost" class="deck-foot">
         <button class="reset-all" @click="clearAll">Khôi phục toàn bộ mặc định</button>
@@ -230,11 +320,26 @@ onBeforeUnmount(() => {
   color: var(--warn);
 }
 
+.card-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.group-title {
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+  border-bottom: 1px solid var(--maroon-edge);
+  padding-bottom: 0.3rem;
+}
+
 .card-rows {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.15rem 0.9rem;
-  margin: 0.6rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
