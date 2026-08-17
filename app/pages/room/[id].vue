@@ -131,6 +131,8 @@ const kitten = useKittenCeremony({
     captureRect: (uid) => handFan.value?.slotRect(uid) ?? null,
 });
 
+useTurnSound({ state, youId: () => you.value?.id });
+
 const discardRect = () => tableCenter.value?.discardRect() ?? null;
 
 const nopeWindow = computed(() => state.value?.nopeWindow ?? null);
