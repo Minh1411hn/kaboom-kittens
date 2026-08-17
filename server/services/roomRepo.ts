@@ -139,6 +139,12 @@ export async function listRooms(limit = 50): Promise<RoomSummary[]> {
       continue
     }
 
+    // Everyone left: the key is kept so a refresh can walk back into the room
+    // by URL, but an empty room is not something to advertise in the lobby.
+    // Not swept from the index either — someone may walk back in, and the
+    // index entry is cleaned up above once the key's TTL expires.
+    if (!state.players.length) continue
+
     const host = state.players.find((p) => p.id === meta.hostId)
     rooms.push({
       id,

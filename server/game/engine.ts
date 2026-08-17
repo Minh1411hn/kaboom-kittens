@@ -98,7 +98,9 @@ export function addPlayer(state: GameState, id: string, nickname: string): strin
 }
 
 export function removePlayer(state: GameState, id: string): void {
-  if (state.status === 'lobby') {
+  // No game is in progress in either state, so the seat can go outright — and
+  // `over` counts as waiting: whoever leaves the end-of-game screen is gone.
+  if (state.status === 'lobby' || state.status === 'over') {
     state.players = state.players.filter((p) => p.id !== id)
     state.players.forEach((p, index) => (p.seat = index))
     return

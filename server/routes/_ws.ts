@@ -17,7 +17,6 @@ import {
   joinRoom,
   kickPlayer,
   leaveRoom,
-  markConnection,
   sendSnapshot,
 } from '../services/roomService'
 import { sessionFromCookieHeader } from '../services/sessions'
@@ -122,7 +121,11 @@ export default defineWebSocketHandler({
     // Another tab may still hold the seat; only the last one counts as leaving.
     if (playerHasOtherPeer(context.roomId, context.playerId, peer)) return
 
-    await markConnection(context.roomId, context.playerId, false)
+    // A dropped socket is a departure: `leaveRoom` frees the seat while the
+    // room is waiting and only flags a disconnect mid-game, so a player in a
+    // live hand can still come back to it.
+    await leaveRoom(context.roomId, context.playerId)
+    await broadcastRoom(context.roomId)
   },
 })
 
@@ -144,8 +147,11 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       const meta = await getRoomMeta(message.roomId)
       if (!meta) return fail(peer, 'no-room', 'Phòng chơi đó không còn tồn tại.')
 
-      const error = await joinRoom(message.roomId, context.playerId, context.nickname)
-      if (error) return fail(peer, 'join-failed', error)
+      // A seat may not be available (game under way, or the room is full).
+      // That is not a rejection: the peer watches instead. `projectStateFor`
+      // already returns `you: null` for a viewer who is not on the roster, so a
+      // spectator sees exactly the public table and nothing more.
+      await joinRoom(message.roomId, context.playerId, context.nickname)
 
       context.roomId = message.roomId
       context.watchingLobby = false

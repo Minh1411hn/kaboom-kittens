@@ -6,6 +6,18 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --ignore-scripts
 
+# ---- development ---------------------------------------------------------
+# Dev-only stage: full install *with* scripts so `postinstall: nuxt prepare`
+# runs and .nuxt/ exists. Never builds — docker-compose.override.yml bind-mounts
+# the source over /app and runs `nuxt dev`.
+FROM node:24-alpine AS development
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm install && npm cache clean --force
+COPY . .
+EXPOSE 3000 24678
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
 # ---- build ---------------------------------------------------------------
 FROM node:24-alpine AS build
 WORKDIR /app

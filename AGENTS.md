@@ -10,8 +10,11 @@ those. This file covers what you need to change code safely.
 
 Always run scripts and commands through docker-compose, not directly on the host (no bare
 `npm`/`npx`/`nuxi`). `docker compose up -d` starts `redis` and `web`; the dev override builds the
-`web` service's `build` stage and runs `npm run gen:art && npm run dev -- --host 0.0.0.0` against a
-bind-mounted source tree with HMR. Run everything else with `docker compose exec web <cmd>` against
+`web` service's `development` stage and runs `npm run gen:art && npm run dev -- --host 0.0.0.0`
+against a bind-mounted source tree with HMR. `node_modules` lives in a named volume
+(`node_modules:/app/node_modules`) that masks the host copy — after changing `package.json` you must
+drop it (`docker compose down -v`) or the container keeps the stale snapshot and modules resolve as
+"not found". Run everything else with `docker compose exec web <cmd>` against
 that running container.
 
 ```bash

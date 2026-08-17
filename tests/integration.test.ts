@@ -291,4 +291,61 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     await rejoined.waitForState((state) => Boolean(state.you), 5000, 'a snapshot after rejoining')
     expect(rejoined.state!.players.some((p) => p.id === target.playerId)).toBe(true)
   }, 30_000)
+
+  it('frees the seat when a waiting player’s socket drops, and hands the room over', async () => {
+    const { roomId, players, host } = await makeRoom(['Ada', 'Alan'])
+    const stayer = players[1]!
+
+    // Closing the tab is a departure while the room is still waiting.
+    host.close()
+    await stayer.waitForState((state) => state.players.length === 1, 5000, 'the roster to shrink')
+    expect(stayer.state!.players.some((p) => p.id === host.playerId)).toBe(false)
+    // The host left, so the room is handed to the one still sitting there.
+    await stayer.waitFor(
+      (message) => message.type === 'snapshot' && message.hostId === stayer.playerId,
+      5000,
+      'host migration',
+    )
+
+    // Coming back is an ordinary join: a new seat, at the end of the row.
+    const back = new TestClient(BASE_URL, host.nickname)
+    back.cookie = host.cookie
+    back.playerId = host.playerId
+    clients.push(back)
+    await back.connect()
+    back.send({ type: 'join', roomId })
+    await back.waitForState((state) => Boolean(state.you), 5000, 'a snapshot after rejoining')
+    expect(back.state!.players.map((p) => p.id)).toEqual([stayer.playerId, host.playerId])
+  }, 30_000)
+
+  it('seats a latecomer as a spectator, then gives them a seat when the game ends', async () => {
+    const { roomId, players, host } = await makeRoom(['Grete', 'Emmy'])
+    host.send({ type: 'start-game' })
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'playing', 5000, 'the game to start')
+
+    const watcher = new TestClient(BASE_URL, 'Sofia')
+    await watcher.login()
+    await watcher.connect()
+    clients.push(watcher)
+    watcher.send({ type: 'join', roomId })
+
+    // No rejection, no seat, no cards — just the public table.
+    await watcher.waitForState((state) => state.roomId === roomId, 5000, 'a spectator snapshot')
+    expect(watcher.errors).toHaveLength(0)
+    expect(watcher.state!.you).toBeNull()
+    expect(watcher.state!.players.some((p) => p.id === watcher.playerId)).toBe(false)
+
+    await playUntilOver(players)
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'over', 5000, 'the game to end')
+    for (const player of players) player.send({ type: 'return-to-lobby' })
+
+    // Back in the waiting room the watcher joins like anyone else. The client
+    // does this on its own; here we make the same request by hand.
+    await watcher.waitForState((state) => state.status === 'lobby', 5000, 'the room to reset')
+    watcher.send({ type: 'join', roomId })
+    await watcher.waitForState((state) => Boolean(state.you), 5000, 'a seat after the game')
+    expect(watcher.state!.players.some((p) => p.id === watcher.playerId)).toBe(true)
+  }, 60_000)
 })

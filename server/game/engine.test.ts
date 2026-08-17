@@ -8,7 +8,7 @@ import {
   type Command,
   type GameState,
 } from '#shared/types/game'
-import { addPlayer, createGame, DEFAULT_CONFIG, reduce, resetToLobby } from './engine'
+import { addPlayer, createGame, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby } from './engine'
 import { cardCount, deckComposition, explodingKittenCount, makeCard } from './deck'
 import { projectStateFor } from './projection'
 import { currentPlayer, playerById } from './turn'
@@ -1238,5 +1238,30 @@ describe('lobby rules', () => {
   it('refuses to start twice', () => {
     const state = started(3)
     expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/already started/i)
+  })
+
+  it('frees the seat of someone who leaves the waiting room', () => {
+    const state = newGame(3)
+    removePlayer(state, 'p1')
+    expect(state.players.map((p) => p.id)).toEqual(['p0', 'p2'])
+    expect(state.players.map((p) => p.seat)).toEqual([0, 1])
+  })
+
+  it('frees the seat of someone who leaves the results screen too', () => {
+    const state = newGame(3)
+    state.status = 'over'
+    removePlayer(state, 'p0')
+    expect(state.players.map((p) => p.id)).toEqual(['p1', 'p2'])
+    expect(state.players.map((p) => p.seat)).toEqual([0, 1])
+  })
+
+  it('eliminates rather than removes someone who leaves mid-game', () => {
+    const state = started(3)
+    removePlayer(state, 'p1')
+    const gone = playerById(state, 'p1')!
+    expect(gone.alive).toBe(false)
+    expect(gone.hand).toHaveLength(0)
+    // Seats stay put so turn order is unaffected.
+    expect(state.players.map((p) => p.seat)).toEqual([0, 1, 2])
   })
 })

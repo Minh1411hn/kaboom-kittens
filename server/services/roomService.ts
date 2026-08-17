@@ -8,7 +8,6 @@ import {
   getRoomMeta,
   saveState,
   setHost,
-  deleteRoom,
   type RoomMeta,
 } from './roomRepo'
 import { withRoomLock } from './lock'
@@ -79,7 +78,7 @@ export async function joinRoom(
   playerId: string,
   nickname: string,
 ): Promise<string | undefined> {
-  return mutateRoom(roomId, (state) => {
+  const error = await mutateRoom(roomId, (state) => {
     const existing = state.players.find((p) => p.id === playerId)
     if (existing) {
       // Reconnect: keep the seat, the hand and the eliminated flag intact.
@@ -90,31 +89,46 @@ export async function joinRoom(
     }
     return addPlayer(state, playerId, nickname) ?? undefined
   })
-}
+  if (error) return error
 
-export async function markConnection(
-  roomId: string,
-  playerId: string,
-  connected: boolean,
-): Promise<void> {
-  await mutateRoom(roomId, (state) => {
-    setConnected(state, playerId, connected, Date.now())
-  })
+  // The room can outlive its host now that an emptied room is kept around for
+  // a refresh to walk back into. Whoever seats themselves in an ownerless room
+  // takes it over, otherwise nobody could ever start a game there.
+  const [state, meta] = await Promise.all([loadState(roomId), getRoomMeta(roomId)])
+  if (state && meta && !state.players.some((p) => p.id === meta.hostId)) {
+    await setHost(roomId, playerId)
+    await publishRoomChanged(roomId)
+    await publishLobbyChanged()
+  }
+  return undefined
 }
 
 /**
- * Leaving the lobby frees the seat outright; leaving mid-game only marks the
- * player disconnected so they can come back to the same hand.
+ * Leaving while waiting (lobby or the end-of-game screen) frees the seat
+ * outright; leaving mid-game only marks the player disconnected so they can
+ * come back to the same hand.
+ *
+ * This runs for an explicit `leave` *and* for a dropped socket — closing the
+ * tab, navigating away or refreshing all count as leaving a waiting room.
  */
 export async function leaveRoom(roomId: string, playerId: string): Promise<void> {
   const meta = await getRoomMeta(roomId)
 
   await mutateRoom(roomId, (state) => {
-    if (state.status === 'lobby') {
-      state.players = state.players.filter((p) => p.id !== playerId)
-      state.players.forEach((p, index) => (p.seat = index))
-    } else {
-      setConnected(state, playerId, false, Date.now())
+    const now = Date.now()
+    // Spectators hold no seat; returning a string keeps `mutateRoom` from
+    // saving and broadcasting a state that did not change.
+    if (!state.players.some((p) => p.id === playerId)) return 'not-seated'
+    if (state.status === 'playing') {
+      setConnected(state, playerId, false, now)
+      return
+    }
+    removePlayer(state, playerId)
+    // Same courtesy as `kickPlayer`: the departure can be the last thing the
+    // room was waiting on before starting the next game.
+    if (state.status === 'over') {
+      const remaining = state.players.filter((p) => p.connected)
+      if (remaining.length && remaining.every((p) => p.ready)) resetToLobby(state, now)
     }
   })
 
@@ -122,8 +136,10 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
   if (!state) return
 
   if (!state.players.length) {
+    // Deliberately not deleted: a refresh is indistinguishable from a close, so
+    // the room stays recoverable by URL until its Redis TTL expires. `listRooms`
+    // hides empty rooms, so nobody sees the husk in the meantime.
     clearRoomTimer(roomId)
-    await deleteRoom(roomId)
     await publishLobbyChanged()
     return
   }

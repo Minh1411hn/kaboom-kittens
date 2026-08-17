@@ -131,6 +131,22 @@ export function useGameSocket() {
     else queue.value.push(message)
   }
 
+  /**
+   * Tell the server we are gone before the tab dies. `onBeforeUnmount` does not
+   * run when a tab is closed, and `pagehide` (not `beforeunload`) is the event
+   * Safari/iOS actually fires. Best effort only — the server's socket-close
+   * handler is what really frees the seat.
+   */
+  function leaveOnPageHide(): () => void {
+    if (!import.meta.client) return () => {}
+    const onHide = () => {
+      const ws = socket.value
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'leave' } satisfies ClientMessage))
+    }
+    window.addEventListener('pagehide', onHide)
+    return () => window.removeEventListener('pagehide', onHide)
+  }
+
   function disconnect(): void {
     wantOpen.value = false
     clearTimeout(retryTimer)
@@ -165,5 +181,6 @@ export function useGameSocket() {
     disconnect,
     send,
     resetRoom,
+    leaveOnPageHide,
   }
 }

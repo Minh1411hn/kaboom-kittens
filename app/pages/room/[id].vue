@@ -24,6 +24,7 @@ const {
     connect,
     send,
     resetRoom,
+    leaveOnPageHide,
 } = useGameSocket();
 
 await load();
@@ -42,6 +43,12 @@ const drawPending = ref(false);
 // --- derived state ---------------------------------------------------------
 
 const you = computed(() => state.value?.you ?? null);
+/**
+ * You walked into a room whose game had already started (or that was full), so
+ * you have no seat — the server sends the public table and nothing else. The
+ * watcher below claims a seat as soon as the room goes back to waiting.
+ */
+const spectating = computed(() => Boolean(state.value && !you.value));
 const hand = computed<Card[]>(() => you.value?.hand ?? []);
 const selectedCards = computed(() =>
     hand.value.filter((c) => selectedUids.value.includes(c.uid)),
@@ -237,23 +244,65 @@ function arcOffset(index: number, count: number): string {
 
 // --- lifecycle -------------------------------------------------------------
 
+let stopPageHide: (() => void) | undefined;
+
 onMounted(() => {
     resetRoom();
+    stopPageHide = leaveOnPageHide();
     if (nickname.value) join();
 });
 
+let joined = false;
+
 function join() {
+    joined = true;
     connect();
-    send({ type: "join", roomId: roomId.value });
+    // A socket carried over from the lobby page is already open, so nothing
+    // would wake the watcher below — send now instead.
+    if (status.value === "open") send({ type: "join", roomId: roomId.value });
 }
+
+/**
+ * Re-join on every fresh socket. A dropped connection now frees the seat while
+ * the room is waiting, and mid-game it flags a disconnect — either way the new
+ * socket starts with no room attached, so without this the table would go quiet
+ * after a blip.
+ */
+watch(status, (now, before) => {
+    if (joined && now === "open" && before !== "open") {
+        send({ type: "join", roomId: roomId.value });
+    }
+});
 
 function onNicknameSet() {
     join();
 }
 
 onBeforeUnmount(() => {
+    stopPageHide?.();
     if (state.value) send({ type: "leave" });
 });
+
+/**
+ * A spectator becomes a player the moment the room goes back to waiting. The
+ * request is the ordinary `join`, so a room that filled up in the meantime just
+ * leaves you watching; we ask again whenever the roster changes, which is the
+ * only way a seat can open up.
+ */
+let seatAskedAt = -1;
+watch(
+    () => [spectating.value, state.value?.status, state.value?.players.length],
+    () => {
+        if (!spectating.value) {
+            seatAskedAt = -1;
+            return;
+        }
+        const seated = state.value?.players.length ?? 0;
+        if (state.value?.status !== "lobby" || seatAskedAt === seated) return;
+        seatAskedAt = seated;
+        send({ type: "join", roomId: roomId.value });
+    },
+);
 
 // Track cards leaving hand and detect newly arrived cards
 let knownHandUids = new Set<string>();
@@ -475,6 +524,13 @@ function cancelQuit() {
 
             <p v-if="kicked" class="panel notice">{{ kicked }}</p>
             <p v-if="error" class="error banner">{{ error }}</p>
+            <p v-if="spectating" class="panel notice">
+                {{
+                    state?.status === "lobby"
+                        ? "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống."
+                        : "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
+                }}
+            </p>
 
             <p v-if="!state" class="panel muted">Đang tham gia phòng chơi…</p>
 
