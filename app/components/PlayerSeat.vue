@@ -20,15 +20,6 @@ const props = withDefaults(
 
 defineEmits<{ pick: [id: string] }>();
 
-const initials = computed(() =>
-    props.player.nickname
-        .split(/\s+/)
-        .map((word) => word[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-);
-
 const colors = computed(() =>
     seatColors(props.player.seat, props.player.alive),
 );
@@ -87,9 +78,18 @@ const back = cardBackUrl();
         </span>
 
         <span class="disc-wrap">
-            <span class="avatar" :style="discStyle">{{
-                player.alive ? initials : "💀"
-            }}</span>
+            <span class="avatar" :style="discStyle">
+                <img
+                    class="avatar-img"
+                    :src="
+                        player.alive
+                            ? avatarUrl(player.avatarId)
+                            : deathAvatarUrl()
+                    "
+                    alt=""
+                    draggable="false"
+                />
+            </span>
         </span>
 
         <span
@@ -177,15 +177,17 @@ const back = cardBackUrl();
     height: 62px;
     border-radius: 50%;
     border: 4px solid transparent;
+    overflow: hidden;
     box-shadow:
         inset 0 0 10px rgb(0 0 0 / 35%),
         inset 0 2px 5px rgb(0 0 0 / 20%);
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: #fff;
-    text-shadow: 0 2px 3px rgb(0 0 0 / 40%);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .fan {

@@ -22,6 +22,7 @@ const card = (id: Card['id'], uid: string): Card => ({ id, uid })
 const player = (overrides: Partial<PublicPlayer> = {}): PublicPlayer => ({
   id: 'p1',
   nickname: 'Whiskers',
+  avatarId: 'art_02',
   seat: 0,
   handCount: 3,
   alive: true,
@@ -73,10 +74,12 @@ function playing(overrides: Partial<PublicGameState> = {}): PublicGameState {
 
 mockNuxtImport('useSession', () => () => ({
   nickname: useState<string>('kk:nickname', () => 'Whiskers'),
+  avatarId: useState<string>('kk:avatarId', () => 'art_02'),
   playerId: useState<string>('kk:sessionPlayerId', () => 'p1'),
   ready: useState<boolean>('kk:sessionReady', () => true),
   load: async () => {},
   setNickname: async () => {},
+  setProfile: async () => {},
   remembered: () => 'Whiskers',
 }))
 

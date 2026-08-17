@@ -41,6 +41,7 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
     players: state.players.map((p) => ({
       id: p.id,
       nickname: p.nickname,
+      avatarId: p.avatarId,
       seat: p.seat,
       handCount: p.hand.length,
       alive: p.alive,

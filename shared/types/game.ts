@@ -130,6 +130,7 @@ export interface Card {
 export interface Player {
   id: string
   nickname: string
+  avatarId: string
   seat: number
   hand: Card[]
   alive: boolean
@@ -252,7 +253,7 @@ export interface GameEvent {
 
 export type GameStatus = 'lobby' | 'playing' | 'over'
 
-export const STATE_VERSION = 3
+export const STATE_VERSION = 4
 
 export interface GameState {
   version: number
@@ -315,6 +316,7 @@ export type Command =
 export interface PublicPlayer {
   id: string
   nickname: string
+  avatarId: string
   seat: number
   handCount: number
   alive: boolean

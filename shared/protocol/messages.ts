@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import avatarManifest from '../generated/avatar-art.json'
 import { ALL_CARD_IDS, DECK_COUNT_MAX, type CardId, type PublicGameState } from '../types/game'
 
 /**
@@ -19,6 +20,12 @@ export const nicknameSchema = z
   .regex(/^[\p{L}\p{N} _'-]+$/u, 'Biệt danh chỉ được dùng chữ cái, chữ số, khoảng trắng, - và _.')
 
 export const roomNameSchema = z.string().trim().min(2).max(32)
+
+// Every id in the generated avatar manifest is a pickable avatar; anything
+// else (including `common/death.png`, which is not in this manifest) is
+// rejected the same way an unknown CardId is.
+const AVATAR_IDS = Object.keys(avatarManifest) as [string, ...string[]]
+export const avatarIdSchema = z.enum(AVATAR_IDS)
 
 export const interactionResponseSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('card'), uid: z.string().max(64) }),
@@ -56,6 +63,7 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('quit-game') }),
   z.object({ type: z.literal('return-to-lobby') }),
   z.object({ type: z.literal('kick-player'), targetPlayerId: z.string().max(64) }),
+  z.object({ type: z.literal('update-profile'), nickname: nicknameSchema, avatarId: avatarIdSchema }),
   z.object({
     type: z.literal('submit-interaction'),
     interactionId: z.string().max(64),
@@ -89,7 +97,7 @@ export interface ChatMessage {
 }
 
 export type ServerMessage =
-  | { type: 'welcome'; playerId: string; nickname: string }
+  | { type: 'welcome'; playerId: string; nickname: string; avatarId: string }
   /**
    * Full redacted state, sent after every command — the client never patches.
    * New events are whatever in `state.log` the client has not seen, keyed by

@@ -21,7 +21,7 @@ let clock = 1_000_000
 
 function newGame(playerCount: number, seed = 42): GameState {
   const state = createGame('test-room', seed)
-  for (let i = 0; i < playerCount; i++) addPlayer(state, `p${i}`, `Player ${i}`)
+  for (let i = 0; i < playerCount; i++) addPlayer(state, `p${i}`, `Player ${i}`, 'art_02')
   return state
 }
 
@@ -1165,7 +1165,7 @@ describe('determinism', () => {
     const commands: Command[] = []
     const build = (seed: number) => {
       let state = createGame('replay', seed)
-      for (let i = 0; i < 4; i++) addPlayer(state, `p${i}`, `Player ${i}`)
+      for (let i = 0; i < 4; i++) addPlayer(state, `p${i}`, `Player ${i}`, 'art_02')
       return state
     }
 
@@ -1231,7 +1231,7 @@ describe('lobby rules', () => {
 
   it('caps the room at ten players', () => {
     const state = newGame(10)
-    expect(addPlayer(state, 'p10', 'Overflow')).toMatch(/full/i)
+    expect(addPlayer(state, 'p10', 'Overflow', 'art_02')).toMatch(/full/i)
     expect(state.players).toHaveLength(10)
   })
 

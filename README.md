@@ -83,6 +83,15 @@ catalog order, and keeps it. Two cats of a kind therefore always look alike and
 two cats of different kinds never do — which is how a player spots a combo. Put
 at least five pictures in the pool or the slots wrap and two cats collide.
 
+## Avatar artwork
+
+Avatars work the same way, minus the per-card folder structure: drop any
+number of images into `public/avatars/artworks/` and rerun `npm run
+gen:manifest` — it also regenerates `shared/generated/avatar-art.json`, the
+id -> url map the profile dialog picks from (id = filename without its
+extension). `public/avatars/common/death.png` is a fixed avatar shown for an
+eliminated player and is not part of the pickable manifest.
+
 ## Adding a new card type
 
 The engine is a registry of card definitions; the turn loop, the Nope stack and

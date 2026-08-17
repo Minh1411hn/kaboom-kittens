@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import type { H3Event } from 'h3'
+import avatarManifest from '#shared/generated/avatar-art.json'
 import { useRedis } from './redis'
 
 /**
- * Nickname-only identity. The cookie holds an opaque token; the token maps to
- * a stable playerId in Redis, which is what lets a refresh — or a crashed tab —
- * rejoin the same seat instead of arriving as a stranger.
+ * Nickname + avatar identity. The cookie holds an opaque token; the token maps
+ * to a stable playerId in Redis, which is what lets a refresh — or a crashed
+ * tab — rejoin the same seat instead of arriving as a stranger.
  */
 
 export const SESSION_COOKIE = 'kk_session'
@@ -15,12 +16,25 @@ export interface Session {
   token: string
   playerId: string
   nickname: string
+  avatarId: string
 }
 
 const key = (token: string) => `session:${token}`
 
-export async function createSession(nickname: string): Promise<Session> {
-  const session: Session = { token: randomUUID(), playerId: randomUUID(), nickname }
+/** Import the raw manifest directly here rather than `avatarIdSchema` from
+ *  the protocol layer, so this file stays free of zod/protocol dependencies. */
+function randomAvatarId(): string {
+  const ids = Object.keys(avatarManifest)
+  return ids[Math.floor(Math.random() * ids.length)] ?? ''
+}
+
+export async function createSession(nickname: string, avatarId?: string): Promise<Session> {
+  const session: Session = {
+    token: randomUUID(),
+    playerId: randomUUID(),
+    nickname,
+    avatarId: avatarId ?? randomAvatarId(),
+  }
   await saveSession(session)
   return session
 }
@@ -28,7 +42,7 @@ export async function createSession(nickname: string): Promise<Session> {
 export async function saveSession(session: Session): Promise<void> {
   await useRedis().set(
     key(session.token),
-    JSON.stringify({ playerId: session.playerId, nickname: session.nickname }),
+    JSON.stringify({ playerId: session.playerId, nickname: session.nickname, avatarId: session.avatarId }),
     'EX',
     SESSION_TTL_SECONDS,
   )
@@ -39,10 +53,22 @@ export async function readSession(token: string | undefined): Promise<Session | 
   const raw = await useRedis().get(key(token))
   if (!raw) return null
   try {
-    const parsed = JSON.parse(raw) as { playerId: string; nickname: string }
+    const parsed = JSON.parse(raw) as { playerId: string; nickname: string; avatarId?: string }
     // Touch the TTL so an active player's session does not expire under them.
     await useRedis().expire(key(token), SESSION_TTL_SECONDS)
-    return { token, ...parsed }
+
+    // Sessions created before avatars existed have no avatarId. Assign one
+    // at random and persist it immediately, so it stays stable across
+    // subsequent reads instead of re-randomizing on every request — the
+    // player can then change it deliberately via the profile dialog.
+    const session: Session = {
+      token,
+      playerId: parsed.playerId,
+      nickname: parsed.nickname,
+      avatarId: parsed.avatarId ?? randomAvatarId(),
+    }
+    if (!parsed.avatarId) await saveSession(session)
+    return session
   } catch {
     return null
   }

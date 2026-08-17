@@ -16,6 +16,7 @@ import { useRedis, useSubscriber } from './redis'
 export interface PeerContext {
   playerId: string
   nickname: string
+  avatarId: string
   roomId: string | null
   watchingLobby: boolean
 }

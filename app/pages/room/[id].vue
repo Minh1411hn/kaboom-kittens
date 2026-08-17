@@ -10,7 +10,7 @@ import { CARD_CATALOG } from "#shared/types/game";
 const route = useRoute();
 const roomId = computed(() => String(route.params.id).toUpperCase());
 
-const { nickname, ready, load } = useSession();
+const { nickname, avatarId, ready, load, setProfile } = useSession();
 const {
     state,
     hostId,
@@ -37,6 +37,8 @@ const confirmingQuit = ref(false);
 const targetModalOpen = ref(false);
 const peekDismissed = ref(false);
 const arrivingCards = ref<Card[]>([]);
+const profileDialogOpen = ref(false);
+const savingProfile = ref(false);
 /** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
 const drawPending = ref(false);
 
@@ -464,6 +466,20 @@ function returnToLobby() {
     send({ type: "return-to-lobby" });
 }
 
+async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
+    if (savingProfile.value) return;
+    savingProfile.value = true;
+    try {
+        // REST first: the durable write, works even if the socket is down.
+        await setProfile(nicknameValue, avatarIdValue);
+        // Then tell the room to broadcast the change to every other player.
+        send({ type: "update-profile", nickname: nicknameValue, avatarId: avatarIdValue });
+        profileDialogOpen.value = false;
+    } finally {
+        savingProfile.value = false;
+    }
+}
+
 function kickPlayer(targetPlayerId: string) {
     send({ type: "kick-player", targetPlayerId });
 }
@@ -518,9 +534,23 @@ function cancelQuit() {
                         :class="status"
                         :title="`Trạng thái: ${status}`"
                     />
-                    <span class="muted small">{{ nickname }}</span>
+                    <CurrentUserButton
+                        :nickname="nickname"
+                        :avatar-id="avatarId"
+                        :clickable="inLobby"
+                        @click="inLobby && (profileDialogOpen = true)"
+                    />
                 </div>
             </header>
+
+            <ProfileDialog
+                v-if="profileDialogOpen"
+                :nickname="nickname"
+                :avatar-id="avatarId"
+                :saving="savingProfile"
+                @save="onProfileSave"
+                @cancel="profileDialogOpen = false"
+            />
 
             <p v-if="kicked" class="panel notice">{{ kicked }}</p>
             <p v-if="error" class="error banner">{{ error }}</p>

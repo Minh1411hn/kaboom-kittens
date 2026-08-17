@@ -8,6 +8,7 @@ import type {
   PublicPlayer,
 } from "#shared/types/game";
 import artManifest from "#shared/generated/card-art.json";
+import { avatarUrl, deathAvatarUrl } from "../composables/useAvatarArt";
 import CardImage from "./CardImage.vue";
 import CardArrivalFlyer from "./CardArrivalFlyer.vue";
 import CardDepartureFlyer from "./CardDepartureFlyer.vue";
@@ -33,6 +34,7 @@ const card = (id: Card["id"], uid: string): Card => ({ id, uid });
 const player = (overrides: Partial<PublicPlayer> = {}): PublicPlayer => ({
   id: "p1",
   nickname: "Whiskers",
+  avatarId: "art_02",
   seat: 0,
   handCount: 5,
   alive: true,
@@ -243,6 +245,25 @@ describe("PlayerSeat", () => {
     // Seat colours wrap, so the eleventh seat reuses the first seat's colour.
     expect(disc(await mount(10))).toBe(disc(first));
     expect(disc(await mount(0, false))).not.toBe(disc(first));
+  });
+
+  it("swaps a player's avatar for the death art once eliminated", async () => {
+    const mount = (alive: boolean) =>
+      mountSuspended(PlayerSeat, {
+        props: {
+          player: player({ alive, avatarId: "art_02" }),
+          isCurrent: false,
+          isHost: false,
+          isYou: false,
+          turnsRemaining: 1,
+        },
+      });
+
+    const alive = await mount(true);
+    expect(alive.get(".avatar-img").attributes("src")).toBe(avatarUrl("art_02"));
+
+    const dead = await mount(false);
+    expect(dead.get(".avatar-img").attributes("src")).toBe(deathAvatarUrl());
   });
 });
 

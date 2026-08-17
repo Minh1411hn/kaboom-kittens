@@ -8,7 +8,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
-    "gen:manifest": "node scripts/gen-card-manifest.mjs",
+    "gen:manifest": "node scripts/gen-card-manifest.mjs && node scripts/gen-avatar-manifest.mjs",
     "gen:art": "npm run gen:manifest",
     "test": "vitest run",
     "test:unit": "vitest run server",

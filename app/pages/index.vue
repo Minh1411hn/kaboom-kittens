@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { RoomSummary } from "#shared/protocol/messages";
 
-const { nickname, ready, load } = useSession();
+const { nickname, avatarId, ready, load, setProfile } = useSession();
 const { rooms, connect, send, status, error, resetRoom } = useGameSocket();
 
 const creating = ref(false);
+const profileDialogOpen = ref(false);
+const savingProfile = ref(false);
 
 await load();
 
@@ -27,6 +29,20 @@ function start() {
 
 function onNicknameSet() {
     start();
+}
+
+async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
+    if (savingProfile.value) return;
+    savingProfile.value = true;
+    try {
+        // REST first: the durable write, works even if the socket is down.
+        await setProfile(nicknameValue, avatarIdValue);
+        // Then tell the live room (if any) to refresh for everyone else.
+        send({ type: "update-profile", nickname: nicknameValue, avatarId: avatarIdValue });
+        profileDialogOpen.value = false;
+    } finally {
+        savingProfile.value = false;
+    }
 }
 
 async function createRoom() {
@@ -76,17 +92,28 @@ function since(at: number): string {
                         <span class="line line-white">Kitten</span>
                     </h1>
                 </div>
-                <div class="row status-row">
-                    <span class="muted"
-                        >Đang chơi với tên <strong>{{ nickname }}</strong></span
-                    >
+                <div class="row profile-row">
                     <span
                         class="dot"
                         :class="status"
                         :title="`Trạng thái kết nối: ${status}`"
                     />
+                    <CurrentUserButton
+                        :nickname="nickname"
+                        :avatar-id="avatarId"
+                        @click="profileDialogOpen = true"
+                    />
                 </div>
             </header>
+
+            <ProfileDialog
+                v-if="profileDialogOpen"
+                :nickname="nickname"
+                :avatar-id="avatarId"
+                :saving="savingProfile"
+                @save="onProfileSave"
+                @cancel="profileDialogOpen = false"
+            />
 
             <p v-if="error" class="error">{{ error }}</p>
 
@@ -221,8 +248,9 @@ function since(at: number): string {
 
 .header {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     padding: 0.5rem 0 0.25rem;
 }
 
@@ -230,6 +258,7 @@ function since(at: number): string {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
 }
 
 .mascot {
@@ -270,7 +299,8 @@ function since(at: number): string {
     color: var(--text);
 }
 
-.status-row {
+.profile-row {
+    flex: none;
     justify-content: flex-end;
 }
 

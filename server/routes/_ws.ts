@@ -18,6 +18,7 @@ import {
   kickPlayer,
   leaveRoom,
   sendSnapshot,
+  updateProfile,
 } from '../services/roomService'
 import { sessionFromCookieHeader } from '../services/sessions'
 import { peersInRoom } from '../services/bus'
@@ -68,10 +69,16 @@ export default defineWebSocketHandler({
         attachPeer(peer, {
           playerId: session.playerId,
           nickname: session.nickname,
+          avatarId: session.avatarId,
           roomId: null,
           watchingLobby: false,
         })
-        send(peer, { type: 'welcome', playerId: session.playerId, nickname: session.nickname })
+        send(peer, {
+          type: 'welcome',
+          playerId: session.playerId,
+          nickname: session.nickname,
+          avatarId: session.avatarId,
+        })
       } catch (error) {
         // Without this the socket would sit open forever with no welcome.
         console.error('[ws] open failed:', error)
@@ -151,7 +158,7 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       // That is not a rejection: the peer watches instead. `projectStateFor`
       // already returns `you: null` for a viewer who is not on the roster, so a
       // spectator sees exactly the public table and nothing more.
-      await joinRoom(message.roomId, context.playerId, context.nickname)
+      await joinRoom(message.roomId, context.playerId, context.nickname, context.avatarId)
 
       context.roomId = message.roomId
       context.watchingLobby = false
@@ -245,6 +252,19 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       }
       const error = await kickPlayer(context.roomId, message.targetPlayerId)
       if (error) return fail(peer, 'kick-failed', error)
+      return broadcastRoom(context.roomId)
+    }
+
+    case 'update-profile': {
+      // Keep the peer's own record fresh regardless of whether it is seated
+      // anywhere — the next `join` (e.g. switching rooms) reads from here,
+      // and a stale value would silently push the old nickname/avatar back
+      // into whatever room is joined next.
+      context.nickname = message.nickname
+      context.avatarId = message.avatarId
+      if (!context.roomId) return
+      const error = await updateProfile(context.roomId, context.playerId, message.nickname, message.avatarId)
+      if (error) return
       return broadcastRoom(context.roomId)
     }
 

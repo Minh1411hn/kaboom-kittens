@@ -77,6 +77,7 @@ export async function joinRoom(
   roomId: string,
   playerId: string,
   nickname: string,
+  avatarId: string,
 ): Promise<string | undefined> {
   const error = await mutateRoom(roomId, (state) => {
     const existing = state.players.find((p) => p.id === playerId)
@@ -85,9 +86,10 @@ export async function joinRoom(
       existing.connected = true
       existing.disconnectedAt = null
       existing.nickname = nickname
+      existing.avatarId = avatarId
       return
     }
-    return addPlayer(state, playerId, nickname) ?? undefined
+    return addPlayer(state, playerId, nickname, avatarId) ?? undefined
   })
   if (error) return error
 
@@ -101,6 +103,27 @@ export async function joinRoom(
     await publishLobbyChanged()
   }
   return undefined
+}
+
+/**
+ * Live-updates a seated player's nickname/avatar in an open room, so a
+ * profile change made from the waiting room shows up for every other peer
+ * without waiting for a reconnect. Mirrors `joinRoom`'s reconnect branch.
+ * Not seated (e.g. spectating) is not an error worth reporting — there is
+ * simply nothing in `GameState` to update for that viewer.
+ */
+export async function updateProfile(
+  roomId: string,
+  playerId: string,
+  nickname: string,
+  avatarId: string,
+): Promise<string | undefined> {
+  return mutateRoom(roomId, (state) => {
+    const existing = state.players.find((p) => p.id === playerId)
+    if (!existing) return 'not-seated'
+    existing.nickname = nickname
+    existing.avatarId = avatarId
+  })
 }
 
 /**

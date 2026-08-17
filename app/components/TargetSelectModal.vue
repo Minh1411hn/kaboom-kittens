@@ -2,6 +2,7 @@
 import type { CardId, ComboKind, PublicPlayer } from '#shared/types/game'
 import { CARD_CATALOG } from '#shared/types/game'
 import { seatColors } from '~/composables/useSeatStyle'
+import { avatarUrl, deathAvatarUrl } from '~/composables/useAvatarArt'
 
 const props = defineProps<{
   players: PublicPlayer[]
@@ -54,15 +55,6 @@ const targetablePlayers = computed(() => {
   })
 })
 
-function initials(nickname: string): string {
-  return nickname
-    .split(/\s+/)
-    .map((word) => word[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
-
 function getSeatBg(seat: number, alive: boolean) {
   const colors = seatColors(seat, alive)
   return {
@@ -112,7 +104,12 @@ function confirm() {
             @click="selectedTargetId = p.id"
           >
             <div class="avatar" :style="getSeatBg(p.seat, p.alive)">
-              {{ p.alive ? initials(p.nickname) : '💀' }}
+              <img
+                class="avatar-img"
+                :src="p.alive ? avatarUrl(p.avatarId) : deathAvatarUrl()"
+                alt=""
+                draggable="false"
+              />
             </div>
             <div class="target-info">
               <strong class="name">{{ p.nickname }}</strong>
@@ -279,13 +276,16 @@ function confirm() {
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid transparent;
+  overflow: hidden;
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .target-info {

@@ -1,6 +1,7 @@
-/** Nickname-only identity. The server holds the real session; this mirrors it. */
+/** Nickname + avatar identity. The server holds the real session; this mirrors it. */
 export function useSession() {
   const nickname = useState<string>('kk:nickname', () => '')
+  const avatarId = useState<string>('kk:avatarId', () => '')
   const playerId = useState<string>('kk:sessionPlayerId', () => '')
   const ready = useState<boolean>('kk:sessionReady', () => false)
 
@@ -12,25 +13,42 @@ export function useSession() {
     // render knows who you are and the nickname gate does not flash on load.
     const request = useRequestFetch()
     try {
-      const result = await request<{ playerId: string | null; nickname: string | null }>(
+      const result = await request<{ playerId: string | null; nickname: string | null; avatarId: string | null }>(
         '/api/session',
       )
       nickname.value = result.nickname ?? ''
+      avatarId.value = result.avatarId ?? ''
       playerId.value = result.playerId ?? ''
     } catch {
       nickname.value = ''
+      avatarId.value = ''
     } finally {
       ready.value = true
     }
   }
 
-  /** Claims or renames; the playerId (and therefore the seat) is preserved. */
+  /** Claims or renames; the playerId (and therefore the seat) is preserved.
+   *  Leaves the avatar untouched — first-time claim keeps whatever the
+   *  server randomized, a plain rename keeps whatever was already chosen. */
   async function setNickname(value: string): Promise<void> {
-    const result = await $fetch<{ playerId: string; nickname: string }>('/api/session', {
+    const result = await $fetch<{ playerId: string; nickname: string; avatarId: string }>('/api/session', {
       method: 'POST',
       body: { nickname: value },
     })
     nickname.value = result.nickname
+    avatarId.value = result.avatarId
+    playerId.value = result.playerId
+    if (import.meta.client) localStorage.setItem('kk:nickname', result.nickname)
+  }
+
+  /** Sets both nickname and avatar together — the profile dialog's save. */
+  async function setProfile(nicknameValue: string, avatarIdValue: string): Promise<void> {
+    const result = await $fetch<{ playerId: string; nickname: string; avatarId: string }>('/api/session', {
+      method: 'POST',
+      body: { nickname: nicknameValue, avatarId: avatarIdValue },
+    })
+    nickname.value = result.nickname
+    avatarId.value = result.avatarId
     playerId.value = result.playerId
     if (import.meta.client) localStorage.setItem('kk:nickname', result.nickname)
   }
@@ -40,5 +58,5 @@ export function useSession() {
     return import.meta.client ? (localStorage.getItem('kk:nickname') ?? '') : ''
   }
 
-  return { nickname, playerId, ready, load, setNickname, remembered }
+  return { nickname, avatarId, playerId, ready, load, setNickname, setProfile, remembered }
 }

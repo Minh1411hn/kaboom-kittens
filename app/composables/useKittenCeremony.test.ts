@@ -25,8 +25,8 @@ function snapshot(overrides: Partial<PublicGameState> = {}): PublicGameState {
     roomId: "ABCD",
     status: "playing",
     players: [
-      { id: "p1", nickname: "Whiskers", seat: 0, handCount: 2, alive: true, connected: true, ready: false },
-      { id: "p2", nickname: "Mittens", seat: 1, handCount: 4, alive: true, connected: true, ready: false },
+      { id: "p1", nickname: "Whiskers", avatarId: "art_02", seat: 0, handCount: 2, alive: true, connected: true, ready: false },
+      { id: "p2", nickname: "Mittens", avatarId: "art_03", seat: 1, handCount: 4, alive: true, connected: true, ready: false },
     ],
     drawCount: 10,
     discardTop: null,

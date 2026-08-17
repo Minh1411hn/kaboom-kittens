@@ -80,13 +80,14 @@ export function createGame(roomId: string, seed = createSeed()): GameState {
   }
 }
 
-export function addPlayer(state: GameState, id: string, nickname: string): string | null {
+export function addPlayer(state: GameState, id: string, nickname: string, avatarId: string): string | null {
   if (state.players.some((p) => p.id === id)) return null
   if (state.status !== 'lobby') return 'Trò chơi đã bắt đầu rồi.'
   if (state.players.length >= MAX_PLAYERS) return `Phòng chơi đã đầy (tối đa ${MAX_PLAYERS} người).`
   state.players.push({
     id,
     nickname,
+    avatarId,
     seat: state.players.length,
     hand: [],
     alive: true,
