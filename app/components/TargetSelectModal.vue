@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { CardId, ComboKind, PublicPlayer } from '#shared/types/game'
 import { CARD_CATALOG } from '#shared/types/game'
-import { seatColors } from '~/composables/useSeatStyle'
-import { avatarUrl, deathAvatarUrl } from '~/composables/useAvatarArt'
 
 const props = defineProps<{
   players: PublicPlayer[]
@@ -55,14 +53,6 @@ const targetablePlayers = computed(() => {
   })
 })
 
-function getSeatBg(seat: number, alive: boolean) {
-  const colors = seatColors(seat, alive)
-  return {
-    backgroundColor: colors.base,
-    borderColor: colors.light,
-  }
-}
-
 const cardOptions = computed(() => {
   const query = searchCardQuery.value.trim().toLowerCase()
   return CARD_CATALOG.filter((c) => {
@@ -103,16 +93,13 @@ function confirm() {
             :class="{ selected: selectedTargetId === p.id }"
             @click="selectedTargetId = p.id"
           >
-            <div class="avatar" :style="getSeatBg(p.seat, p.alive)">
-              <img
-                class="avatar-img"
-                :src="p.alive ? avatarUrl(p.avatarId) : deathAvatarUrl()"
-                alt=""
-                draggable="false"
-              />
-            </div>
+            <PlayerAvatar
+              :avatar-id="p.avatarId"
+              :alive="p.alive"
+              :name="p.nickname"
+              :size="40"
+            />
             <div class="target-info">
-              <strong class="name">{{ p.nickname }}</strong>
               <span class="count">{{ p.handCount }} lá bài</span>
             </div>
             <span v-if="selectedTargetId === p.id" class="check-icon" aria-hidden="true">✓</span>
@@ -270,37 +257,9 @@ function confirm() {
     0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .target-info {
-  display: flex;
-  flex-direction: column;
   min-width: 0;
   flex: 1;
-}
-
-.target-info .name {
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
 }
 
 .target-info .count {

@@ -23,7 +23,7 @@ defineEmits<{ click: [] }>();
         :disabled="!clickable"
         @click="$emit('click')"
     >
-        <img class="avatar-thumb" :src="avatarUrl(avatarId)" alt="" />
+        <PlayerAvatar :avatar-id="avatarId" :size="32" />
         <span class="nick">{{ nickname }}</span>
     </button>
 </template>
@@ -57,15 +57,6 @@ defineEmits<{ click: [] }>();
 
 .current-user:disabled {
     opacity: 1;
-}
-
-.avatar-thumb {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex: none;
-    border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 .nick {

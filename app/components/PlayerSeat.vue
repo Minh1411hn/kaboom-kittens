@@ -15,19 +15,10 @@ const props = withDefaults(
     }>(),
     {
         layout: "vertical",
-    }
+    },
 );
 
 defineEmits<{ pick: [id: string] }>();
-
-const colors = computed(() =>
-    seatColors(props.player.seat, props.player.alive),
-);
-
-const discStyle = computed(() => ({
-    backgroundColor: colors.value.base,
-    borderColor: colors.value.light,
-}));
 
 /**
  * Past this many the fan stops growing and an overflow chip takes over. An
@@ -64,10 +55,22 @@ const back = cardBackUrl();
         :disabled="!targetable"
         @click="targetable && $emit('pick', player.id)"
     >
-        <span class="name">
-            {{ player.nickname }}
-            <span v-if="!player.connected" title="Mất kết nối">🔌</span>
-        </span>
+        <PlayerAvatar
+            class="seat-avatar"
+            :avatar-id="player.avatarId"
+            :alive="player.alive"
+            :name="player.nickname"
+            :host="isHost && layout === 'horizontal'"
+            :current="isCurrent"
+            :selected="selected"
+            :targetable="targetable"
+            :offline="!player.connected"
+        >
+            <template #nameSuffix>
+                <span v-if="!player.connected"> (Mất kết nối)</span>
+                <!-- <span v-if="isYou" class="you-tag"> (bạn)</span> -->
+            </template>
+        </PlayerAvatar>
 
         <span
             v-if="player.ready"
@@ -75,21 +78,6 @@ const back = cardBackUrl();
             title="Đã sẵn sàng cho ván mới"
         >
             ✅ Sẵn sàng
-        </span>
-
-        <span class="disc-wrap">
-            <span class="avatar" :style="discStyle">
-                <img
-                    class="avatar-img"
-                    :src="
-                        player.alive
-                            ? avatarUrl(player.avatarId)
-                            : deathAvatarUrl()
-                    "
-                    alt=""
-                    draggable="false"
-                />
-            </span>
         </span>
 
         <span
@@ -109,7 +97,7 @@ const back = cardBackUrl();
             <span v-if="overflow" class="more">+{{ overflow }}</span>
         </span>
 
-        <span class="meta">
+        <span v-if="layout !== 'horizontal'" class="meta">
             {{ player.handCount }} lá bài
             <template v-if="isCurrent && turnsRemaining > 1">
                 · còn {{ turnsRemaining }} lượt</template
@@ -148,46 +136,6 @@ const back = cardBackUrl();
 
 .seat:active:not(:disabled) {
     transform: none;
-}
-
-.name {
-    font-family: var(--font-display);
-    font-size: 1.02rem;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--text);
-    text-shadow: 0 2px 3px rgb(30 12 0 / 65%);
-    max-width: 170px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.disc-wrap {
-    position: relative;
-    display: grid;
-    place-items: center;
-}
-
-.avatar {
-    display: grid;
-    place-items: center;
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    border: 4px solid transparent;
-    overflow: hidden;
-    box-shadow:
-        inset 0 0 10px rgb(0 0 0 / 35%),
-        inset 0 2px 5px rgb(0 0 0 / 20%);
-}
-
-.avatar-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
 }
 
 .fan {
@@ -234,89 +182,30 @@ const back = cardBackUrl();
     text-shadow: 0 1px 2px rgb(30 12 0 / 60%);
 }
 
-.seat.you .name::after {
-    content: " (bạn)";
+.you-tag {
     color: var(--text-dim);
     font-weight: normal;
-}
-
-/* Whose turn it is: a lit ring plus a brighter nameplate. */
-.seat.current .avatar {
-    box-shadow:
-        inset 0 0 10px rgb(0 0 0 / 35%),
-        inset 0 2px 5px rgb(0 0 0 / 20%),
-        0 0 0 4px var(--warn),
-        0 0 18px rgb(255 194 26 / 60%);
-}
-
-.seat.current .name {
-    color: #fff;
 }
 
 .seat.dead {
     opacity: 0.55;
 }
 
-.seat.dead .name,
 .seat.dead .meta {
     color: var(--text-dim);
-}
-
-.seat.offline .avatar {
-    filter: grayscale(0.6);
 }
 
 .seat.targetable {
     cursor: pointer;
 }
 
-.seat.targetable .avatar {
-    animation: pulse 1.4s ease-in-out infinite;
-}
-
-.seat.selected .avatar {
-    box-shadow:
-        inset 0 0 10px rgb(0 0 0 / 35%),
-        inset 0 2px 5px rgb(0 0 0 / 20%),
-        0 0 0 5px var(--bad),
-        0 0 20px rgb(232 53 46 / 60%);
-}
-
-@keyframes pulse {
-    50% {
-        box-shadow:
-            inset 0 0 10px rgb(0 0 0 / 35%),
-            inset 0 2px 5px rgb(0 0 0 / 20%),
-            0 0 0 5px rgb(255 194 26 / 55%),
-            0 0 16px rgb(255 194 26 / 40%);
-    }
-}
-
 .seat.horizontal {
     flex-direction: row;
-    justify-content: flex-start;
+    justify-content: space-between;
     text-align: left;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 0.5rem 1rem;
     gap: 1rem;
-}
-
-.seat.horizontal .disc-wrap {
-    order: 1;
-}
-
-.seat.horizontal .name {
-    order: 2;
-    flex: 1;
-    text-align: left;
-    max-width: none;
-}
-
-.seat.horizontal .ready-badge {
-    order: 3;
-}
-
-.seat.horizontal .meta {
-    order: 4;
 }
 </style>

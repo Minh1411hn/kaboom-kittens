@@ -224,29 +224,6 @@ describe("PlayerSeat", () => {
     expect(many.get(".more").text()).toBe("+4");
   });
 
-  it("gives each seat its own avatar colour, and drains it on death", async () => {
-    const mount = (seat: number, alive = true) =>
-      mountSuspended(PlayerSeat, {
-        props: {
-          player: player({ seat, alive }),
-          isCurrent: false,
-          isHost: false,
-          isYou: false,
-          turnsRemaining: 1,
-        },
-      });
-
-    const first = await mount(0);
-    const second = await mount(1);
-    const disc = (w: Awaited<ReturnType<typeof mount>>) =>
-      w.get(".avatar").attributes("style");
-
-    expect(disc(first)).not.toBe(disc(second));
-    // Seat colours wrap, so the eleventh seat reuses the first seat's colour.
-    expect(disc(await mount(10))).toBe(disc(first));
-    expect(disc(await mount(0, false))).not.toBe(disc(first));
-  });
-
   it("swaps a player's avatar for the death art once eliminated", async () => {
     const mount = (alive: boolean) =>
       mountSuspended(PlayerSeat, {

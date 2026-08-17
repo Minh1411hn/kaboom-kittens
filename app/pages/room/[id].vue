@@ -598,13 +598,19 @@ function cancelQuit() {
                                     :turns-remaining="0"
                                     layout="horizontal"
                                 />
+                                <span
+                                    class="conn-tag"
+                                    :class="player.connected ? 'online' : 'offline'"
+                                >
+                                    {{ player.connected ? "Đã kết nối" : "Mất kết nối" }}
+                                </span>
                                 <button
                                     v-if="isHost && player.id !== you?.id"
                                     class="kick-btn"
                                     title="Mời ra khỏi phòng"
                                     @click="kickPlayer(player.id)"
                                 >
-                                    ✕
+                                    Kick
                                 </button>
                             </div>
                         </div>
@@ -1103,31 +1109,48 @@ function cancelQuit() {
 }
 
 .lobby-seat-wrap {
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     width: 100%;
 }
 
+.conn-tag {
+    flex: none;
+    padding: 0.25rem 0.6rem;
+    border: 1.5px solid;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.conn-tag.online {
+    color: var(--good);
+    border-color: var(--good);
+}
+
+.conn-tag.offline {
+    color: var(--bad);
+    border-color: var(--bad);
+}
+
 .kick-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    right: 1rem;
-    z-index: 1;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    font-size: 0.85rem;
-    line-height: 1;
-    background: rgb(20 8 0 / 70%);
+    flex: none;
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: var(--bad);
     color: var(--text);
     box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
 }
 
 .kick-btn:hover {
-    background: var(--bad);
+    background: #ff4b43;
 }
 
 /* ------------------------------------------------------------ the table */
