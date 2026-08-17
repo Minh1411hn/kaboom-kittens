@@ -88,9 +88,24 @@ const canQuit = computed(
 const selfPlayer = computed(
     () => state.value?.players.find((p) => p.id === you.value?.id) ?? null,
 );
-const others = computed(() =>
-    (state.value?.players ?? []).filter((p) => p.id !== you.value?.id),
-);
+const others = computed(() => {
+    const players = state.value?.players ?? [];
+    if (!you.value || selfPlayer.value?.seat === undefined) {
+        return players;
+    }
+
+    const yourSeat = selfPlayer.value.seat;
+    const n = players.length;
+    const result = [];
+
+    // Order cyclically starting from the player to your immediate "left" (seat + 1)
+    for (let i = 1; i < n; i++) {
+        const seat = (yourSeat + i) % n;
+        const player = players.find(p => p.seat === seat);
+        if (player) result.push(player);
+    }
+    return result;
+});
 const youAreReady = computed(() => Boolean(selfPlayer.value?.ready));
 const readyCount = computed(
     () => state.value?.players.filter((p) => p.ready).length ?? 0,
