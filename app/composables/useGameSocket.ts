@@ -90,7 +90,7 @@ export function useGameSocket() {
         // Anything newer than we have seen is fresh for animation.
         const fresh = message.state.log.filter((event) => event.seq > seenSeq.value)
         if (fresh.length) {
-          pending.value = [...pending.value, ...fresh].slice(-40)
+          pending.value = [...pending.value, ...fresh].slice(-300)
           seenSeq.value = fresh[fresh.length - 1]!.seq
         }
         break
@@ -102,7 +102,7 @@ export function useGameSocket() {
 
       case 'chat':
         if (!chat.value.some((c) => c.id === message.message.id)) {
-          chat.value = [...chat.value, message.message].slice(-50)
+          chat.value = [...chat.value, message.message].slice(-300)
         }
         break
 

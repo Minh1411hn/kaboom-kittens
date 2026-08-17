@@ -29,16 +29,17 @@ const entries = computed(() => {
       nickname: message.nickname,
     })),
   ]
-  return combined.sort((a, b) => a.at - b.at).slice(-80)
+  return combined.sort((a, b) => a.at - b.at).slice(-300)
 })
 
 watch(
-  () => entries.value.length,
+  entries,
   async () => {
     await nextTick()
     const element = scroller.value
     if (element) element.scrollTop = element.scrollHeight
   },
+  { flush: 'post' }
 )
 
 function say() {
@@ -190,6 +191,19 @@ function say() {
   border-left: 3px solid #60a5fa;
   color: #f0f9ff;
   font-weight: 500;
+}
+
+.entry.event.game-started {
+  background: transparent;
+  border-left: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.25);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 0;
+  color: #ffb049;
+  text-align: center;
+  font-weight: 700;
+  margin: 1.25rem 0 0.5rem;
+  padding: 0.6rem 0;
 }
 
 .empty-state {

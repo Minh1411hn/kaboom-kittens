@@ -53,5 +53,5 @@ export function logEvent(state: GameState, event: Omit<GameEvent, 'seq' | 'at'>,
   state.eventSeq += 1
   state.log.push({ ...event, seq: state.eventSeq, at: now })
   // Keep the log bounded; the client only renders the recent tail anyway.
-  if (state.log.length > 200) state.log.splice(0, state.log.length - 200)
+  if (state.log.length > 300) state.log.splice(0, state.log.length - 300)
 }

@@ -172,7 +172,7 @@ export async function appendChat(roomId: string, message: ChatMessage): Promise<
   await redis
     .multi()
     .rpush(chatKey(roomId), JSON.stringify(message))
-    .ltrim(chatKey(roomId), -50, -1)
+    .ltrim(chatKey(roomId), -300, -1)
     .expire(chatKey(roomId), ttl())
     .exec()
 }

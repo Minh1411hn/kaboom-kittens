@@ -32,7 +32,7 @@ await load();
 const selectedUids = ref<string[]>([]);
 const targetId = ref<string | null>(null);
 const namedCardId = ref<CardId | null>(null);
-const logOpen = ref(false);
+const logOpen = ref(true);
 const confirmingQuit = ref(false);
 const targetModalOpen = ref(false);
 const peekDismissed = ref(false);
@@ -101,7 +101,7 @@ const others = computed(() => {
     // Order cyclically starting from the player to your immediate "left" (seat + 1)
     for (let i = 1; i < n; i++) {
         const seat = (yourSeat + i) % n;
-        const player = players.find(p => p.seat === seat);
+        const player = players.find((p) => p.seat === seat);
         if (player) result.push(player);
     }
     return result;
@@ -158,7 +158,9 @@ const canDraw = computed(
 /** The uid the drag delivered, held just long enough for HandFan to flip it. */
 const flipUid = ref<string | null>(null);
 const handArea = useTemplateRef<HTMLElement>("handArea");
-const handAreaRect = computed(() => handArea.value?.getBoundingClientRect() ?? null);
+const handAreaRect = computed(
+    () => handArea.value?.getBoundingClientRect() ?? null,
+);
 let flipTimer: ReturnType<typeof setTimeout> | undefined;
 /** The hand as it stood when you let go, to spot what the draw delivered. */
 let handAtDrop = new Set<string>();
@@ -490,7 +492,11 @@ async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
         // REST first: the durable write, works even if the socket is down.
         await setProfile(nicknameValue, avatarIdValue);
         // Then tell the room to broadcast the change to every other player.
-        send({ type: "update-profile", nickname: nicknameValue, avatarId: avatarIdValue });
+        send({
+            type: "update-profile",
+            nickname: nicknameValue,
+            avatarId: avatarIdValue,
+        });
         profileDialogOpen.value = false;
     } finally {
         savingProfile.value = false;
@@ -602,9 +608,15 @@ function cancelQuit() {
                                 />
                                 <span
                                     class="conn-tag"
-                                    :class="player.connected ? 'online' : 'offline'"
+                                    :class="
+                                        player.connected ? 'online' : 'offline'
+                                    "
                                 >
-                                    {{ player.connected ? "Đã kết nối" : "Mất kết nối" }}
+                                    {{
+                                        player.connected
+                                            ? "Đã kết nối"
+                                            : "Mất kết nối"
+                                    }}
                                 </span>
                                 <button
                                     v-if="isHost && player.id !== you?.id"
@@ -617,31 +629,43 @@ function cancelQuit() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="lobby-right panel">
                         <h2 class="lobby-heading">Cài đặt phòng</h2>
                         <div class="lobby-actions">
                             <p class="muted">
-                                Đã có {{ state.players.length }}/10 người tham gia. Chia sẻ
-                                liên kết này để rủ bạn bè cùng chơi:
+                                Đã có {{ state.players.length }}/10 người tham
+                                gia. Chia sẻ liên kết này để rủ bạn bè cùng
+                                chơi:
                             </p>
                             <ShareLink :room-id="roomId" />
-                            
+
                             <div class="start-game-container">
                                 <button
                                     v-if="isHost"
                                     class="primary start-btn"
-                                    :disabled="state.players.length < 2 || state.status === 'over'"
+                                    :disabled="
+                                        state.players.length < 2 ||
+                                        state.status === 'over'
+                                    "
                                     @click="startGame"
                                 >
-                                    {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Bắt đầu ván đấu' }}
+                                    {{
+                                        state.status === "over"
+                                            ? "Đang chờ mọi người…"
+                                            : "Bắt đầu ván đấu"
+                                    }}
                                 </button>
                                 <p v-else class="muted">
-                                    {{ state.status === 'over' ? 'Đang chờ mọi người…' : 'Đang chờ chủ phòng bắt đầu ván đấu…' }}
+                                    {{
+                                        state.status === "over"
+                                            ? "Đang chờ mọi người…"
+                                            : "Đang chờ chủ phòng bắt đầu ván đấu…"
+                                    }}
                                 </p>
                             </div>
                         </div>
-                        
+
                         <DeckSettingsPanel
                             :deck="state.deck"
                             :is-host="isHost"
@@ -802,7 +826,9 @@ function cancelQuit() {
                         <div class="panel result">
                             <h2>
                                 {{
-                                    winner ? `${winner} đã chiến thắng! 🏆` : "Ván đấu kết thúc"
+                                    winner
+                                        ? `${winner} đã chiến thắng! 🏆`
+                                        : "Ván đấu kết thúc"
                                 }}
                             </h2>
                             <div class="lobby-seats">
@@ -817,10 +843,7 @@ function cancelQuit() {
                                 />
                             </div>
                             <div v-if="youAreSeated" class="row">
-                                <button
-                                    class="secondary"
-                                    @click="leaveToLobby"
-                                >
+                                <button class="secondary" @click="leaveToLobby">
                                     Rời phòng
                                 </button>
                                 <button
@@ -836,10 +859,7 @@ function cancelQuit() {
                                 </button>
                             </div>
                             <div v-else class="row">
-                                <button
-                                    class="primary"
-                                    @click="leaveToLobby"
-                                >
+                                <button class="primary" @click="leaveToLobby">
                                     Rời phòng
                                 </button>
                             </div>
@@ -862,7 +882,12 @@ function cancelQuit() {
             </div>
 
             <InteractionModal
-                v-if="state?.interaction && !['reorder-cards', 'choose-deck-position'].includes(state.interaction.kind)"
+                v-if="
+                    state?.interaction &&
+                    !['reorder-cards', 'choose-deck-position'].includes(
+                        state.interaction.kind,
+                    )
+                "
                 :interaction="state.interaction"
                 :hand="hand"
                 :players="state.players"
@@ -1276,6 +1301,13 @@ function cancelQuit() {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.4rem;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.log-dock:hover,
+.log-dock:focus-within {
+    opacity: 1;
 }
 
 .log-toggle {
@@ -1290,7 +1322,9 @@ function cancelQuit() {
     border-radius: 999px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     cursor: pointer;
-    transition: filter 0.15s ease, transform 0.08s ease;
+    transition:
+        filter 0.15s ease,
+        transform 0.08s ease;
 }
 
 .log-toggle:hover {
