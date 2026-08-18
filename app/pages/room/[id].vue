@@ -133,6 +133,22 @@ const kitten = useKittenCeremony({
 
 useTurnSound({ state, youId: () => you.value?.id });
 
+// --- voice chat ------------------------------------------------------------
+
+const {
+    available: voiceAvailable,
+    micOn: voiceMicOn,
+    needsGesture: voiceNeedsGesture,
+    isMuted: voiceIsMuted,
+    isSpeaking: voiceIsSpeaking,
+    micOnFor: voiceMicOnFor,
+    toggleMute: voiceToggleMute,
+    start: startVoice,
+    stop: stopVoice,
+} = useVoiceChat();
+const audioDialogOpen = ref(false);
+const voiceSinks = useTemplateRef<{ resume: () => void }>("voiceSinks");
+
 const discardRect = () => tableCenter.value?.discardRect() ?? null;
 
 const nopeWindow = computed(() => state.value?.nopeWindow ?? null);
@@ -278,6 +294,10 @@ let joined = false;
 function join() {
     joined = true;
     connect();
+    // Voice is independent of the game socket: it has its own connection to
+    // the SFU and survives a socket blip, so it is started once here and torn
+    // down only when the page goes away.
+    void startVoice();
     // A socket carried over from the lobby page is already open, so nothing
     // would wake the watcher below — send now instead.
     if (status.value === "open") send({ type: "join", roomId: roomId.value });
@@ -301,6 +321,7 @@ function onNicknameSet() {
 
 onBeforeUnmount(() => {
     stopPageHide?.();
+    stopVoice();
     if (state.value) send({ type: "leave" });
 });
 
@@ -552,6 +573,14 @@ function cancelQuit() {
                     </div>
                 </div>
                 <div class="row">
+                    <button
+                        v-if="voiceAvailable"
+                        class="icon"
+                        title="Cài đặt âm thanh"
+                        @click="audioDialogOpen = true"
+                    >
+                        {{ voiceMicOn ? "🎙️" : "🔇" }}
+                    </button>
                     <span
                         class="dot"
                         :class="status"
@@ -574,6 +603,21 @@ function cancelQuit() {
                 @save="onProfileSave"
                 @cancel="profileDialogOpen = false"
             />
+
+            <AudioSettingsDialog
+                v-if="audioDialogOpen"
+                @cancel="audioDialogOpen = false"
+            />
+
+            <VoiceAudioSinks ref="voiceSinks" />
+
+            <button
+                v-if="voiceNeedsGesture"
+                class="panel notice gesture-prompt"
+                @click="voiceSinks?.resume()"
+            >
+                🔈 Bấm để bật tiếng người chơi khác
+            </button>
 
             <p v-if="kicked" class="panel notice">{{ kicked }}</p>
             <p v-if="error" class="error banner">{{ error }}</p>
@@ -605,6 +649,17 @@ function cancelQuit() {
                                     :is-you="player.id === you?.id"
                                     :turns-remaining="0"
                                     layout="horizontal"
+                                    :voice-mic-on="voiceMicOnFor(player.id)"
+                                    :voice-speaking="
+                                        voiceIsSpeaking(
+                                            player.id === you?.id
+                                                ? 'self'
+                                                : player.id,
+                                        )
+                                    "
+                                    :voice-muted="voiceIsMuted(player.id)"
+                                    :voice-interactive="player.id !== you?.id"
+                                    @toggle-voice-mute="voiceToggleMute"
                                 />
                                 <span
                                     class="conn-tag"
@@ -693,7 +748,12 @@ function cancelQuit() {
                             :turns-remaining="state.turn.turnsRemaining"
                             :targetable="targetablePlayers.has(player.id)"
                             :selected="targetId === player.id"
+                            :voice-mic-on="voiceMicOnFor(player.id)"
+                            :voice-speaking="voiceIsSpeaking(player.id)"
+                            :voice-muted="voiceIsMuted(player.id)"
+                            voice-interactive
                             @pick="pickTarget"
+                            @toggle-voice-mute="voiceToggleMute"
                         />
                     </div>
                 </div>
@@ -766,6 +826,8 @@ function cancelQuit() {
                         :is-host="isHost"
                         :is-you="true"
                         :turns-remaining="state.turn.turnsRemaining"
+                        :voice-mic-on="voiceMicOnFor(selfPlayer.id)"
+                        :voice-speaking="voiceIsSpeaking('self')"
                     />
                 </div>
 
@@ -1058,6 +1120,14 @@ function cancelQuit() {
 
 .small {
     font-size: 0.78rem;
+}
+
+/* Autoplay was blocked; one click on this wakes every remote audio element. */
+.gesture-prompt {
+    display: block;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
 }
 
 .dot {

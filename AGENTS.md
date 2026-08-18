@@ -118,6 +118,47 @@ in-memory `setTimeout`, re-armed on every save from `nextDeadline(state)`. When 
 `applyCommand` with `timeout-turn` / `timeout-interaction` / `close-nope-window` — timeouts re-enter
 the same path as a real player action, lock and all.
 
+## Voice chat
+
+Group audio over the **Cloudflare Realtime SFU**: one `RTCPeerConnection` per
+tab, pushing one mic track and pulling everyone else's over that same
+connection. It is deliberately bolted *beside* the command path, not into it.
+
+```
+browser ──▶ /api/voice/{session,tracks,renegotiate,close}   [server/api/voice/]
+                └─ sessionFromEvent + ownsVoiceSession       [services/voice.ts]
+                └─ services/sfu.ts ──▶ rtc.live.cloudflare.com
+
+browser ──▶ ws `voice-join` / `voice-mic` / `voice-leave`    [_ws.ts]
+                └─ setVoiceMember / patchVoiceMic            [roomRepo.ts, room:${id}:voice]
+                └─ publishRoomChanged ──▶ snapshot.voice     [roomService.snapshotFor]
+```
+
+Three things to keep straight:
+
+- **The App Secret never leaves the server.** `NUXT_REALTIME_APP_ID` /
+  `NUXT_REALTIME_APP_SECRET`; unset means voice is off and `/api/voice/*`
+  answers `503`, which the client reads as "hide the voice UI".
+- **Session ids are capabilities.** Anyone holding one can renegotiate it or cut
+  its tracks, so every session we mint is stamped with its owner
+  (`voice:owner:${sessionId}`) and the proxy routes refuse to act on someone
+  else's. Only the *path* session is checked — the `sessionId` inside a remote
+  track object is meant to be another player's.
+- **Voice never enters `GameState`.** The roster lives in its own Redis hash
+  alongside chat, so `server/game/` stays pure and **`STATE_VERSION` does not
+  move** when the voice shape changes. It reaches clients as the `voice` field
+  on the `snapshot` message, which means a mic toggle reuses the whole existing
+  `publishRoomChanged` → `broadcastRoom` fanout and needs no new channel.
+
+Client side, `app/composables/useVoiceChat.ts` owns the WebRTC lifecycle. Its
+watchers are bound **once** at module scope, not per call site — the composable
+is used from three components and a per-instance watcher would fire three
+simultaneous pulls per roster change. Negotiation is serialised through one
+promise chain for the same reason: two offers in flight is glare. Speaking
+detection is a local `AnalyserNode` per stream, which is why
+`VoiceAudioSinks.vue` must keep a real `<audio>` element per member — Chrome
+only feeds WebAudio from a PeerConnection stream that is also attached to one.
+
 ## Adding a card
 
 Five steps, listed in `README.md` and in the doc comment on `registry.ts`. `catalog.test.ts` fails
@@ -160,6 +201,7 @@ enforces the registry, and a mismatch means offering a play that then gets rejec
 shared/          types, zod protocol schemas, card catalog + combo rules (client + server)
 server/game/     the pure engine — engine, effects, registry, nope, turn, deck, rng, projection, cards/
 server/services/ redis, roomRepo, lock, bus (pub/sub + peer registry), roomService, sessions, timers
+server/api/      REST: session, rooms, health, and the voice/* SFU proxy
 server/routes/   _ws.ts — the single socket entrypoint
 server/plugins/  realtime.ts — starts the bus and timer dispatcher once per process
 app/             pages, components, composables

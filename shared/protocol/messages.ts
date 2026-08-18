@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import avatarManifest from '../generated/avatar-art.json'
 import { ALL_CARD_IDS, DECK_COUNT_MAX, type CardId, type PublicGameState } from '../types/game'
+import { rtcSessionIdSchema, trackNameSchema, type VoiceMember } from './voice'
 
 /**
  * Every byte crossing the socket is validated against these schemas, in both
@@ -69,6 +70,15 @@ export const clientMessageSchema = z.discriminatedUnion('type', [
     interactionId: z.string().max(64),
     response: interactionResponseSchema,
   }),
+  // Voice chat signaling. None of this reaches the engine — the server writes
+  // it to the room's voice roster in Redis and re-broadcasts a snapshot.
+  z.object({
+    type: z.literal('voice-join'),
+    sessionId: rtcSessionIdSchema,
+    trackName: trackNameSchema,
+  }),
+  z.object({ type: z.literal('voice-leave') }),
+  z.object({ type: z.literal('voice-mic'), on: z.boolean() }),
   z.object({ type: z.literal('ping') }),
 ])
 
@@ -103,7 +113,14 @@ export type ServerMessage =
    * New events are whatever in `state.log` the client has not seen, keyed by
    * `seq`, so animation needs no separate delta channel.
    */
-  | { type: 'snapshot'; state: PublicGameState; hostId: string; roomName: string }
+  | {
+      type: 'snapshot'
+      state: PublicGameState
+      hostId: string
+      roomName: string
+      /** Who is currently in the voice call, and which SFU track to pull. */
+      voice: VoiceMember[]
+    }
   | { type: 'room-list'; rooms: RoomSummary[] }
   | { type: 'chat'; message: ChatMessage }
   | { type: 'error'; code: string; message: string }

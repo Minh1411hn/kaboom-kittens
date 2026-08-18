@@ -1,4 +1,5 @@
 import type { ClientMessage, ChatMessage, RoomSummary, ServerMessage } from '#shared/protocol/messages'
+import type { VoiceMember } from '#shared/protocol/voice'
 import type { GameEvent, PublicGameState } from '#shared/types/game'
 
 /**
@@ -14,6 +15,8 @@ export function useGameSocket() {
   const roomName = useState<string>('kk:roomName', () => '')
   const rooms = useState<RoomSummary[]>('kk:rooms', () => [])
   const chat = useState<ChatMessage[]>('kk:chat', () => [])
+  /** Who is in the voice call right now — rides along on every snapshot. */
+  const voice = useState<VoiceMember[]>('kk:voice', () => [])
   const playerId = useState<string>('kk:playerId', () => '')
   const status = useState<'idle' | 'connecting' | 'open' | 'closed'>('kk:wsStatus', () => 'idle')
   const error = useState<string>('kk:wsError', () => '')
@@ -87,6 +90,7 @@ export function useGameSocket() {
         state.value = message.state
         hostId.value = message.hostId
         roomName.value = message.roomName
+        voice.value = message.voice ?? []
         // Anything newer than we have seen is fresh for animation.
         const fresh = message.state.log.filter((event) => event.seq > seenSeq.value)
         if (fresh.length) {
@@ -159,6 +163,7 @@ export function useGameSocket() {
   function resetRoom(): void {
     state.value = null
     chat.value = []
+    voice.value = []
     pending.value = []
     seenSeq.value = 0
     kicked.value = ''
@@ -171,6 +176,7 @@ export function useGameSocket() {
     roomName,
     rooms,
     chat,
+    voice,
     playerId,
     status,
     error,

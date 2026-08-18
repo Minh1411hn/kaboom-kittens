@@ -9,6 +9,9 @@
  * removed; only status rings remain. `name` is optional: leave it unset to
  * render just the circle (e.g. the compact header/topbar user pill, which
  * keeps its own nickname text beside the avatar).
+ *
+ * The `corner` slot hangs a badge off the bottom-right (the voice chip). It is
+ * a sibling of `.avatar`, not a child, because `.avatar` clips to the circle.
  */
 const props = withDefaults(
     defineProps<{
@@ -61,6 +64,10 @@ const src = computed(() =>
         </span>
 
         <span v-if="host" class="host-tag">Host</span>
+
+        <span v-if="$slots.corner" class="corner">
+            <slot name="corner" />
+        </span>
     </span>
 </template>
 
@@ -175,6 +182,17 @@ const src = computed(() =>
 
 .nameplate.current {
     color: #fff;
+}
+
+/* Badge slot: overhangs the circle's bottom-right, outside the clip. */
+.corner {
+    position: absolute;
+    right: -2%;
+    bottom: -2%;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    line-height: 0;
 }
 
 /* Mirrors .nameplate, but sits inside the bottom of the circle. */

@@ -12,13 +12,33 @@ const props = withDefaults(
         targetable?: boolean;
         selected?: boolean;
         layout?: "horizontal" | "vertical";
+        /** `null` when this player is not in the voice call — no badge shown. */
+        voiceMicOn?: boolean | null;
+        voiceSpeaking?: boolean;
+        voiceMuted?: boolean;
+        /** Only other players' badges are clickable; yours is a read-out. */
+        voiceInteractive?: boolean;
     }>(),
     {
         layout: "vertical",
+        voiceMicOn: null,
+        voiceSpeaking: false,
+        voiceMuted: false,
+        voiceInteractive: false,
     },
 );
 
-defineEmits<{ pick: [id: string] }>();
+const emit = defineEmits<{ pick: [id: string]; toggleVoiceMute: [id: string] }>();
+
+/**
+ * The seat is a div, not a button: it carries the voice badge, which is itself
+ * a button, and a button inside a button is invalid markup that browsers
+ * flatten unpredictably. `role`/`tabindex`/keyboard handling keep the
+ * pick-a-target affordance intact.
+ */
+function pick() {
+    if (props.targetable) emit("pick", props.player.id);
+}
 
 /**
  * Past this many the fan stops growing and an overflow chip takes over. An
@@ -41,7 +61,7 @@ const back = cardBackUrl();
 </script>
 
 <template>
-    <button
+    <div
         class="seat"
         :class="{
             current: isCurrent,
@@ -52,8 +72,12 @@ const back = cardBackUrl();
             offline: !player.connected,
             horizontal: layout === 'horizontal',
         }"
-        :disabled="!targetable"
-        @click="targetable && $emit('pick', player.id)"
+        role="button"
+        :aria-disabled="!targetable"
+        :tabindex="targetable ? 0 : -1"
+        @click="pick"
+        @keydown.enter.prevent="pick"
+        @keydown.space.prevent="pick"
     >
         <PlayerAvatar
             class="seat-avatar"
@@ -69,6 +93,16 @@ const back = cardBackUrl();
             <template #nameSuffix>
                 <span v-if="!player.connected"> (Mất kết nối)</span>
                 <!-- <span v-if="isYou" class="you-tag"> (bạn)</span> -->
+            </template>
+
+            <template v-if="voiceMicOn !== null" #corner>
+                <VoiceBadge
+                    :mic-on="voiceMicOn"
+                    :speaking="voiceSpeaking"
+                    :muted="voiceMuted"
+                    :interactive="voiceInteractive"
+                    @toggle="emit('toggleVoiceMute', player.id)"
+                />
             </template>
         </PlayerAvatar>
 
@@ -103,7 +137,7 @@ const back = cardBackUrl();
                 · còn {{ turnsRemaining }} lượt</template
             >
         </span>
-    </button>
+    </div>
 </template>
 
 <style scoped>
@@ -119,22 +153,25 @@ const back = cardBackUrl();
     box-shadow: none;
     border-radius: 14px;
     cursor: default;
+    /* Explicit now that the root is a div: the global `button` rule used to
+       supply this, and inheriting it silently would be a trap for later. */
+    color: var(--text);
     text-transform: none;
     font-family: var(--font-body);
     font-size: 1rem;
     letter-spacing: normal;
 }
 
-.seat:disabled {
+.seat[aria-disabled="true"] {
     opacity: 1;
     cursor: default;
 }
 
-.seat:hover:not(:disabled) {
+.seat:hover:not([aria-disabled="true"]) {
     filter: none;
 }
 
-.seat:active:not(:disabled) {
+.seat:active:not([aria-disabled="true"]) {
     transform: none;
 }
 

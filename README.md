@@ -186,6 +186,12 @@ tests/           WebSocket integration tests
 | `NUXT_NOPE_WINDOW_MS` | `5000` | How long a Nope window stays open |
 | `NUXT_TURN_TIMEOUT_MS` | `45000` | Auto-draw for an idle or absent player |
 | `NUXT_ROOM_TTL_SECONDS` | `21600` | Idle room expiry (6h) |
+| `NUXT_REALTIME_APP_ID` | *(empty)* | Cloudflare Realtime SFU app id — voice chat |
+| `NUXT_REALTIME_APP_SECRET` | *(empty)* | Cloudflare Realtime SFU app secret |
+
+Leave the two `NUXT_REALTIME_*` vars empty to run without voice chat: the
+`/api/voice/*` routes answer `503` and the client hides the voice UI. Everything
+else in the game is unaffected.
 
 A Nope window closes early as soon as every player holding a Nope has passed —
 and never opens at all if nobody is holding one.

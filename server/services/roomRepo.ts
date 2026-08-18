@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { STATE_VERSION, type GameState } from '#shared/types/game'
 import type { ChatMessage, RoomSummary } from '#shared/protocol/messages'
+import type { VoiceMember } from '#shared/protocol/voice'
 import { MAX_PLAYERS } from '../game/deck'
 import { createGame } from '../game/engine'
 import { useRedis } from './redis'
@@ -19,6 +20,7 @@ const ROOMS_INDEX = 'rooms:index'
 const metaKey = (id: string) => `room:${id}`
 const stateKey = (id: string) => `room:${id}:state`
 const chatKey = (id: string) => `room:${id}:chat`
+const voiceKey = (id: string) => `room:${id}:voice`
 
 /** Short, unambiguous room codes — no 0/O/1/I to mistype from a shared link. */
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -95,13 +97,14 @@ export async function saveState(state: GameState): Promise<void> {
     .set(stateKey(state.roomId), JSON.stringify(state), 'EX', ttl())
     .expire(metaKey(state.roomId), ttl())
     .expire(chatKey(state.roomId), ttl())
+    .expire(voiceKey(state.roomId), ttl())
     .exec()
 }
 
 export async function deleteRoom(id: string): Promise<void> {
   await useRedis()
     .multi()
-    .del(metaKey(id), stateKey(id), chatKey(id))
+    .del(metaKey(id), stateKey(id), chatKey(id), voiceKey(id))
     .zrem(ROOMS_INDEX, id)
     .exec()
 }
@@ -182,6 +185,52 @@ export async function loadChat(roomId: string): Promise<ChatMessage[]> {
   return raw.flatMap((entry) => {
     try {
       return [JSON.parse(entry) as ChatMessage]
+    } catch {
+      return []
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Voice roster — who is publishing a mic track to the Cloudflare SFU.
+//
+// Kept out of GameState for the same reason chat is: the engine must stay pure
+// and replayable, and a mic toggle is not a game event. It rides to clients on
+// the `snapshot` message instead, so voice changes reuse the existing
+// publishRoomChanged -> broadcastRoom fanout.
+// ---------------------------------------------------------------------------
+
+export async function setVoiceMember(roomId: string, member: VoiceMember): Promise<void> {
+  await useRedis()
+    .multi()
+    .hset(voiceKey(roomId), member.playerId, JSON.stringify(member))
+    .expire(voiceKey(roomId), ttl())
+    .exec()
+}
+
+/** No-op when the player is not in voice, so a stray toggle cannot resurrect them. */
+export async function patchVoiceMic(roomId: string, playerId: string, micOn: boolean): Promise<void> {
+  const redis = useRedis()
+  const raw = await redis.hget(voiceKey(roomId), playerId)
+  if (!raw) return
+  try {
+    const member = JSON.parse(raw) as VoiceMember
+    await setVoiceMember(roomId, { ...member, micOn })
+  } catch {
+    // Corrupt entry: drop it rather than leave a ghost in the roster.
+    await removeVoiceMember(roomId, playerId)
+  }
+}
+
+export async function removeVoiceMember(roomId: string, playerId: string): Promise<void> {
+  await useRedis().hdel(voiceKey(roomId), playerId)
+}
+
+export async function loadVoice(roomId: string): Promise<VoiceMember[]> {
+  const raw = await useRedis().hgetall(voiceKey(roomId))
+  return Object.values(raw ?? {}).flatMap((entry) => {
+    try {
+      return [JSON.parse(entry) as VoiceMember]
     } catch {
       return []
     }

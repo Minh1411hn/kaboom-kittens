@@ -10,17 +10,27 @@ import {
   playerHasOtherPeer,
   send,
 } from '../services/bus'
-import { appendChat, getRoomMeta, listRooms, loadChat } from '../services/roomRepo'
+import {
+  appendChat,
+  getRoomMeta,
+  listRooms,
+  loadChat,
+  patchVoiceMic,
+  removeVoiceMember,
+  setVoiceMember,
+} from '../services/roomRepo'
 import {
   applyCommand,
   broadcastRoom,
   joinRoom,
   kickPlayer,
   leaveRoom,
+  leaveVoice,
   sendSnapshot,
   updateProfile,
 } from '../services/roomService'
 import { sessionFromCookieHeader } from '../services/sessions'
+import { ownsVoiceSession } from '../services/voice'
 import { peersInRoom } from '../services/bus'
 
 /**
@@ -131,6 +141,7 @@ export default defineWebSocketHandler({
     // A dropped socket is a departure: `leaveRoom` frees the seat while the
     // room is waiting and only flags a disconnect mid-game, so a player in a
     // live hand can still come back to it.
+    await removeVoiceMember(context.roomId, context.playerId)
     await leaveRoom(context.roomId, context.playerId)
     await broadcastRoom(context.roomId)
   },
@@ -171,8 +182,40 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       if (!context.roomId) return
       const roomId = context.roomId
       context.roomId = null
+      await removeVoiceMember(roomId, context.playerId)
       await leaveRoom(roomId, context.playerId)
       return broadcastRoom(roomId)
+    }
+
+    // --- voice chat signaling ------------------------------------------
+    // None of this reaches the engine: it lands in the room's voice roster
+    // and rides out on the next snapshot.
+
+    case 'voice-join': {
+      if (!context.roomId) return fail(peer, 'not-in-room', 'Hãy tham gia phòng trước.')
+      // Without this check anyone could advertise someone else's SFU session
+      // as their own and impersonate their audio in the roster.
+      if (!(await ownsVoiceSession(message.sessionId, context.playerId))) {
+        return fail(peer, 'voice-denied', 'Phiên thoại này không phải của bạn.')
+      }
+      await setVoiceMember(context.roomId, {
+        playerId: context.playerId,
+        sessionId: message.sessionId,
+        trackName: message.trackName,
+        micOn: true,
+      })
+      return broadcastRoom(context.roomId)
+    }
+
+    case 'voice-mic': {
+      if (!context.roomId) return
+      await patchVoiceMic(context.roomId, context.playerId, message.on)
+      return broadcastRoom(context.roomId)
+    }
+
+    case 'voice-leave': {
+      if (!context.roomId) return
+      return leaveVoice(context.roomId, context.playerId)
     }
 
     case 'chat': {

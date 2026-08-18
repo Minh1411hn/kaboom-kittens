@@ -24,6 +24,10 @@ export default defineNuxtConfig({
     turnTimeoutMs: 45000,
     roomTtlSeconds: 21600,
     disconnectGraceMs: 60000,
+    // Cloudflare Realtime SFU. Empty means voice chat is switched off — the
+    // proxy routes answer 503 and the client hides the voice UI.
+    realtimeAppId: '',
+    realtimeAppSecret: '',
     public: {
       baseUrl: 'http://localhost:3000',
       maxPlayers: 10,

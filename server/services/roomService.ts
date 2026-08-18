@@ -1,11 +1,14 @@
 import type { Peer } from 'crossws'
 import type { Command, GameState } from '#shared/types/game'
 import type { ServerMessage } from '#shared/protocol/messages'
+import type { VoiceMember } from '#shared/protocol/voice'
 import { addPlayer, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby, setConnected, type EngineConfig } from '../game/engine'
 import { projectStateFor } from '../game/projection'
 import {
   loadState,
   getRoomMeta,
+  loadVoice,
+  removeVoiceMember,
   saveState,
   setHost,
   type RoomMeta,
@@ -213,7 +216,11 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   const listeners = peersInRoom(roomId)
   if (!listeners.length) return
 
-  const [state, meta] = await Promise.all([loadState(roomId), getRoomMeta(roomId)])
+  const [state, meta, voice] = await Promise.all([
+    loadState(roomId),
+    getRoomMeta(roomId),
+    loadVoice(roomId),
+  ])
   if (!state) {
     for (const { peer } of listeners) {
       send(peer, { type: 'kicked', reason: 'Phòng chơi này đã bị đóng.' })
@@ -222,11 +229,16 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   }
 
   for (const { peer, context } of listeners) {
-    send(peer, snapshotFor(state, meta, context.playerId))
+    send(peer, snapshotFor(state, meta, context.playerId, voice))
   }
 }
 
-export function snapshotFor(state: GameState, meta: RoomMeta | null, viewerId: string): ServerMessage {
+export function snapshotFor(
+  state: GameState,
+  meta: RoomMeta | null,
+  viewerId: string,
+  voice: VoiceMember[] = [],
+): ServerMessage {
   const projected = projectStateFor(state, viewerId)
   if (projected.you) projected.you.isHost = meta?.hostId === viewerId
   return {
@@ -234,16 +246,33 @@ export function snapshotFor(state: GameState, meta: RoomMeta | null, viewerId: s
     state: projected,
     hostId: meta?.hostId ?? '',
     roomName: meta?.name ?? 'Phòng chơi',
+    voice,
   }
 }
 
 export async function sendSnapshot(peer: Peer, roomId: string, viewerId: string): Promise<void> {
-  const [state, meta] = await Promise.all([loadState(roomId), getRoomMeta(roomId)])
+  const [state, meta, voice] = await Promise.all([
+    loadState(roomId),
+    getRoomMeta(roomId),
+    loadVoice(roomId),
+  ])
   if (!state) {
     send(peer, { type: 'kicked', reason: 'Phòng chơi này không còn tồn tại.' })
     return
   }
-  send(peer, snapshotFor(state, meta, viewerId))
+  send(peer, snapshotFor(state, meta, viewerId, voice))
+}
+
+/**
+ * Drop a player from the voice roster and tell the room.
+ *
+ * Voice lives outside GameState, so `mutateRoom` cannot reach it — this
+ * follows the same shape as the `setHost` bookkeeping in `leaveRoom`: write
+ * the non-engine store, then publish.
+ */
+export async function leaveVoice(roomId: string, playerId: string): Promise<void> {
+  await removeVoiceMember(roomId, playerId)
+  await publishRoomChanged(roomId)
 }
 
 // ---------------------------------------------------------------------------
