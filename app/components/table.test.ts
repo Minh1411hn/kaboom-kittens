@@ -525,7 +525,8 @@ describe("NopeBar", () => {
         passed: false,
       },
     });
-    expect(wrapper.text()).toContain("Whiskers played Attack 2x");
+    expect(wrapper.text()).toContain("Whiskers");
+    expect(wrapper.text()).toContain("đã dùng");
     await wrapper.get("button.danger").trigger("click");
     expect(wrapper.emitted("nope")).toHaveLength(1);
 
@@ -540,10 +541,33 @@ describe("NopeBar", () => {
       },
     });
     expect(own.find("button.danger").exists()).toBe(false);
-    expect(own.text()).toContain("Waiting");
+    expect(own.text()).toContain("Đang chờ");
   });
 
-  it("spells out the verdict as Nopes stack up", async () => {
+  it("shows target player when action has a target", async () => {
+    const targetedStack: PendingAction[] = [
+      {
+        ...stack[0]!,
+        cardId: "targeted-attack-2x",
+        targetPlayerId: "p2",
+      },
+    ];
+    const wrapper = await mountSuspended(NopeBar, {
+      props: {
+        stack: targetedStack,
+        deadline: Date.now() + 5000,
+        players: [player(), player({ id: "p2", nickname: "Mittens" })],
+        hasNope: false,
+        youPlayedTop: false,
+        passed: false,
+      },
+    });
+    expect(wrapper.text()).toContain("Whiskers");
+    expect(wrapper.text()).toContain("Mittens");
+    expect(wrapper.find(".player-pill.target").exists()).toBe(true);
+  });
+
+  it("spells out the verdict and renders avatar badge as Nopes stack up", async () => {
     const twoNopes: PendingAction[] = [
       stack[0]!,
       { ...stack[0]!, id: "a2", cardId: "nope", playerId: "p2" },
@@ -559,8 +583,9 @@ describe("NopeBar", () => {
         passed: false,
       },
     });
-    expect(wrapper.text()).toContain("2 Nopes");
-    expect(wrapper.text()).toContain("The Nopes cancel out");
+    expect(wrapper.text()).toContain("2 Nope");
+    expect(wrapper.text()).toContain("Đang có hiệu lực");
+    expect(wrapper.findAll(".card-avatar-badge")).toHaveLength(2);
   });
 });
 
