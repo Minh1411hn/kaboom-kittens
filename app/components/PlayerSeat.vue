@@ -111,7 +111,7 @@ const back = cardBackUrl();
             class="ready-badge"
             title="Đã sẵn sàng cho ván mới"
         >
-            ✅ Sẵn sàng
+            <Icon name="lucide:circle-check" aria-hidden="true" /> Sẵn sàng
         </span>
 
         <span

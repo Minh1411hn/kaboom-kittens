@@ -76,7 +76,6 @@ export interface CatalogEntry {
   art?: string
   deck: { base?: number; min?: number; formula?: 'players-minus-1' | 'defuse' }
   color: string
-  emoji: string
   text: string
   /**
    * Hints so the client can grey out illegal cards and prompt for a target

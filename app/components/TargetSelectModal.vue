@@ -102,7 +102,9 @@ function confirm() {
             <div class="target-info">
               <span class="count">{{ p.handCount }} lá bài</span>
             </div>
-            <span v-if="selectedTargetId === p.id" class="check-icon" aria-hidden="true">✓</span>
+            <span v-if="selectedTargetId === p.id" class="check-icon" aria-hidden="true">
+              <Icon name="lucide:check" />
+            </span>
           </button>
         </div>
         <p v-else class="empty-notice">Không có đối thủ nào khả dụng để chọn.</p>

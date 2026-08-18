@@ -76,7 +76,7 @@ function save() {
                 <PlaqueButton
                     type="button"
                     :title="saving ? 'Đang lưu…' : 'Lưu'"
-                    icon="💾"
+                    icon="lucide:save"
                     variant="primary"
                     compact
                     :disabled="saving"

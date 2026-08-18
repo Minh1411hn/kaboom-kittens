@@ -8,6 +8,18 @@ const emit = defineEmits<{ say: [text: string] }>()
 const draft = ref('')
 const scroller = ref<HTMLElement | null>(null)
 
+/** Icons for the event types that already get their own colour treatment below. */
+const EVENT_ICON: Partial<Record<GameEvent['type'], string>> = {
+  'kitten-drawn': 'lucide:bomb',
+  'player-exploded': 'lucide:bomb',
+  'kitten-defused': 'lucide:shield-check',
+  'game-over': 'lucide:trophy',
+  'action-noped': 'lucide:ban',
+  'player-attacked': 'lucide:swords',
+  'turn-changed': 'lucide:arrow-right-circle',
+  'game-started': 'lucide:play',
+}
+
 /** Game log and chat share one timeline so the story reads in order. */
 const entries = computed(() => {
   const combined = [
@@ -64,6 +76,7 @@ function say() {
           <span class="chat-text">{{ entry.text }}</span>
         </template>
         <template v-else>
+          <Icon v-if="entry.type && EVENT_ICON[entry.type]" :name="EVENT_ICON[entry.type]!" aria-hidden="true" />
           <span class="event-text">{{ entry.text }}</span>
         </template>
       </div>

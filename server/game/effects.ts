@@ -78,7 +78,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
         state.limbo.push(card)
         logEvent(
           state,
-          { type: 'kitten-drawn', playerId: player.id, cardId: card.id, message: `${player.nickname} đã rút phải Exploding Kitten! 💥` },
+          { type: 'kitten-drawn', playerId: player.id, cardId: card.id, message: `${player.nickname} đã rút phải Exploding Kitten!` },
           now,
         )
         const defuse = player.hand.find((c) => c.id === 'defuse')
@@ -307,7 +307,7 @@ export function applyEffect(state: GameState, effect: Effect, env: EffectEnv): v
       delete state.peeks[player.id]
       logEvent(
         state,
-        { type: 'player-exploded', playerId: player.id, message: `${player.nickname} đã bị nổ tung! 💥` },
+        { type: 'player-exploded', playerId: player.id, message: `${player.nickname} đã bị nổ tung!` },
         now,
       )
       checkGameOver(state, now)
@@ -445,7 +445,7 @@ export function checkGameOver(state: GameState, now: number): void {
       type: 'game-over',
       playerId: state.winnerId ?? undefined,
       message: state.winnerId
-        ? `${playerById(state, state.winnerId)?.nickname} là chú mèo sống sót cuối cùng! 🏆`
+        ? `${playerById(state, state.winnerId)?.nickname} là chú mèo sống sót cuối cùng!`
         : 'Trò chơi kết thúc.',
     },
     now,

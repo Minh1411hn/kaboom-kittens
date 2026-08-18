@@ -155,7 +155,7 @@ describe("PlayerSeat", () => {
       },
     });
     expect(dead.get(".seat").classes()).toContain("dead");
-    expect(dead.text()).toContain("💀");
+    expect(dead.get(".avatar-img").attributes("src")).toContain("death.png");
   });
 
   it("is only clickable while it is a legal target", async () => {
@@ -409,7 +409,9 @@ describe("TableCenter", () => {
         deadline: null,
       },
     });
-    expect(wrapper.get(".direction").text()).toBe("↺");
+    expect(
+      wrapper.get(".direction").findComponent({ name: "Icon" }).props("name"),
+    ).toBe("lucide:rotate-ccw");
     expect(wrapper.text()).toContain("10 cards left");
   });
 });

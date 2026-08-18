@@ -24,7 +24,10 @@ async function copy() {
 <template>
   <div class="share">
     <input :value="link" readonly aria-label="Liên kết phòng" @focus="($event.target as HTMLInputElement).select()" />
-    <button @click="copy">{{ copied ? 'Đã sao chép ✓' : 'Sao chép link' }}</button>
+    <button @click="copy">
+      <template v-if="copied"><Icon name="lucide:check" aria-hidden="true" /> Đã sao chép</template>
+      <template v-else>Sao chép link</template>
+    </button>
   </div>
 </template>
 

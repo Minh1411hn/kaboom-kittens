@@ -117,7 +117,9 @@ const verdictText = computed(() => {
 
                     <!-- Target (if exists) -->
                     <template v-if="target">
-                        <span class="target-arrow" aria-hidden="true">➔</span>
+                        <span class="target-arrow" aria-hidden="true">
+                            <Icon name="lucide:arrow-right" />
+                        </span>
                         <div
                             class="player-pill target"
                             :title="`Mục tiêu: ${target.nickname}`"

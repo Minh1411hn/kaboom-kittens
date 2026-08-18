@@ -30,7 +30,7 @@ const headline = computed(() =>
     <div class="sheet">
       <div class="pictogram" aria-hidden="true">
         <span class="who" :style="{ background: actorColor }" />
-        <span class="arrow">→</span>
+        <span class="arrow"><Icon name="lucide:arrow-right" /></span>
         <img class="card-glyph" :src="back" alt="" draggable="false" />
       </div>
 

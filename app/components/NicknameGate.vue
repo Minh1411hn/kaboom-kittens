@@ -28,7 +28,7 @@ async function submit() {
 
 <template>
   <form class="gate panel" @submit.prevent="submit">
-    <h1>🙀 Kaboom Kitten</h1>
+    <h1><Icon name="lucide:cat" aria-hidden="true" /> Kaboom Kitten</h1>
     <p class="muted">Mèo Cảm Tử online dành cho 2–10 người chơi. Hãy chọn biệt danh để bắt đầu.</p>
 
     <label class="stack">
@@ -47,7 +47,7 @@ async function submit() {
     <PlaqueButton
       type="submit"
       :title="busy ? 'Đang xử lý…' : 'Vào sảnh chờ'"
-      icon="🐾"
+      icon="lucide:paw-print"
       variant="primary"
       chevron
       :disabled="busy || value.trim().length < 2"

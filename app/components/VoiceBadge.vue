@@ -40,9 +40,10 @@ defineEmits<{ toggle: [] }>();
         "
         @click.stop="interactive && $emit('toggle')"
     >
-        <span aria-hidden="true">{{
-            muted ? "🔇" : micOn ? "🔊" : "🎙"
-        }}</span>
+        <Icon
+            aria-hidden="true"
+            :name="muted ? 'lucide:volume-x' : micOn ? 'lucide:volume-2' : 'lucide:mic-off'"
+        />
     </component>
 </template>
 

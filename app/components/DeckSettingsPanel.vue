@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
   <section class="deck-settings">
     <header class="deck-head">
       <button class="toggle" :aria-expanded="open" @click="open = !open">
-        <span class="chevron" :class="{ open }">▸</span>
+        <span class="chevron" :class="{ open }"><Icon name="lucide:chevron-right" aria-hidden="true" /></span>
         Bộ bài của phòng
       </button>
       <span class="summary">{{ total }} lá · chia {{ handSize + 1 }} lá mỗi người</span>
@@ -105,10 +105,10 @@ onBeforeUnmount(() => {
       </p>
 
       <p v-if="noKittens" class="warn small">
-        ⚠️ Không có lá Mèo nổ nào — ván đấu sẽ không thể kết thúc bằng cách nổ.
+        <Icon name="lucide:triangle-alert" aria-hidden="true" /> Không có lá Mèo nổ nào — ván đấu sẽ không thể kết thúc bằng cách nổ.
       </p>
       <p v-if="dealable < handSize * 2" class="warn small">
-        ⚠️ Không đủ bài để chia — hãy tăng số lượng các lá thường lên.
+        <Icon name="lucide:triangle-alert" aria-hidden="true" /> Không đủ bài để chia — hãy tăng số lượng các lá thường lên.
       </p>
 
       <div class="card-groups">
@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
                     :aria-label="`Bớt một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) <= 0"
                     @click="bump(entry.id, -1)"
-                  >−</button>
+                  ><Icon name="lucide:minus" aria-hidden="true" /></button>
                   <input
                     type="number"
                     min="0"
@@ -145,14 +145,14 @@ onBeforeUnmount(() => {
                     :aria-label="`Thêm một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                     @click="bump(entry.id, 1)"
-                  >+</button>
+                  ><Icon name="lucide:plus" aria-hidden="true" /></button>
                 </div>
                 <button
                   class="reset-one"
                   :disabled="overrides[entry.id] == null"
                   title="Trả lá này về số lượng mặc định"
                   @click="clearOne(entry.id)"
-                >↺</button>
+                ><Icon name="lucide:rotate-ccw" aria-hidden="true" /></button>
               </template>
               <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
             </li>
@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
                     :aria-label="`Bớt một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) <= 0"
                     @click="bump(entry.id, -1)"
-                  >−</button>
+                  ><Icon name="lucide:minus" aria-hidden="true" /></button>
                   <input
                     type="number"
                     min="0"
@@ -192,14 +192,14 @@ onBeforeUnmount(() => {
                     :aria-label="`Thêm một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                     @click="bump(entry.id, 1)"
-                  >+</button>
+                  ><Icon name="lucide:plus" aria-hidden="true" /></button>
                 </div>
                 <button
                   class="reset-one"
                   :disabled="overrides[entry.id] == null"
                   title="Trả lá này về số lượng mặc định"
                   @click="clearOne(entry.id)"
-                >↺</button>
+                ><Icon name="lucide:rotate-ccw" aria-hidden="true" /></button>
               </template>
               <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
             </li>
@@ -226,7 +226,7 @@ onBeforeUnmount(() => {
                     :aria-label="`Bớt một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) <= 0"
                     @click="bump(entry.id, -1)"
-                  >−</button>
+                  ><Icon name="lucide:minus" aria-hidden="true" /></button>
                   <input
                     type="number"
                     min="0"
@@ -239,14 +239,14 @@ onBeforeUnmount(() => {
                     :aria-label="`Thêm một lá ${entry.name}`"
                     :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                     @click="bump(entry.id, 1)"
-                  >+</button>
+                  ><Icon name="lucide:plus" aria-hidden="true" /></button>
                 </div>
                 <button
                   class="reset-one"
                   :disabled="overrides[entry.id] == null"
                   title="Trả lá này về số lượng mặc định"
                   @click="clearOne(entry.id)"
-                >↺</button>
+                ><Icon name="lucide:rotate-ccw" aria-hidden="true" /></button>
               </template>
               <span v-else class="count">{{ counts[entry.id] ?? 0 }}</span>
             </li>

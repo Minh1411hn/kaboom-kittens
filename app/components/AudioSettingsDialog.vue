@@ -56,7 +56,7 @@ const supported = computed(
             <template v-else>
                 <div class="control">
                     <div class="control-head">
-                        <span>🎙️ Micro</span>
+                        <span><Icon name="lucide:mic" aria-hidden="true" /> Micro</span>
                         <button
                             class="toggle"
                             :class="{ on: micOn }"
@@ -100,7 +100,7 @@ const supported = computed(
 
                 <div class="control">
                     <div class="control-head">
-                        <span>🔊 Loa</span>
+                        <span><Icon name="lucide:volume-2" aria-hidden="true" /> Loa</span>
                         <button
                             class="toggle"
                             :class="{ on: speakerOn }"

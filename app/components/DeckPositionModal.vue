@@ -98,7 +98,7 @@ function submit() {
                     :class="{ selected: pickedByRandom }"
                     @click="pickRandom"
                 >
-                    🎲 NGẪU NHIÊN
+                    <Icon name="lucide:dices" aria-hidden="true" /> NGẪU NHIÊN
                 </button>
             </div>
 

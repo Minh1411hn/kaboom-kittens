@@ -11,7 +11,6 @@
         "formula": "players-minus-1"
       },
       "color": "#c0392b",
-      "emoji": "💥",
       "text": "Bạn sẽ nổ tung trừ khi có lá Defuse để gỡ bom.",
       "play": {
         "solo": false
@@ -26,7 +25,6 @@
         "formula": "defuse"
       },
       "color": "#27ae60",
-      "emoji": "🛡️",
       "text": "Vô hiệu hóa Exploding Kitten. Đặt lại mèo nổ vào bất kỳ vị trí nào trong chồng bài rút.",
       "play": {
         "solo": false
@@ -41,7 +39,6 @@
         "base": 5
       },
       "color": "#e74c3c",
-      "emoji": "⛔",
       "text": "Chặn đứng mọi hành động ngoại trừ Defuse hoặc Exploding Kitten. Có thể bị Nope đè.",
       "play": {
         "solo": true,
@@ -57,7 +54,6 @@
         "base": 4
       },
       "color": "#d35400",
-      "emoji": "⚔️",
       "text": "Kết thúc các lượt của bạn mà không cần rút bài. Người chơi kế tiếp phải đi 2 lượt.",
       "play": {
         "solo": true
@@ -72,7 +68,6 @@
         "base": 3
       },
       "color": "#e67e22",
-      "emoji": "🎯",
       "text": "Kết thúc các lượt của bạn mà không cần rút bài. Chọn 1 người chơi bất kỳ phải đi 2 lượt.",
       "play": {
         "solo": true,
@@ -88,7 +83,6 @@
         "base": 3
       },
       "color": "#8e44ad",
-      "emoji": "🔥",
       "text": "Kết thúc lượt hiện tại không cần rút bài, sau đó tự mình thực hiện thêm 3 lượt.",
       "play": {
         "solo": true
@@ -103,7 +97,6 @@
         "base": 4
       },
       "color": "#16a085",
-      "emoji": "⏭️",
       "text": "Kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
@@ -118,7 +111,6 @@
         "base": 4
       },
       "color": "#2980b9",
-      "emoji": "🔄",
       "text": "Đảo ngược chiều đánh và kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
@@ -133,7 +125,6 @@
         "base": 4
       },
       "color": "#2c3e50",
-      "emoji": "🎲",
       "text": "Xào lại toàn bộ chồng bài rút.",
       "play": {
         "solo": true
@@ -148,7 +139,6 @@
         "base": 4
       },
       "color": "#c2185b",
-      "emoji": "🤲",
       "text": "Chọn 1 người chơi; người đó phải tự chọn 1 lá bài trên tay để đưa cho bạn.",
       "play": {
         "solo": true,
@@ -164,7 +154,6 @@
         "base": 4
       },
       "color": "#795548",
-      "emoji": "⬇️",
       "text": "Kết thúc lượt của bạn bằng cách rút lá bài ở dưới đáy chồng bài rút.",
       "play": {
         "solo": true
@@ -179,7 +168,6 @@
         "base": 5
       },
       "color": "#7b1fa2",
-      "emoji": "🔮",
       "text": "Bí mật xem trước 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
@@ -195,7 +183,6 @@
         "min": 1
       },
       "color": "#6a1b9a",
-      "emoji": "🔮",
       "text": "Bí mật xem trước 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
@@ -210,7 +197,6 @@
         "base": 4
       },
       "color": "#3949ab",
-      "emoji": "🔀",
       "text": "Bí mật xem và sắp xếp lại thứ tự 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
@@ -226,7 +212,6 @@
         "min": 1
       },
       "color": "#283593",
-      "emoji": "🔀",
       "text": "Bí mật xem và sắp xếp lại thứ tự 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
@@ -242,7 +227,6 @@
         "min": 1
       },
       "color": "#546e7a",
-      "emoji": "🗑️",
       "text": "Mọi người chơi bỏ 1 lá bài vào tụ. Tụ bài được xào đều rồi chia lại cho mọi người.",
       "play": {
         "solo": true
@@ -258,7 +242,6 @@
         "base": 4
       },
       "color": "#f39c12",
-      "emoji": "🌮",
       "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
@@ -274,7 +257,6 @@
         "base": 4
       },
       "color": "#2ecc71",
-      "emoji": "🍉",
       "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
@@ -290,7 +272,6 @@
         "base": 4
       },
       "color": "#a1887f",
-      "emoji": "🥔",
       "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
@@ -306,7 +287,6 @@
         "base": 4
       },
       "color": "#00bcd4",
-      "emoji": "🌈",
       "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
@@ -322,7 +302,6 @@
         "base": 4
       },
       "color": "#5d4037",
-      "emoji": "🧔",
       "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
@@ -337,7 +316,6 @@
         "base": 4
       },
       "color": "#ff5722",
-      "emoji": "🐈",
       "text": "Dùng thay thế cho bất kỳ lá bài Mèo nào để ghép combo.",
       "play": {
         "solo": false

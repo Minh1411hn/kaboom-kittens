@@ -18,9 +18,11 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^1.0.1",
+    "@nuxt/icon": "^2.5.0",
     "@vueuse/core": "^14.4.0",
     "@vueuse/integrations": "^14.4.0",
     "ioredis": "^6.0.0",
+    "@iconify-json/lucide": "^1.2.124",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.2",
     "sortablejs": "^1.15.7",

@@ -555,7 +555,7 @@ function cancelQuit() {
                         title="Quay lại sảnh chờ"
                         @click="leaveToLobby"
                     >
-                        ←
+                        <Icon name="lucide:arrow-left" aria-hidden="true" />
                     </button>
                     <button
                         v-if="canQuit"
@@ -563,7 +563,7 @@ function cancelQuit() {
                         title="Rời trận — bạn sẽ bị xử thua"
                         @click="askToQuit"
                     >
-                        🚪 Rời trận
+                        <Icon name="lucide:log-out" aria-hidden="true" /> Rời trận
                     </button>
                     <div class="stack tight">
                         <strong class="room-title">{{
@@ -579,7 +579,7 @@ function cancelQuit() {
                         title="Cài đặt âm thanh"
                         @click="audioDialogOpen = true"
                     >
-                        {{ voiceMicOn ? "🎙️" : "🔇" }}
+                        <Icon :name="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'" aria-hidden="true" />
                     </button>
                     <span
                         class="dot"
@@ -616,7 +616,7 @@ function cancelQuit() {
                 class="panel notice gesture-prompt"
                 @click="voiceSinks?.resume()"
             >
-                🔈 Bấm để bật tiếng người chơi khác
+                <Icon name="lucide:volume-2" aria-hidden="true" /> Bấm để bật tiếng người chơi khác
             </button>
 
             <p v-if="kicked" class="panel notice">{{ kicked }}</p>
@@ -851,7 +851,7 @@ function cancelQuit() {
                         khán giả.
                     </p>
                     <p v-else-if="!alive" class="watching">
-                        Bạn đã bị nổ tung 💥 — hãy ở lại xem ai sẽ là người sống
+                        <Icon name="lucide:bomb" aria-hidden="true" /> Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống
                         sót cuối cùng!
                     </p>
                 </div>
@@ -887,11 +887,8 @@ function cancelQuit() {
                     <div v-if="isOver" class="curtain">
                         <div class="panel result">
                             <h2>
-                                {{
-                                    winner
-                                        ? `${winner} đã chiến thắng! 🏆`
-                                        : "Ván đấu kết thúc"
-                                }}
+                                <Icon v-if="winner" name="lucide:trophy" aria-hidden="true" />
+                                {{ winner ? `${winner} đã chiến thắng!` : "Ván đấu kết thúc" }}
                             </h2>
                             <div class="lobby-seats">
                                 <PlayerSeat
@@ -933,7 +930,8 @@ function cancelQuit() {
             <!-- Chat and the story of the game, tucked into a corner. -->
             <div v-if="state" class="log-dock" :class="{ open: logOpen }">
                 <button class="log-toggle" @click="logOpen = !logOpen">
-                    {{ logOpen ? "Ẩn lịch sử ▾" : "Lịch sử & Chat ▴" }}
+                    {{ logOpen ? "Ẩn lịch sử" : "Lịch sử & Chat" }}
+                    <Icon :name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true" />
                 </button>
                 <EventLog
                     v-show="logOpen"

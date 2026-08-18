@@ -3,6 +3,7 @@ withDefaults(
   defineProps<{
     title: string
     subtitle?: string
+    /** Iconify icon name, e.g. `lucide:paw-print`. */
     icon?: string
     chevron?: boolean
     compact?: boolean
@@ -35,12 +36,14 @@ defineEmits<{ click: [MouseEvent] }>()
     :disabled="disabled"
     @click="$emit('click', $event)"
   >
-    <span v-if="icon" class="plaque-btn__badge" aria-hidden="true">{{ icon }}</span>
+    <span v-if="icon" class="plaque-btn__badge" aria-hidden="true"><Icon :name="icon" /></span>
     <span class="plaque-btn__text">
       <span class="plaque-btn__title">{{ title }}</span>
       <span v-if="subtitle" class="plaque-btn__subtitle">{{ subtitle }}</span>
     </span>
-    <span v-if="chevron" class="plaque-btn__chevron" aria-hidden="true">›</span>
+    <span v-if="chevron" class="plaque-btn__chevron" aria-hidden="true">
+      <Icon name="lucide:chevron-right" />
+    </span>
   </button>
 </template>
 

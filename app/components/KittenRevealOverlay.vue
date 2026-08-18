@@ -20,8 +20,8 @@ const props = defineProps<{
 
 const caption = computed(() =>
     props.defused
-        ? `${props.playerName} đã rút phải Exploding Kitten! 💥`
-        : `${props.playerName} nổ tung! 💥`,
+        ? `${props.playerName} đã rút phải Exploding Kitten!`
+        : `${props.playerName} nổ tung!`,
 );
 </script>
 
@@ -36,7 +36,7 @@ const caption = computed(() =>
                     width="min(350px, 82vw)"
                 />
             </div>
-            <p class="caption">{{ caption }}</p>
+            <p class="caption"><Icon name="lucide:bomb" /> {{ caption }}</p>
         </div>
     </div>
 </template>
