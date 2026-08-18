@@ -1,7 +1,7 @@
 // @vitest-environment nuxt
 import { describe, expect, it, beforeEach } from "vitest";
 import type { VoiceMember } from "#shared/protocol/voice";
-import { diffRoster, loadVoicePrefs, saveVoicePrefs } from "./useVoiceChat";
+import { addOpusDtx, diffRoster, loadVoicePrefs, saveVoicePrefs } from "./useVoiceChat";
 
 /**
  * Only the parts that decide *what* to do are tested here. The WebRTC half is
@@ -58,6 +58,45 @@ describe("diffRoster", () => {
 
     expect(added).toEqual([]);
     expect(removed).toEqual([]);
+  });
+});
+
+describe("addOpusDtx", () => {
+  const opusLine = "a=rtpmap:111 opus/48000/2";
+
+  it("appends usedtx to an existing fmtp line for the opus payload", () => {
+    const sdp = [opusLine, "a=fmtp:111 minptime=10;useinbandfec=1"].join("\r\n");
+
+    expect(addOpusDtx(sdp)).toContain("a=fmtp:111 minptime=10;useinbandfec=1;usedtx=1");
+  });
+
+  it("adds a fresh fmtp line when opus has none", () => {
+    expect(addOpusDtx(opusLine)).toBe(`${opusLine}\r\na=fmtp:111 usedtx=1`);
+  });
+
+  it("is idempotent — never doubles usedtx", () => {
+    const sdp = [opusLine, "a=fmtp:111 minptime=10;usedtx=1"].join("\r\n");
+
+    expect(addOpusDtx(sdp)).toBe(sdp);
+  });
+
+  it("leaves an SDP without an opus payload untouched", () => {
+    const sdp = ["a=rtpmap:9 G722/8000", "a=fmtp:9 something"].join("\r\n");
+
+    expect(addOpusDtx(sdp)).toBe(sdp);
+  });
+
+  it("only touches the fmtp line matching opus' own payload type", () => {
+    const sdp = [
+      "a=rtpmap:9 G722/8000",
+      "a=fmtp:9 keepme=1",
+      opusLine,
+      "a=fmtp:111 minptime=10",
+    ].join("\r\n");
+
+    const out = addOpusDtx(sdp);
+    expect(out).toContain("a=fmtp:9 keepme=1");
+    expect(out).toContain("a=fmtp:111 minptime=10;usedtx=1");
   });
 });
 
