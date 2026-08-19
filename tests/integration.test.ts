@@ -198,7 +198,7 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     waiting.errors = []
     waiting.send({ type: 'draw-card' })
     await waiting.waitFor((message) => message.type === 'error')
-    expect(waiting.errors.join(' ')).toMatch(/not your turn/i)
+    expect(waiting.errors.join(' ')).toMatch(/chưa đến lượt/i)
   }, 30_000)
 
   it('lets a player reconnect to the same seat and hand', async () => {
@@ -274,7 +274,7 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     // Only the host can kick.
     bystander.send({ type: 'kick-player', targetPlayerId: target.playerId })
     await bystander.waitFor((message) => message.type === 'error')
-    expect(bystander.errors.join(' ')).toMatch(/only the host/i)
+    expect(bystander.errors.join(' ')).toMatch(/chủ phòng/i)
 
     host.send({ type: 'kick-player', targetPlayerId: target.playerId })
     await target.waitFor((message) => message.type === 'kicked', 5000, 'the kick notice')

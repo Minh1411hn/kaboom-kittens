@@ -196,6 +196,40 @@ rules for `button`, `input`, `.panel` and friends. Tailwind v4 and Sass sit on t
   `@include respond-to('md')` work with no import. Nothing in those partials may emit CSS — the
   file is prepended to every style block and would duplicate the output once per component.
 
+### `.vue` file conventions
+
+Every SFC keeps its three blocks in this order, each with the same attributes every time:
+
+```vue
+<template lang="pug">
+  ...
+</template>
+
+<script setup lang="ts">
+  ...
+</script>
+
+<style scoped lang="scss">
+  ...
+</style>
+```
+
+- `<template lang="pug">` — Pug, not HTML. `pug` is a devDependency for this.
+- `<script setup lang="ts">` — always Composition API with `setup`, never Options API and never a
+  bare `<script>` for component logic.
+- `<style scoped lang="scss">` — always `scoped`, always SCSS, never a global `<style>` in a
+  component.
+- Inside `<style>`, name classes with **BEM** (`block__element--modifier`) and nest with SCSS's
+  **parent selector (`&`)** instead of repeating the block name:
+
+  ```scss
+  .card {
+    &__title { ... }
+    &__title--active { ... }
+    &--disabled { ... }
+  }
+  ```
+
 ## Things that bite
 
 - **Changing the `GameState` shape requires bumping `STATE_VERSION`** (`shared/types/game.ts`).

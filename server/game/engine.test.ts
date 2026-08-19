@@ -241,7 +241,7 @@ describe('turn order', () => {
   it('refuses a draw from anyone but the current player', () => {
     const state = started(4)
     const other = state.players.find((p) => p.seat !== state.turn.seat)!
-    expect(expectRejected(state, { type: 'draw-card', playerId: other.id })).toMatch(/not your turn/i)
+    expect(expectRejected(state, { type: 'draw-card', playerId: other.id })).toMatch(/chưa đến lượt/i)
   })
 
   it('Skip ends the turn without drawing', () => {
@@ -552,7 +552,7 @@ describe('nope', () => {
         uids: uidsOf(state, player.id, ['nope']),
         combo: null,
       }),
-    ).toMatch(/your own card/i)
+    ).toMatch(/chính mình|tự nope/i)
   })
 
   it('discards a Noped card anyway', () => {
@@ -680,19 +680,19 @@ describe('quit game', () => {
 
   it('refuses to quit before the game starts', () => {
     const state = newGame(3)
-    expect(expectRejected(state, { type: 'quit-game', playerId: 'p0' })).toMatch(/not running/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'p0' })).toMatch(/chưa bắt đầu/i)
   })
 
   it('refuses to quit twice', () => {
     let state = started(3)
     const quitter = currentPlayer(state)!
     state = run(state, { type: 'quit-game', playerId: quitter.id })
-    expect(expectRejected(state, { type: 'quit-game', playerId: quitter.id })).toMatch(/already/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: quitter.id })).toMatch(/đã rời/i)
   })
 
   it('refuses to quit for a player not in the game', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'quit-game', playerId: 'nobody' })).toMatch(/not in this game/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'nobody' })).toMatch(/không có trong ván/i)
   })
 })
 
@@ -715,13 +715,13 @@ describe('return to lobby', () => {
 
   it('refuses before the game is over', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'p0' })).toMatch(/not over/i)
+    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'p0' })).toMatch(/chưa kết thúc/i)
   })
 
   it('refuses for a player not in the game', () => {
     const state = ended(3)
     expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'nobody' })).toMatch(
-      /not in this game/i,
+      /không có trong ván/i,
     )
   })
 
@@ -845,7 +845,7 @@ describe('cat combos', () => {
         combo: 'pair',
         targetPlayerId: victim.id,
       }),
-    ).toMatch(/do not match/i)
+    ).toMatch(/không khớp/i)
   })
 
   it('three of a kind demands a named card, and gets nothing if absent', () => {
@@ -964,7 +964,7 @@ describe('favor', () => {
         combo: null,
         targetPlayerId: target.id,
       }),
-    ).toMatch(/no cards/i)
+    ).toMatch(/không có lá bài nào/i)
   })
 })
 
@@ -1038,7 +1038,7 @@ describe('the future', () => {
         interactionId: state.interaction!.id,
         response: { type: 'order', uids: [shown[0]!, shown[0]!, shown[1]!] },
       }),
-    ).toMatch(/valid ordering/i)
+    ).toMatch(/không hợp lệ/i)
   })
 })
 
@@ -1314,18 +1314,18 @@ describe('determinism', () => {
 describe('lobby rules', () => {
   it('needs at least two players to start', () => {
     const state = newGame(1)
-    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/at least 2/i)
+    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/ít nhất 2/i)
   })
 
   it('caps the room at ten players', () => {
     const state = newGame(10)
-    expect(addPlayer(state, 'p10', 'Overflow', 'art_02')).toMatch(/full/i)
+    expect(addPlayer(state, 'p10', 'Overflow', 'art_02')).toMatch(/đã đầy/i)
     expect(state.players).toHaveLength(10)
   })
 
   it('refuses to start twice', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/already started/i)
+    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/đã bắt đầu/i)
   })
 
   it('frees the seat of someone who leaves the waiting room', () => {

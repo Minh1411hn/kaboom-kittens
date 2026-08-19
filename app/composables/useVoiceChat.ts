@@ -92,10 +92,10 @@ export function diffRoster(
  */
 export function addOpusDtx(sdp: string): string {
     const rtpmap = sdp.match(/^a=rtpmap:(\d+) opus\/48000.*$/m);
-    if (!rtpmap) return sdp;
+    if (!rtpmap || !rtpmap[1]) return sdp;
     const pt = rtpmap[1];
     const fmtp = sdp.match(new RegExp(`^a=fmtp:${pt} (.+)$`, "m"));
-    if (fmtp) {
+    if (fmtp && fmtp[1]) {
         if (/usedtx=/.test(fmtp[1])) return sdp;
         return sdp.replace(fmtp[0], `a=fmtp:${pt} ${fmtp[1]};usedtx=1`);
     }

@@ -73,8 +73,11 @@ export class TestClient {
     timeoutMs = 5000,
     what = 'a message',
   ): Promise<ServerMessage> {
-    const already = this.received.find(predicate)
-    if (already) return Promise.resolve(already)
+    const idx = this.received.findIndex(predicate)
+    if (idx !== -1) {
+      const [already] = this.received.splice(idx, 1)
+      return Promise.resolve(already!)
+    }
 
     return new Promise((resolve, reject) => {
       const timer = setTimeout(
@@ -108,11 +111,31 @@ export class TestClient {
     what = 'a matching snapshot',
   ): Promise<PublicGameState> {
     if (this.state && predicate(this.state)) return this.state
-    await this.waitFor(
-      (message) => message.type === 'snapshot' && predicate(message.state),
-      timeoutMs,
-      what,
-    )
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(
+        () =>
+          reject(
+            new Error(
+              `${this.nickname}: timed out waiting for ${what}. ` +
+                `socket=${this.ws.readyState} errors=[${this.errors.join(' | ')}] ` +
+                `state=${JSON.stringify({
+                  status: this.state?.status,
+                  players: this.state?.players.length,
+                  you: Boolean(this.state?.you),
+                })}`,
+            ),
+          ),
+        timeoutMs,
+      )
+      this.waiters.push((message) => {
+        if (message.type === 'snapshot' && predicate(message.state)) {
+          clearTimeout(timer)
+          resolve()
+          return true
+        }
+        return false
+      })
+    })
     return this.state!
   }
 
