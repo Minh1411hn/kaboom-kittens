@@ -91,7 +91,7 @@ export function diffRoster(
  * but SDP text isn't ours to assume about) or if DTX is already set.
  */
 export function addOpusDtx(sdp: string): string {
-    const rtpmap = sdp.match(/^a=rtpmap:(\d+) opus\/48000/m);
+    const rtpmap = sdp.match(/^a=rtpmap:(\d+) opus\/48000.*$/m);
     if (!rtpmap) return sdp;
     const pt = rtpmap[1];
     const fmtp = sdp.match(new RegExp(`^a=fmtp:${pt} (.+)$`, "m"));

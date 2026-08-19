@@ -52,7 +52,7 @@ function processIncomingCard(card: Card, delayMs = 0) {
     if (processingUids.has(card.uid)) return;
     processingUids.add(card.uid);
 
-    setTimeout(() => {
+    const run = () => {
         if (reducedMotion) {
             emit("landed", card.uid);
             processingUids.delete(card.uid);
@@ -89,7 +89,13 @@ function processIncomingCard(card: Card, delayMs = 0) {
                 emit("landed", card.uid);
             }, FLIGHT_MS);
         }, REVEAL_MS);
-    }, delayMs);
+    };
+
+    if (delayMs > 0) {
+        setTimeout(run, delayMs);
+    } else {
+        run();
+    }
 }
 
 watch(

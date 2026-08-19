@@ -52,7 +52,7 @@ describe("CardImage", () => {
     expect(img.attributes("src")).toContain("/cards/skip/artworks/");
     expect(img.attributes("alt")).toBe("Skip");
     expect(wrapper.get(".card").attributes("title")).toContain(
-      "End your turn without drawing a card",
+      "Kết thúc lượt của bạn mà không cần rút bài.",
     );
   });
 
@@ -142,8 +142,8 @@ describe("PlayerSeat", () => {
     });
     expect(current.get(".seat").classes()).toContain("current");
     expect(current.text()).toContain("Whiskers");
-    expect(current.text()).toContain("5 cards");
-    expect(current.text()).toContain("2 turns left");
+    expect(current.text()).toContain("5 lá bài");
+    expect(current.text()).toContain("còn 2 lượt");
 
     const dead = await mountSuspended(PlayerSeat, {
       props: {
@@ -261,7 +261,7 @@ describe("HandFan", () => {
     const wrapper = await mountSuspended(HandFan, {
       props: { hand: [], selected: [] },
     });
-    expect(wrapper.text()).toContain("No cards left");
+    expect(wrapper.text()).toContain("Không còn lá bài nào trên tay.");
   });
 
   it("flips over only the card the drag just delivered", async () => {
@@ -409,9 +409,7 @@ describe("TableCenter", () => {
         deadline: null,
       },
     });
-    expect(
-      wrapper.get(".direction").findComponent({ name: "Icon" }).props("name"),
-    ).toBe("lucide:rotate-ccw");
+    expect(wrapper.get(".direction-badge").classes()).toContain("ccw");
     expect(wrapper.text()).toContain("Còn 10 lá");
     expect(wrapper.text()).toContain("Chiều bốc bài");
   });
@@ -430,13 +428,13 @@ describe("SeeFutureModal", () => {
     expect(wrapper.findAll(".card")).toHaveLength(2);
   });
 
-  it("emits close when clicking the X close button", async () => {
+  it("emits close when clicking the backdrop", async () => {
     const wrapper = await mountSuspended(SeeFutureModal, {
       props: {
         cards: [card("skip", "p1")],
       },
     });
-    await wrapper.get(".close-btn").trigger("click");
+    await wrapper.get(".backdrop").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(1);
   });
 
@@ -473,13 +471,13 @@ describe("TurnBanner", () => {
 
   it("names whoever is on the clock, and shouts when it is you", async () => {
     const waiting = await mountSuspended(TurnBanner, { props: base });
-    expect(waiting.text()).toContain("Waiting for Mittens");
+    expect(waiting.text()).toContain("Đang chờ Mittens đi…");
     expect(waiting.classes()).not.toContain("live");
 
     const yours = await mountSuspended(TurnBanner, {
       props: { ...base, isYourTurn: true },
     });
-    expect(yours.text()).toContain("It's your turn!");
+    expect(yours.text()).toContain("Đến lượt của bạn!");
     expect(yours.classes()).toContain("live");
   });
 
@@ -613,6 +611,7 @@ describe("InteractionModal", () => {
         },
         hand: [],
         players: [player()],
+        youId: "p1",
       },
     });
     expect(wrapper.text()).toContain("Choose a card to give");
@@ -637,9 +636,10 @@ describe("InteractionModal", () => {
         },
         hand: [],
         players: [player()],
+        youId: "p2",
       },
     });
-    expect(wrapper.text()).toContain("Waiting for Whiskers");
+    expect(wrapper.text()).toContain("Đang chờ Whiskers chọn bài…");
     expect(wrapper.findAll(".choice")).toHaveLength(0);
   });
 });
@@ -694,7 +694,7 @@ describe("DeckPositionModal", () => {
     });
     const random = wrapper
       .findAll("button")
-      .find((b) => b.text().includes("RANDOM"))!;
+      .find((b) => b.classes().includes("random"))!;
     await random.trigger("click");
     // Still needs an explicit Confirm — clicking RANDOM only previews.
     expect(wrapper.emitted("submit")).toBeUndefined();
@@ -732,14 +732,14 @@ describe("usePlayIntent", () => {
     const selected = ref([card("skip", "s1")]);
     expect(usePlayIntent(selected, state(), ref(true)).value.ok).toBe(true);
     expect(usePlayIntent(selected, state(), ref(false)).value.reason).toMatch(
-      /wait for your turn/i,
+      /đến lượt|wait for your turn/i,
     );
   });
 
   it("refuses a lone cat card and explains why", () => {
     const selected = ref([card("tacocat", "c1")]);
     expect(usePlayIntent(selected, state(), ref(true)).value.reason).toMatch(
-      /combo of 2, 3 or 5/i,
+      /combo 2, 3 hoặc 5|combo of 2, 3 or 5/i,
     );
   });
 
@@ -797,7 +797,7 @@ describe("usePlayIntent", () => {
     expect(
       usePlayIntent(ref(five), state({ discardCount: 0 }), ref(true)).value
         .reason,
-    ).toMatch(/discard pile is empty/i);
+    ).toMatch(/đang trống|discard pile is empty/i);
   });
 
   it("allows Nope out of turn, but not against your own card", () => {
@@ -809,11 +809,11 @@ describe("usePlayIntent", () => {
 
     const yours = state({ actionStack: [{ playerId: "p1" } as PendingAction] });
     expect(usePlayIntent(nope, yours, ref(false)).value.reason).toMatch(
-      /your own card/i,
+      /chính mình|your own card/i,
     );
 
     expect(usePlayIntent(nope, state(), ref(false)).value.reason).toMatch(
-      /nothing to Nope/i,
+      /không có hành động|nothing to Nope/i,
     );
   });
 });

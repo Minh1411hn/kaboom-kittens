@@ -97,6 +97,7 @@ mockNuxtImport('useGameSocket', () => () => {
     roomName: useState<string>('kk:roomName', () => 'The Litter Box'),
     rooms: useState('kk:rooms', () => []),
     chat: useState('kk:chat', () => []),
+    voice: useState('kk:voice', () => []),
     pending: useState('kk:events', () => []),
     playerId: useState<string>('kk:playerId', () => 'p1'),
     status: useState<string>('kk:wsStatus', () => 'open'),
@@ -107,6 +108,7 @@ mockNuxtImport('useGameSocket', () => () => {
       sent.push(message)
     },
     resetRoom: () => {},
+    leaveOnPageHide: () => () => {},
   }
 })
 
@@ -138,8 +140,8 @@ describe('the table stage', () => {
     fixture = playing()
     const wrapper = await mount()
 
-    expect(wrapper.get('.ribbon').text()).toBe('14 cards left')
-    expect(wrapper.text()).toContain('Discard · 2')
+    expect(wrapper.text()).toContain('Còn 14 lá')
+    expect(wrapper.text()).toContain('Bài đã đánh · 2')
     // The discard top prints no text — its name only reaches the DOM as the
     // artwork's alt, which is what a screen reader reads out.
     expect(wrapper.get('.discard img').attributes('alt')).toBe('Defuse')
@@ -151,8 +153,9 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     const controls = wrapper.get('.controls').text()
-    expect(controls).toContain('Clear')
+    expect(controls).toContain('Bỏ chọn')
     expect(controls).not.toContain('Draw')
+    expect(controls).not.toContain('Rút bài')
 
     // The hand only lights up as a target while a card is being dragged.
     expect(wrapper.get('.hand-area').classes()).not.toContain('drop-active')
@@ -164,12 +167,12 @@ describe('the table stage', () => {
   it('lets the banner speak for whoever is on the clock', async () => {
     fixture = playing()
     const yours = await mount()
-    expect(yours.get('.headline').text()).toBe("It's your turn!")
+    expect(yours.get('.headline').text()).toBe('Đến lượt của bạn!')
     expect(yours.get('.banner-area .banner').classes()).toContain('live')
 
     fixture = playing({ currentPlayerId: 'p2' })
     const theirs = await mount()
-    expect(theirs.get('.headline').text()).toBe('Waiting for Mittens')
+    expect(theirs.get('.headline').text()).toBe('Đang chờ Mittens đi…')
   })
 
   it('keeps the table visible after you explode, and curtains it when the game ends', async () => {
@@ -184,11 +187,11 @@ describe('the table stage', () => {
     const dead = await mount()
     expect(dead.find('.curtain').exists()).toBe(false)
     expect(dead.find('.hand-area .slot').exists()).toBe(false)
-    expect(dead.get('.watching').text()).toContain('You exploded')
+    expect(dead.get('.watching').text()).toContain('Bạn đã bị nổ tung')
 
     fixture = playing({ status: 'over', winnerId: 'p2', currentPlayerId: null })
     const over = await mount()
-    expect(over.get('.curtain').text()).toContain('Mittens wins!')
+    expect(over.get('.curtain').text()).toContain('Mittens đã chiến thắng!')
   })
 
   it('offers a way back to the waiting room, gated on being ready', async () => {
@@ -205,7 +208,7 @@ describe('the table stage', () => {
     const notReady = await mount()
     const curtain = notReady.get('.curtain')
     const button = curtain.get('button.primary')
-    expect(button.text()).toBe('Quay về phòng chờ')
+    expect(button.text()).toBe('Sẵn sàng ván mới')
     expect(button.attributes('disabled')).toBeUndefined()
     // Only Mittens (ready: true) has readied up so far.
     expect(curtain.findAll('.ready-badge')).toHaveLength(1)
@@ -221,8 +224,10 @@ describe('the table stage', () => {
       ],
     })
     const ready = await mount()
-    const waitingButton = ready.get('.curtain').get('button.primary')
-    expect(waitingButton.text()).toBe('Đang chờ người chơi khác…')
+    expect(ready.find('.curtain').exists()).toBe(false)
+    expect(ready.find('.lobby').exists()).toBe(true)
+    const waitingButton = ready.get('.lobby button.start-btn')
+    expect(waitingButton.text()).toBe('Đang chờ mọi người…')
     expect(waitingButton.attributes('disabled')).toBeDefined()
   })
 
@@ -231,7 +236,7 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     expect(wrapper.find('.stage').exists()).toBe(false)
-    expect(wrapper.get('.lobby').text()).toContain('Waiting for players')
+    expect(wrapper.get('.lobby').text()).toContain('Cài đặt phòng')
     // Everyone shows in the lobby, including you.
     expect(wrapper.findAll('.lobby-seats .seat')).toHaveLength(3)
   })
@@ -310,14 +315,14 @@ describe('the table stage', () => {
     }
   })
 
-  it('keeps the log tucked away until it is asked for', async () => {
+  it('toggles the log dock when clicking the toggle button', async () => {
     fixture = playing()
     const wrapper = await mount()
 
     const dock = wrapper.get('.log-dock')
-    expect(dock.classes()).not.toContain('open')
+    expect(dock.classes()).toContain('open')
 
     await wrapper.get('.log-toggle').trigger('click')
-    expect(wrapper.get('.log-dock').classes()).toContain('open')
+    expect(wrapper.get('.log-dock').classes()).not.toContain('open')
   })
 })
