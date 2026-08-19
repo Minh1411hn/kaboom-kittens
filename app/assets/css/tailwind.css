@@ -1,0 +1,69 @@
+/*
+ * Tailwind v4 entry point. Loaded *after* main.css (see `css` in nuxt.config.ts)
+ * so utilities win over the hand-written rules there.
+ *
+ * Two deliberate choices:
+ *
+ * 1. Preflight is NOT imported. main.css already owns the base layer — the
+ *    reset for `button`, `input`, `h1..h3` and `body` is written by hand and
+ *    Tailwind's reset would strip it. Add
+ *      @import 'tailwindcss/preflight.css' layer(base);
+ *    below if that hand-written base ever goes away.
+ *
+ * 2. Utilities are imported *unlayered*. main.css is unlayered too, and
+ *    unlayered rules always beat layered ones — inside `@layer utilities`,
+ *    `class="bg-red-500"` would lose to main.css's bare `button { ... }`.
+ *    Unlayered, plain specificity applies and the class wins.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css';
+
+/* Template sources to scan. Relative to this file: `../../` is app/. */
+@source '../../';
+
+/*
+ * The design tokens from main.css, re-exposed as Tailwind theme keys so
+ * `bg-parchment`, `text-ink`, `font-display`, `rounded-card` … resolve to the
+ * same custom properties. Tokens stay defined in one place — main.css — these
+ * are aliases, not copies.
+ */
+@theme {
+  --color-wood-1: var(--wood-1);
+  --color-wood-2: var(--wood-2);
+  --color-wood-3: var(--wood-3);
+  --color-wood-edge: var(--wood-edge);
+
+  --color-parchment: var(--parchment);
+  --color-parchment-2: var(--parchment-2);
+  --color-parchment-edge: var(--parchment-edge);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+
+  --color-deck-hot: var(--deck-hot);
+  --color-deck-warm: var(--deck-warm);
+
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+
+  --color-red-1: var(--red-1);
+  --color-red-2: var(--red-2);
+  --color-red-3: var(--red-3);
+  --color-maroon-1: var(--maroon-1);
+  --color-maroon-2: var(--maroon-2);
+  --color-maroon-edge: var(--maroon-edge);
+
+  --font-display: 'Oswald', system-ui, sans-serif;
+  --font-body: 'Oswald', system-ui, sans-serif;
+
+  --radius-card: var(--card-radius);
+  --radius-plaque: 10px;
+
+  --shadow-plaque: var(--shadow);
+  --shadow-plaque-sm: var(--shadow-sm);
+}

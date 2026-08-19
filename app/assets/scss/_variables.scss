@@ -1,0 +1,45 @@
+// Sass-side view of the design system.
+//
+// The tokens themselves live in app/assets/css/main.css as custom properties —
+// these are *aliases*, not copies, so a re-skin still means editing one file.
+// Only values Sass genuinely needs at compile time (breakpoints, which can't be
+// custom properties because media queries don't read them) are real numbers.
+
+// Surfaces
+$wood-1: var(--wood-1);
+$wood-2: var(--wood-2);
+$wood-3: var(--wood-3);
+$wood-edge: var(--wood-edge);
+
+$parchment: var(--parchment);
+$parchment-2: var(--parchment-2);
+$parchment-edge: var(--parchment-edge);
+$ink: var(--ink);
+$ink-dim: var(--ink-dim);
+
+// Semantic
+$bg: var(--bg);
+$text: var(--text);
+$text-dim: var(--text-dim);
+$accent: var(--accent);
+$accent-dim: var(--accent-dim);
+$good: var(--good);
+$bad: var(--bad);
+$warn: var(--warn);
+
+// Shape
+$radius: var(--radius);
+$card-radius: var(--card-radius);
+$shadow: var(--shadow);
+$shadow-sm: var(--shadow-sm);
+
+$font-display: var(--font-display);
+$font-body: var(--font-body);
+
+// Breakpoints — compile-time only, used by the `respond-to` mixin.
+$breakpoints: (
+  'sm': 640px,
+  'md': 768px,
+  'lg': 1024px,
+  'xl': 1280px,
+);

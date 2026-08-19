@@ -35,6 +35,18 @@ docker compose down                               # stop the stack
 
 There is no linter configured.
 
+**Every project command runs through docker-compose — no bare `npm`/`npx`/`nuxi` on the host.** When
+a task needs a new library, do not hand-edit `package.json` with a guessed version range: write out
+the `docker compose exec web npm install …` line and **ask the user before running it**. The install
+happens inside the running container, which writes the resolved latest versions back into the
+bind-mounted `package.json`/`package-lock.json` and into the `node_modules` volume, so no
+`down -v` rebuild is needed afterwards.
+
+```bash
+docker compose exec web npm install <pkg>        # runtime dependency
+docker compose exec web npm install -D <pkg>     # dev dependency
+```
+
 `docker compose exec web npm run typecheck` prints a `vue-router/volar/sfc-route-blocks` resolve
 error from Volar on every run. It is noise — check the exit code, not the output.
 
@@ -165,6 +177,24 @@ Five steps, listed in `README.md` and in the doc comment on `registry.ts`. `cata
 the build if `catalog.json` and the registry ever disagree about targets, out-of-turn play, or which
 cards can be played solo — the client greys out cards from the catalog hints while the server
 enforces the registry, and a mismatch means offering a play that then gets rejected.
+
+## Styling
+
+`app/assets/css/main.css` is still the source of truth: the token block under `:root` plus the base
+rules for `button`, `input`, `.panel` and friends. Tailwind v4 and Sass sit on top of it.
+
+- **Tailwind** is wired through `@tailwindcss/vite` (`vite.plugins` in `nuxt.config.ts`), not the
+  Nuxt module. `app/assets/css/tailwind.css` is the entry and is loaded **after** `main.css`.
+  It imports utilities **unlayered and without preflight** on purpose — main.css is unlayered, and
+  unlayered rules beat any `@layer`, so layered utilities would lose to bare `button { … }`. Both
+  reasons are written out at the top of that file; read it before changing the imports.
+- The tokens are re-exported as theme keys in `@theme`, so `bg-parchment`, `text-ink`,
+  `font-display`, `rounded-card` resolve to the same custom properties. They are aliases —
+  add new colours to `main.css` first, then alias them.
+- **Sass** is available in any `<style lang="scss">`. `app/assets/scss/_index.scss` is auto-injected
+  via `vite.css.preprocessorOptions.scss.additionalData`, so `$parchment`, `$shadow` and
+  `@include respond-to('md')` work with no import. Nothing in those partials may emit CSS — the
+  file is prepended to every style block and would duplicate the output once per component.
 
 ## Things that bite
 

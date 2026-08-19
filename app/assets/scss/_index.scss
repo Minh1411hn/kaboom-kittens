@@ -1,0 +1,8 @@
+// Auto-injected into every .scss file and every <style lang="scss"> block by
+// `vite.css.preprocessorOptions.scss.additionalData` in nuxt.config.ts — so
+// $tokens and @include respond-to(...) are available without an import.
+//
+// Keep this file free of anything that *emits* CSS: it is prepended to every
+// stylesheet, and emitted rules would be duplicated once per style block.
+@forward 'variables';
+@forward 'mixins';

@@ -1,10 +1,40 @@
+import { fileURLToPath } from 'node:url'
+import tailwindcss from '@tailwindcss/vite'
+
+// Absolute, because Sass resolves @use against the filesystem and knows nothing
+// about Nuxt's `~` alias.
+const scssIndex = fileURLToPath(new URL('./app/assets/scss/_index.scss', import.meta.url))
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
 
   modules: ['@pinia/nuxt', '@nuxt/icon'],
 
-  css: ['~/assets/css/main.css'],
+  icon: {
+    serverBundle: {
+      collections: ['lucide'],
+    },
+    clientBundle: {
+      scan: true,
+    },
+  },
+
+  // Order matters: main.css owns the base layer, tailwind.css ships unlayered
+  // utilities that must come after it to win. See the header of tailwind.css.
+  css: ['~/assets/css/main.css', '~/assets/css/tailwind.css'],
+
+  vite: {
+    plugins: [tailwindcss()],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          // Tokens + mixins in every <style lang="scss"> without an import.
+          additionalData: `@use '${scssIndex}' as *;\n`,
+        },
+      },
+    },
+  },
 
   typescript: {
     strict: true,
