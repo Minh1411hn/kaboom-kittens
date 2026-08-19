@@ -1092,10 +1092,98 @@ describe('garbage collection', () => {
       })
     }
 
+    // Everyone answered, but the prompt runs its full clock so players can
+    // still switch cards — only the deadline closes it.
+    expect(state.interaction).not.toBeNull()
+    state = run(state, { type: 'timeout-interaction' } as never)
+
     expect(state.interaction).toBeNull()
     // Cards move around but none are created or destroyed.
     const totalAfter = state.players.reduce((n, p) => n + p.hand.length, 0)
     expect(totalAfter).toBe(totalBefore - 1) // the garbage-collection card itself was discarded
+  })
+
+  it('lets a player switch their pick until the deadline', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const [a, b] = state.players.filter((p) => p.id !== player.id)
+    setHand(state, player.id, ['garbage-collection', 'skip', 'favor'])
+    setHand(state, a!.id, ['shuffle'])
+    setHand(state, b!.id, ['reverse'])
+
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['garbage-collection']),
+      combo: null,
+    })
+
+    const hand = playerById(state, player.id)!.hand
+    const first = hand[0]!.uid
+    const second = hand[1]!.uid
+
+    state = run(state, {
+      type: 'submit-interaction',
+      playerId: player.id,
+      interactionId: state.interaction!.id,
+      response: { type: 'card', uid: first },
+    })
+    expect(state.interaction!.responses[player.id]).toEqual({ type: 'card', uid: first })
+
+    // Re-submitting overwrites the earlier pick instead of being rejected.
+    state = run(state, {
+      type: 'submit-interaction',
+      playerId: player.id,
+      interactionId: state.interaction!.id,
+      response: { type: 'card', uid: second },
+    })
+    expect(state.interaction!.responses[player.id]).toEqual({ type: 'card', uid: second })
+  })
+
+  it('never deals an Exploding Kitten back into a hand', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const [a, b] = state.players.filter((p) => p.id !== player.id)
+    setHand(state, player.id, ['garbage-collection', 'skip'])
+    setHand(state, a!.id, ['favor'])
+    setHand(state, b!.id, ['reverse'])
+
+    // Mostly kittens: only three safe cards exist for the three contributors,
+    // so a naive "deal off the top" would hand someone a kitten.
+    state.drawPile = [
+      ...Array.from({ length: 8 }, () => makeCard('exploding-kitten')),
+      ...(['skip', 'shuffle', 'attack'] as CardId[]).map((id) => makeCard(id)),
+    ]
+    const kittensBefore = state.drawPile.filter((c) => c.id === 'exploding-kitten').length
+
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['garbage-collection']),
+      combo: null,
+    })
+    for (const id of [player.id, a!.id, b!.id]) {
+      const hand = playerById(state, id)!.hand
+      state = run(state, {
+        type: 'submit-interaction',
+        playerId: id,
+        interactionId: state.interaction!.id,
+        response: { type: 'card', uid: hand[0]!.uid },
+      })
+    }
+    state = run(state, { type: 'timeout-interaction' } as never)
+
+    for (const p of state.players) {
+      expect(p.hand.filter((c) => c.id === 'exploding-kitten')).toHaveLength(0)
+    }
+    // The skipped kittens stay in the deck rather than being destroyed.
+    expect(state.drawPile.filter((c) => c.id === 'exploding-kitten')).toHaveLength(kittensBefore)
+    // Each contributor still got a card back.
+    for (const id of [player.id, a!.id, b!.id]) {
+      expect(playerById(state, id)!.hand.length).toBeGreaterThan(0)
+    }
   })
 })
 

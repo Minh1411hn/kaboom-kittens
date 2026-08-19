@@ -3,7 +3,11 @@
  * deadlines rather than durations so a slow message or a skewed clock cannot
  * give one player extra seconds.
  */
-export function useCountdown(deadline: () => number | null | undefined) {
+export function useCountdown(
+  deadline: () => number | null | undefined,
+  /** Full length of the window, so the bar drains across all of it. */
+  totalMs: () => number = () => 5000,
+) {
   const now = ref(Date.now())
   let timer: ReturnType<typeof setInterval> | undefined
 
@@ -23,7 +27,7 @@ export function useCountdown(deadline: () => number | null | undefined) {
     const at = deadline()
     if (!at) return 0
     const left = at - now.value
-    return Math.max(0, Math.min(1, left / 5000))
+    return Math.max(0, Math.min(1, left / Math.max(1, totalMs())))
   })
 
   return { remaining, fraction }

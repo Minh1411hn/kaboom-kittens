@@ -951,6 +951,7 @@ function cancelQuit() {
                 :interaction="state.interaction"
                 :hand="hand"
                 :players="state.players"
+                :you-id="state.you?.id ?? null"
                 @submit="submitInteraction"
             />
 
