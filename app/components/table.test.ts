@@ -412,7 +412,8 @@ describe("TableCenter", () => {
     expect(
       wrapper.get(".direction").findComponent({ name: "Icon" }).props("name"),
     ).toBe("lucide:rotate-ccw");
-    expect(wrapper.text()).toContain("10 cards left");
+    expect(wrapper.text()).toContain("Còn 10 lá");
+    expect(wrapper.text()).toContain("Chiều bốc bài");
   });
 });
 

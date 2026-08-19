@@ -34,6 +34,34 @@ defineExpose({
 
 <template>
     <div class="center">
+        <div
+            class="direction-indicator pile"
+            :title="
+                direction === 1
+                    ? 'Chiều bốc bài: Thuận chiều kim đồng hồ'
+                    : 'Chiều bốc bài: Ngược chiều kim đồng hồ'
+            "
+            :aria-label="
+                direction === 1
+                    ? 'Chiều bốc bài: Thuận chiều kim đồng hồ'
+                    : 'Chiều bốc bài: Ngược chiều kim đồng hồ'
+            "
+        >
+            <div class="direction-badge" :class="{ ccw: direction === -1 }">
+                <span class="direction">
+                    <Icon
+                        :name="
+                            direction === 1
+                                ? 'lucide:rotate-cw'
+                                : 'lucide:rotate-ccw'
+                        "
+                        aria-hidden="true"
+                    />
+                </span>
+            </div>
+            <span class="ribbon quiet">Chiều bốc bài</span>
+        </div>
+
         <div class="pile">
             <button
                 class="deck"
@@ -80,28 +108,57 @@ defineExpose({
     gap: 2rem;
 }
 
-.signpost {
+.direction-indicator {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.6rem 0.9rem;
-    border-radius: 16px;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.direction-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
     background: linear-gradient(
         180deg,
-        rgb(255 255 255 / 10%),
-        rgb(0 0 0 / 14%)
+        rgb(255 255 255 / 12%),
+        rgb(0 0 0 / 25%)
     );
+    border: 2px solid rgb(255 255 255 / 18%);
     box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 20%),
-        var(--shadow-sm);
+        inset 0 1px 0 rgb(255 255 255 / 25%),
+        0 4px 14px rgb(20 8 0 / 50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto 0;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.direction-badge:hover {
+    transform: scale(1.08);
+    border-color: rgb(255 194 26 / 50%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 35%),
+        0 0 16px rgb(255 194 26 / 35%);
+}
+
+.direction-badge.ccw {
+    border-color: rgb(255 122 26 / 40%);
 }
 
 .direction {
-    font-size: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
     line-height: 1;
-    color: var(--text);
-    text-shadow: 0 2px 4px rgb(20 8 0 / 60%);
+    color: var(--warn);
+    text-shadow: 0 2px 6px rgb(20 8 0 / 70%);
 }
 
 .timer {
