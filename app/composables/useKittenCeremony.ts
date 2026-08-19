@@ -20,11 +20,11 @@ import type { Card, PublicGameState } from '#shared/types/game'
 export type KittenCeremonyPhase = 'idle' | 'reveal' | 'defuse'
 
 /** How long the kitten sits in the middle of the screen. */
-export const REVEAL_MS = 1400
+export const REVEAL_MS = 3000
 /** Fallback in case the departure flyer never reports back. */
 const DEFUSE_TIMEOUT_MS = 1200
 /** Hard ceiling. The dialog must never be held hostage by a stuck animation. */
-const MAX_CEREMONY_MS = 3000
+const MAX_CEREMONY_MS = 4500
 
 interface Ceremony {
   seq: number

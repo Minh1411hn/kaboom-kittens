@@ -132,6 +132,7 @@ const kitten = useKittenCeremony({
 });
 
 useTurnSound({ state, youId: () => you.value?.id });
+useKittenSound({ state });
 
 // --- voice chat ------------------------------------------------------------
 

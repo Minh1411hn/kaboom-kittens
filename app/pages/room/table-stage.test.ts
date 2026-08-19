@@ -304,8 +304,9 @@ describe('the table stage', () => {
       expect(wrapper.find('.slot.held').exists()).toBe(true)
       expect(wrapper.text()).not.toContain('Secretly put the Exploding Kitten back')
 
-      // Long enough for the whole ceremony, including its safety ceiling.
-      vi.advanceTimersByTime(4000)
+      // Long enough for the whole ceremony, including its safety ceiling
+      // (MAX_CEREMONY_MS in useKittenCeremony.ts).
+      vi.advanceTimersByTime(4600)
       await nextTick()
 
       expect(wrapper.find('.reveal').exists()).toBe(false)
