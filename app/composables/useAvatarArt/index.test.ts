@@ -1,7 +1,7 @@
 // @vitest-environment nuxt
 import { describe, expect, it } from 'vitest'
 import manifest from '#shared/generated/avatar-art.json'
-import { allAvatarIds, avatarUrl, deathAvatarUrl } from './useAvatarArt'
+import { allAvatarIds, avatarUrl, deathAvatarUrl } from './index'
 
 describe('useAvatarArt', () => {
   it('lists every avatar in the generated manifest', () => {

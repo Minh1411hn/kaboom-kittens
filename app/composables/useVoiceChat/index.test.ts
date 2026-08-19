@@ -1,7 +1,7 @@
 // @vitest-environment nuxt
 import { describe, expect, it, beforeEach } from "vitest";
 import type { VoiceMember } from "#shared/protocol/voice";
-import { addOpusDtx, diffRoster, loadVoicePrefs, saveVoicePrefs } from "./useVoiceChat";
+import { addOpusDtx, diffRoster, loadVoicePrefs, saveVoicePrefs } from "./index";
 
 /**
  * Only the parts that decide *what* to do are tested here. The WebRTC half is

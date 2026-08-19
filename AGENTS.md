@@ -162,7 +162,7 @@ Three things to keep straight:
   on the `snapshot` message, which means a mic toggle reuses the whole existing
   `publishRoomChanged` → `broadcastRoom` fanout and needs no new channel.
 
-Client side, `app/composables/useVoiceChat.ts` owns the WebRTC lifecycle. Its
+Client side, `app/composables/useVoiceChat/index.ts` owns the WebRTC lifecycle. Its
 watchers are bound **once** at module scope, not per call site — the composable
 is used from three components and a per-instance watcher would fire three
 simultaneous pulls per roster change. Negotiation is serialised through one

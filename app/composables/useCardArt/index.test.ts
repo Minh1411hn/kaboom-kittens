@@ -1,7 +1,7 @@
 // @vitest-environment nuxt
 import { describe, expect, it } from 'vitest'
 import { CARD_CATALOG, type CardId } from '#shared/types/game'
-import { cardArtUrl } from './useCardArt'
+import { cardArtUrl } from './index'
 
 /**
  * A card sharing an art pool gets its picture by *position* — its index among

@@ -1,6 +1,6 @@
 import { effectScope } from "vue";
 import { describe, expect, it, vi } from "vitest";
-import { useDrawDrag } from "./useDrawDrag";
+import { useDrawDrag } from "./index";
 
 /**
  * jsdom has no `PointerEvent`, but a `MouseEvent` under a pointer type name

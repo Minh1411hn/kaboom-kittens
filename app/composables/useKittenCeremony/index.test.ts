@@ -2,7 +2,7 @@
 import { effectScope, nextTick, ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Card, GameEvent, PublicGameState } from "#shared/types/game";
-import { useKittenCeremony, REVEAL_MS } from "./useKittenCeremony";
+import { useKittenCeremony, REVEAL_MS } from "./index";
 
 /**
  * The ceremony is the only thing in the client that turns log events into

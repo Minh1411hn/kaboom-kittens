@@ -53,6 +53,9 @@ export default defineNuxtConfig({
         // Tells Nuxt to look for all .vue files except those inside a 'components' folder
         pattern: ["**/*.vue", "!**/components/**", "!**/*.js"],
     },
+    imports: {
+        dirs: ["composables/**"],
+    },
 
     runtimeConfig: {
         redisUrl: "redis://localhost:6379",

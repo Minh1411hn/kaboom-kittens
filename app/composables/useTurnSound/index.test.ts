@@ -2,7 +2,7 @@
 import { effectScope, nextTick, ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
 import type { GameEvent, PublicGameState } from "#shared/types/game";
-import { useTurnSound } from "./useTurnSound";
+import { useTurnSound } from "./index";
 
 const event = (seq: number, type: GameEvent["type"], playerId: string): GameEvent => ({
   seq,
