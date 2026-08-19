@@ -250,7 +250,7 @@ defineExpose({
 }
 
 .discard:hover {
-    transform: scale(1.35);
+    transform: scale(1.175);
     z-index: 10;
     position: relative;
 }

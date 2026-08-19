@@ -226,7 +226,7 @@ useSortable(choicesEl, order, {
 }
 
 .card-wrapper:hover {
-    transform: translateY(-4px) scale(1.35);
+    transform: translateY(-4px) scale(1.175);
     z-index: 10;
 }
 

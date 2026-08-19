@@ -337,7 +337,7 @@ function confirm() {
 
 .card-choice-btn:hover {
   background: rgba(80, 32, 18, 0.8);
-  transform: translateY(-3px) scale(1.35);
+  transform: translateY(-3px) scale(1.175);
   z-index: 10;
 }
 
@@ -349,7 +349,7 @@ function confirm() {
 }
 
 .card-choice-btn.selected:hover {
-  transform: translateY(-4px) scale(1.35);
+  transform: translateY(-4px) scale(1.175);
   z-index: 10;
 }
 

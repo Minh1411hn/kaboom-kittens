@@ -231,7 +231,7 @@ const verdictText = computed(() => {
 }
 
 .stack-card-item:hover {
-    transform: scale(1.35) translateY(-8px);
+    transform: scale(1.175) translateY(-8px);
     z-index: 50 !important;
 }
 

@@ -331,7 +331,7 @@ const canSubmit = computed(() => Boolean(chosenUid.value))
 }
 
 .choice:hover:not(:disabled) :deep(.card) {
-  transform: translateY(-6px) scale(1.35);
+  transform: translateY(-6px) scale(1.175);
   z-index: 10;
 }
 
