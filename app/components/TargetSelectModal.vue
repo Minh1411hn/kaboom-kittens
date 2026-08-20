@@ -142,14 +142,11 @@
       flex-direction: column;
       gap: 1.15rem;
       padding: 1.5rem 1.65rem;
-      background: rgba(32, 10, 8, 0.95);
-      border: 1px solid rgba(255, 194, 26, 0.35);
+      background: $cream-card;
+      border: $outline-width solid $ink;
       border-radius: 20px;
-      box-shadow:
-        0 24px 50px rgba(0, 0, 0, 0.7),
-        0 0 30px rgba(255, 122, 26, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      color: var(--text);
+      box-shadow: $shadow;
+      color: $ink;
       animation: dialog-pop 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
 
@@ -160,8 +157,7 @@
     &__title {
       font-size: 1.45rem;
       margin: 0 0 0.3rem;
-      color: var(--accent);
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      color: $ink;
     }
 
     &__subtitle {
@@ -195,27 +191,22 @@
       align-items: center;
       gap: 0.65rem;
       padding: 0.6rem 0.75rem;
-      background: rgb(60 25 15 / 55%);
-      border: 2px solid rgba(255, 255, 255, 0.12);
+      background: $cream;
+      border: 2px solid $ink;
       border-radius: 12px;
       cursor: pointer;
       position: relative;
       text-align: left;
       transition: all 0.15s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 3px 0 $ink;
 
       &:hover {
-        background: rgb(90 38 20 / 70%);
-        border-color: rgba(255, 194, 26, 0.5);
+        filter: brightness(0.97);
         transform: translateY(-2px);
       }
 
       &--selected {
-        background: rgb(110 45 20 / 90%);
-        border-color: var(--warn);
-        box-shadow:
-          0 0 16px rgba(255, 194, 26, 0.45),
-          0 4px 10px rgba(0, 0, 0, 0.4);
+        background: linear-gradient(180deg, $gold-1, $gold-2);
       }
     }
 
@@ -249,7 +240,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.55rem;
-      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+      border-top: 1px dashed $ink;
       padding-top: 0.85rem;
     }
 
@@ -265,9 +256,9 @@
       padding: 0.3rem 0.6rem;
       font-size: 0.82rem;
       border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.35);
-      color: var(--text);
+      border: 2px solid $ink;
+      background: $cream;
+      color: $ink;
       width: 170px;
     }
 
@@ -319,7 +310,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 80px;
-      color: var(--text);
+      color: $ink;
     }
 
     &__actions {
@@ -327,7 +318,7 @@
       justify-content: flex-end;
       gap: 0.75rem;
       margin-top: 0.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid $ink;
       padding-top: 0.85rem;
     }
 

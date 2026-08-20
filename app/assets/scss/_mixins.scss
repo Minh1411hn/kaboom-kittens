@@ -12,10 +12,11 @@
   }
 }
 
-// The parchment sign, for components that need it without the `.panel` class.
-@mixin parchment {
-  background: linear-gradient(180deg, $parchment, $parchment-2);
-  box-shadow: $shadow, inset 0 0 0 2px rgb(255 255 255 / 45%);
+// The card surface, for components that need it without the `.panel` class.
+@mixin card {
+  background: $cream-card;
+  border: $outline-width solid $ink;
   border-radius: $radius;
+  box-shadow: $shadow;
   color: $ink;
 }

@@ -218,18 +218,18 @@
       margin: 0 0 0.1rem 0.35rem;
       padding: 0.05rem 0.32rem;
       border-radius: 999px;
-      background: rgb(40 18 2 / 80%);
+      background: $cream-card;
+      border: 1px solid $ink;
       font-family: var(--font-display);
       font-size: 0.72rem;
       line-height: 1.35;
-      color: var(--text);
+      color: $ink;
     }
 
     &__meta {
       font-size: 0.7rem;
       letter-spacing: 0.3px;
-      color: var(--text-dim);
-      text-shadow: 0 1px 2px rgb(30 12 0 / 60%);
+      color: $ink-dim;
     }
   }
 </style>

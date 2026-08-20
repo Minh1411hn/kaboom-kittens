@@ -1,395 +1,308 @@
-<script setup lang="ts">
-import type { RoomSummary } from "#shared/protocol/messages";
+<template lang="pug">
+.home
+  NicknameGate(v-if="ready && !nickname" @done="onNicknameSet")
 
-const { nickname, avatarId, ready, load, setProfile } = useSession();
-const { rooms, connect, send, status, error, resetRoom } = useGameSocket();
+  template(v-else-if="ready")
+    CommonHeader.home__header(
+      :avatar-id="avatarId"
+      :nickname="nickname"
+      :status="status"
+      @profile-click="profileDialogOpen = true"
+    )
+      template(#actions)
+        CommonButton(
+          aria-label="Cài đặt âm thanh"
+          icon="lucide:volume-2"
+          variant="gold"
+          @click="audioDialogOpen = true"
+        )
+        CommonButton(
+          aria-label="Hồ sơ của bạn"
+          icon="lucide:settings"
+          variant="gold"
+          @click="profileDialogOpen = true"
+        )
 
-const creating = ref(false);
-const profileDialogOpen = ref(false);
-const savingProfile = ref(false);
+    .home__inner
+      //- Left column: the brand and the one primary action.
+      section.home__brand
+        img.home__logo(alt="BLOW U.P." src="/branding/logo-banner.png")
+        img.home__mascot(alt="" src="/branding/mascot.png")
 
-await load();
+        CommonButton.home__create(
+          :disabled="creating"
+          :loading="creating"
+          icon="lucide:users"
+          label="Tạo phòng"
+          size="lg"
+          variant="gold"
+          @click="createRoom"
+        )
 
-// Paint the list server-side; the socket keeps it live from then on.
-const { data: initialRooms } = await useFetch<{ rooms: RoomSummary[] }>(
-    "/api/rooms",
-);
-if (initialRooms.value?.rooms) rooms.value = initialRooms.value.rooms;
+        p.home__error.error(v-if="error") {{ error }}
 
-onMounted(() => {
-    resetRoom();
-    if (nickname.value) start();
-});
+      //- Right column: who you are, then the live room list.
+      section.home__lobby
+        h2.home__heading Danh sách phòng
 
-function start() {
-    connect();
-    // The socket may still be opening; useGameSocket buffers until it is not.
-    send({ type: "watch-lobby" });
-}
+        p.home__empty(v-if="!openRooms.length")
+          | Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!
 
-function onNicknameSet() {
-    start();
-}
+        ul.home__rooms(v-else)
+          li.home__room(v-for="room in openRooms" :key="room.id")
+            .home__room-main
+              strong.home__room-name {{ room.name }}
+              span.home__room-meta
+                | - {{ room.playerCount }}/{{ room.maxPlayers }} người ·
+                | {{ room.status === "playing" ? "đang chơi" : "đang chờ" }} ·
+                | {{ since(room.createdAt) }}
+            CommonButton.home__room-join(
+              :disabled="room.playerCount >= room.maxPlayers && room.status === 'lobby'"
+              :label="room.status === 'playing' ? 'Xem' : 'Vào phòng'"
+              size="sm"
+              variant="red"
+              @click="navigateTo(`/room/${room.id}`)"
+            )
 
-async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
-    if (savingProfile.value) return;
-    savingProfile.value = true;
-    try {
-        // REST first: the durable write, works even if the socket is down.
-        await setProfile(nicknameValue, avatarIdValue);
-        // Then tell the live room (if any) to refresh for everyone else.
-        send({ type: "update-profile", nickname: nicknameValue, avatarId: avatarIdValue });
-        profileDialogOpen.value = false;
-    } finally {
-        savingProfile.value = false;
-    }
-}
+    ProfileDialog(
+      v-if="profileDialogOpen"
+      :avatar-id="avatarId"
+      :nickname="nickname"
+      :saving="savingProfile"
+      @cancel="profileDialogOpen = false"
+      @save="onProfileSave"
+    )
 
-async function createRoom() {
-    if (creating.value) return;
-    creating.value = true;
-    try {
-        const { roomId } = await $fetch<{ roomId: string }>("/api/rooms", {
-            method: "POST",
-            body: {},
-        });
-        await navigateTo(`/room/${roomId}`);
-    } catch (caught) {
-        error.value =
-            (caught as { statusMessage?: string }).statusMessage ??
-            "Không thể tạo phòng chơi.";
-    } finally {
-        creating.value = false;
-    }
-}
-
-const openRooms = computed(() =>
-    rooms.value.filter((room) => room.status !== "over"),
-);
-
-function since(at: number): string {
-    const minutes = Math.round((Date.now() - at) / 60000);
-    if (minutes < 1) return "vừa xong";
-    if (minutes < 60) return `${minutes} phút trước`;
-    return `${Math.round(minutes / 60)} giờ trước`;
-}
-</script>
-
-<template>
-    <div class="page">
-        <NicknameGate v-if="ready && !nickname" @done="onNicknameSet" />
-
-        <template v-else-if="ready">
-            <header class="header">
-                <div class="hero">
-                    <img
-                        src="/common/mascot-kitten.svg"
-                        alt=""
-                        class="mascot"
-                    />
-                    <h1 class="hero-title">
-                        <span class="line line-gold">Kaboom</span>
-                        <span class="line line-white">Kitten</span>
-                    </h1>
-                </div>
-                <div class="row profile-row">
-                    <span
-                        class="dot"
-                        :class="status"
-                        :title="`Trạng thái kết nối: ${status}`"
-                    />
-                    <CurrentUserButton
-                        :nickname="nickname"
-                        :avatar-id="avatarId"
-                        @click="profileDialogOpen = true"
-                    />
-                </div>
-            </header>
-
-            <ProfileDialog
-                v-if="profileDialogOpen"
-                :nickname="nickname"
-                :avatar-id="avatarId"
-                :saving="savingProfile"
-                @save="onProfileSave"
-                @cancel="profileDialogOpen = false"
-            />
-
-            <p v-if="error" class="error">{{ error }}</p>
-
-            <div class="start-game-container">
-                <button
-                    class="primary start-btn"
-                    :disabled="creating"
-                    @click="createRoom"
-                >
-                    Bắt đầu ván mới
-                </button>
-            </div>
-
-            <section class="panel">
-                <h2>Phòng đang mở</h2>
-                <p v-if="!openRooms.length" class="muted">
-                    Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!
-                </p>
-                <ul v-else class="rooms">
-                    <li v-for="room in openRooms" :key="room.id" class="room">
-                        <div class="room-main">
-                            <strong>{{ room.name }}</strong>
-                            <span class="muted small">
-                                Chủ phòng: {{ room.hostNickname }} ·
-                                {{ since(room.createdAt) }}
-                            </span>
-                        </div>
-                        <span class="badge" :class="room.status">
-                            {{
-                                room.status === "playing"
-                                    ? "Đang chơi"
-                                    : "Đang chờ"
-                            }}
-                        </span>
-                        <span
-                            class="count"
-                            :class="{
-                                full: room.playerCount >= room.maxPlayers,
-                            }"
-                        >
-                            {{ room.playerCount }}/{{ room.maxPlayers }}
-                        </span>
-                        <NuxtLink :to="`/room/${room.id}`">
-                            <button
-                                :disabled="
-                                    room.playerCount >= room.maxPlayers &&
-                                    room.status === 'lobby'
-                                "
-                            >
-                                {{
-                                    room.status === "playing" ? "Xem" : "Tham gia"
-                                }}
-                            </button>
-                        </NuxtLink>
-                    </li>
-                </ul>
-            </section>
-        </template>
-    </div>
+    AudioSettingsDialog(v-if="audioDialogOpen" @cancel="audioDialogOpen = false")
 </template>
 
-<style scoped>
-/*
- * The landing page gets its own red/maroon "menu" theme instead of the
- * wood-table look the rest of the app uses — scoped entirely to this file
- * so it can't leak into the live game table.
- */
-.page {
+<script setup lang="ts">
+  import type { RoomSummary } from "#shared/protocol/messages"
+
+  const { nickname, avatarId, ready, load, setProfile } = useSession()
+  const { rooms, connect, send, status, error, resetRoom } = useGameSocket()
+
+  const creating = ref(false)
+  const profileDialogOpen = ref(false)
+  const audioDialogOpen = ref(false)
+  const savingProfile = ref(false)
+
+  await load()
+
+  // Paint the list server-side; the socket keeps it live from then on.
+  const { data: initialRooms } = await useFetch<{ rooms: RoomSummary[] }>("/api/rooms")
+  if (initialRooms.value?.rooms) rooms.value = initialRooms.value.rooms
+
+  onMounted(() => {
+    resetRoom()
+    if (nickname.value) start()
+  })
+
+  function start() {
+    connect()
+    // The socket may still be opening; useGameSocket buffers until it is not.
+    send({ type: "watch-lobby" })
+  }
+
+  function onNicknameSet() {
+    start()
+  }
+
+  async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
+    if (savingProfile.value) return
+    savingProfile.value = true
+    try {
+      // REST first: the durable write, works even if the socket is down.
+      await setProfile(nicknameValue, avatarIdValue)
+      // Then tell the live room (if any) to refresh for everyone else.
+      send({ type: "update-profile", nickname: nicknameValue, avatarId: avatarIdValue })
+      profileDialogOpen.value = false
+    } finally {
+      savingProfile.value = false
+    }
+  }
+
+  async function createRoom() {
+    if (creating.value) return
+    creating.value = true
+    try {
+      const { roomId } = await $fetch<{ roomId: string }>("/api/rooms", {
+        method: "POST",
+        body: {}
+      })
+      await navigateTo(`/room/${roomId}`)
+    } catch (caught) {
+      error.value = (caught as { statusMessage?: string }).statusMessage ?? "Không thể tạo phòng chơi."
+    } finally {
+      creating.value = false
+    }
+  }
+
+  const openRooms = computed(() => rooms.value.filter((room) => room.status !== "over"))
+
+  function since(at: number): string {
+    const minutes = Math.round((Date.now() - at) / 60000)
+    if (minutes < 1) return "vừa xong"
+    if (minutes < 60) return `${minutes} phút trước`
+    return `${Math.round(minutes / 60)} giờ trước`
+  }
+</script>
+
+<style scoped lang="scss">
+  /*
+   * Two columns on wide screens — brand on the left, room list on the right —
+   * stacking to one below `md`. The page paints no background of its own; the
+   * cream comes from `layouts/default.vue`.
+   */
+  .home {
     position: relative;
-    max-width: 820px;
-    margin: 0 auto;
-    padding: 1.5rem 1rem 4rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-}
+    gap: 1.5rem;
+    min-height: 100dvh;
+    padding: 1.5rem 1rem 3rem;
 
-.page::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image: url("/common/background-red-texture.png");
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-}
+    &__header {
+      flex: none;
 
-/*
- * These target elements written directly in this page's own template
- * (the "Create room" / "Open rooms" sections and their input), so a plain
- * scoped selector is enough — no `:deep()`, which would otherwise also
- * reach into NicknameGate's internal markup and fight with its own
- * self-contained styling.
- */
-.page > section.panel {
-    background: rgba(30, 5, 5, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    color: var(--text);
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    padding: 1.5rem;
-}
+      /*
+       * Wide enough to spare the room: lift the bar out of the flow so it stops
+       * eating into the height `__inner` centres against, and the brand and the
+       * room list sit in the middle of the viewport rather than in the middle of
+       * what is left under it. Below `lg` the stacked columns are taller than the
+       * viewport anyway, so a floating bar would just cover the logo — there it
+       * stays in the flow.
+       */
+      @include respond-to("lg") {
+        position: absolute;
+        inset: 1.5rem 1rem auto;
+        z-index: 1;
+      }
+    }
 
-.page > section.panel h2 {
-    color: var(--text);
-}
+    &__inner {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      width: 100%;
+      max-width: 1280px;
+      /*
+       * `auto` on all four sides centres the block in both axes. Deliberately
+       * not `align-items: center` on the parent: when the content outgrows the
+       * viewport that overflows past the top edge and cannot be scrolled back
+       * to, while auto margins collapse to zero instead.
+       */
+      margin: auto;
 
-.page > section.panel .muted {
-    color: var(--text-dim);
-}
+      @include respond-to("lg") {
+        flex-direction: row;
+        align-items: center;
+        gap: 3rem;
+      }
+    }
 
-.start-game-container {
-    display: flex;
-    justify-content: center;
-    margin: 2rem 0;
-}
+    &__brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      flex: 1;
+    }
 
-.start-btn {
-    font-size: 1.5rem;
-    padding: 1rem 2.5rem;
-    border: 2px solid yellow;
-    box-shadow: 0 8px 24px rgba(255, 122, 26, 0.4);
-}
+    // Placeholder until the real `BLOW U.P.` artwork lands.
+    // A transparent PNG wordmark, so it sits straight on the cream field.
+    &__logo {
+      display: block;
+      width: 100%;
+      max-width: 520px;
+      height: auto;
+    }
 
-.rooms button {
-    background: linear-gradient(180deg, var(--maroon-1), var(--maroon-2));
-}
+    &__mascot {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+    }
 
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.5rem 0 0.25rem;
-}
+    &__create {
+      width: 100%;
+      max-width: 480px;
+    }
 
-.hero {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-}
+    &__error {
+      text-align: center;
+    }
 
-.mascot {
-    width: 76px;
-    height: auto;
-    flex: none;
-    filter: drop-shadow(0 4px 6px rgb(0 0 0 / 45%));
-}
+    &__lobby {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1;
+      min-width: 0;
+    }
 
-/* Two-tone outlined title, mobile-app menu style. */
-.hero-title {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    line-height: 0.92;
-    font-size: clamp(2rem, 7vw, 3.2rem);
-    font-weight: 900;
-    letter-spacing: -0.01em;
-}
+    &__empty {
+      color: $ink-dim;
+      text-align: center;
+    }
 
-.hero-title .line {
-    text-shadow:
-        -2px -2px 0 var(--outline),
-        2px -2px 0 var(--outline),
-        -2px 2px 0 var(--outline),
-        2px 2px 0 var(--outline),
-        0 6px 10px rgb(0 0 0 / 40%);
-}
+    &__heading {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+    }
 
-.hero-title .line-gold {
-    background: linear-gradient(180deg, #ffe066 0%, var(--accent) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
+    &__rooms {
+      list-style: none;
+      margin: 0;
+      padding: 0 0.5rem 0.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-height: 70vh;
+      overflow-y: auto;
+      scrollbar-color: $ink transparent;
+      scrollbar-width: thin;
+    }
 
-.hero-title .line-white {
-    color: var(--text);
-}
+    &__room {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.1rem;
+      background: $cream-card;
+      border: $outline-width solid $ink;
+      border-radius: $radius;
+      box-shadow: 0 4px 0 $ink;
+    }
 
-.profile-row {
-    flex: none;
-    justify-content: flex-end;
-}
+    &__room-main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1;
+      min-width: 0;
+    }
 
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--text-dim);
-}
+    &__room-name {
+      font-family: $font-display;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: $ink;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.dot.open {
-    background: var(--good);
-}
+    &__room-meta {
+      font-size: 0.9rem;
+      color: $ink-dim;
+    }
 
-.dot.connecting {
-    background: var(--warn);
-}
-
-.dot.closed {
-    background: var(--bad);
-}
-
-.small {
-    font-size: 0.85rem;
-}
-
-.rooms {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.room {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius);
-    transition:
-        background 0.2s,
-        border-color 0.2s;
-}
-
-.room:hover {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.room-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.room-main strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.badge {
-    font-family: var(--font-display);
-    font-size: 0.72rem;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    padding: 0.18rem 0.6rem;
-    border-radius: 999px;
-    background: rgb(0 0 0 / 28%);
-    color: var(--text-dim);
-}
-
-.badge.playing {
-    background: var(--accent-dim);
-    color: #fff;
-}
-
-.count {
-    font-variant-numeric: tabular-nums;
-    color: var(--text-dim);
-}
-
-.count.full {
-    color: var(--bad);
-    font-weight: bold;
-}
+    &__room-join {
+      flex: none;
+    }
+  }
 </style>

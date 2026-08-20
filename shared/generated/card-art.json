@@ -15,6 +15,9 @@
   "card-back": [
     "/cards/card-back/artworks/art04.png"
   ],
+  "copy": [
+    "/cards/copy/artworks/art02.png"
+  ],
   "defuse": [
     "/cards/defuse/artworks/art41.png",
     "/cards/defuse/artworks/art42.png",
@@ -24,6 +27,9 @@
     "/cards/defuse/artworks/art46.png",
     "/cards/defuse/artworks/art47.png",
     "/cards/defuse/artworks/art48.png"
+  ],
+  "discard": [
+    "/cards/discard/artworks/art02.png"
   ],
   "draw-from-the-bottom": [
     "/cards/draw-from-the-bottom/artworks/art40.png"
@@ -69,6 +75,9 @@
     "/cards/reverse/artworks/art17.png",
     "/cards/reverse/artworks/art24.png"
   ],
+  "search": [
+    "/cards/search/artworks/art02.png"
+  ],
   "see-the-future-3x": [
     "/cards/see-the-future-3x/artworks/art08.png",
     "/cards/see-the-future-3x/artworks/art16.png",
@@ -86,6 +95,9 @@
     "/cards/skip/artworks/art05.png",
     "/cards/skip/artworks/art13.png",
     "/cards/skip/artworks/art20.png"
+  ],
+  "steal-a-card": [
+    "/cards/steal-a-card/artworks/art02.png"
   ],
   "targeted-attack-2x": [
     "/cards/targeted-attack-2x/artworks/art01.png",

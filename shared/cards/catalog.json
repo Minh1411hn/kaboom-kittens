@@ -146,6 +146,21 @@
       }
     },
     {
+      "id": "steal-a-card",
+      "name": "Steal a Card",
+      "label": "Trộm bài",
+      "category": "action",
+      "deck": {
+        "base": 3
+      },
+      "color": "#009688",
+      "text": "Chọn 1 người chơi; trộm ngẫu nhiên 1 lá bài trên tay người đó.",
+      "play": {
+        "solo": true,
+        "target": true
+      }
+    },
+    {
       "id": "draw-from-the-bottom",
       "name": "Draw From the Bottom",
       "label": "Rút từ đáy",

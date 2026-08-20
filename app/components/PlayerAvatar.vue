@@ -75,7 +75,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       place-items: center;
       border-radius: 50%;
       overflow: hidden;
-      background: rgb(0 0 0 / 25%);
+      background: $cream;
       box-shadow:
         inset 0 0 10px rgb(0 0 0 / 35%),
         inset 0 2px 5px rgb(0 0 0 / 20%);
@@ -123,13 +123,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       letter-spacing: 0.3px;
       text-transform: uppercase;
       text-align: center;
-      color: var(--text);
-      text-shadow:
-        -1px -1px 0 var(--outline),
-        1px -1px 0 var(--outline),
-        -1px 1px 0 var(--outline),
-        1px 1px 0 var(--outline),
-        0 2px 3px rgb(0 0 0 / 45%);
+      color: $ink;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -139,7 +133,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       }
 
       &--current {
-        color: #fff;
+        color: $accent-dim;
       }
     }
 

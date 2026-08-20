@@ -59,10 +59,10 @@ form.nickname-gate.panel(@submit.prevent="submit")
 
 <style scoped lang="scss">
   /*
- * This gate is the entry point to both the landing page and a room link,
- * always before a game exists — so it always gets the red/maroon menu
- * look, self-contained here rather than relying on the global `.panel`
- * (which stays wood/parchment for the live game table).
+ * The gate is the entry point to both the landing page and a room link, so it
+ * carries the same card look as everything else on the cream field: a thick ink
+ * outline over `$cream-card`, spelled out here rather than borrowed from the
+ * global `.panel`, because it also owns its own width and rhythm.
  */
   .nickname-gate {
     position: relative;
@@ -72,23 +72,17 @@ form.nickname-gate.panel(@submit.prevent="submit")
     flex-direction: column;
     gap: 1rem;
     padding: 1.6rem 1.8rem;
-    background: linear-gradient(160deg, rgb(122 20 20 / 55%), rgb(61 10 12 / 78%));
-    border: 2px solid var(--maroon-edge);
-    color: var(--text);
-    box-shadow:
-      var(--shadow),
-      inset 0 0 0 1px rgb(255 255 255 / 8%);
+    background: $cream-card;
+    border: $outline-width solid $ink;
+    border-radius: $radius;
+    color: $ink;
+    box-shadow: $shadow;
 
     &__title {
       font-size: 2.4rem;
       line-height: 1.05;
       text-align: center;
-      color: var(--accent);
-      text-shadow:
-        -2px -2px 0 var(--outline),
-        2px -2px 0 var(--outline),
-        -2px 2px 0 var(--outline),
-        2px 2px 0 var(--outline);
+      color: $ink;
     }
 
     &__subtitle {
@@ -106,14 +100,12 @@ form.nickname-gate.panel(@submit.prevent="submit")
     }
 
     &__input {
-      color: var(--text);
-      background: linear-gradient(180deg, var(--red-3), #2c0708);
-      border: 2px solid var(--maroon-edge);
-      box-shadow: inset 0 2px 5px rgb(0 0 0 / 45%);
+      color: $ink;
+      background: $cream;
+      border: $outline-width solid $ink;
 
       &::placeholder {
-        color: var(--text-dim);
-        opacity: 0.7;
+        color: $ink-dim;
       }
     }
 

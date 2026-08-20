@@ -1,31 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap");
 
 /*
  * The whole visual system lives here plus one `<style scoped>` block per
  * component. Everything below :root is expressed in these tokens — reskinning
  * the game means editing the token block, not hunting hexes in templates.
  *
- * The red/maroon/plaque tokens and `.plaque-btn*` rules near the bottom are
- * an exception: they belong only to the landing page and the pre-game
- * waiting room, scoped there in each of those components' own <style>
- * blocks. They're additive and self-contained — they don't touch `--bg`,
- * `--text`, `button`, `.panel` or any other token/rule the live game table
- * still relies on.
+ * The app sits on one flat cream field (`--cream`), painted once by
+ * `app/layouts/default.vue` and by `body` below. There is no background
+ * image anywhere: signs, cards and buttons carry the whole look through a
+ * thick ink outline and a hard (blur-free) drop shadow.
+ *
+ * `--parchment*` survives only as an alias of the card cream so the few
+ * templates that still name it keep working.
  */
 :root {
-  /* The table surface. */
-  --wood-1: #8a5a2b;
-  --wood-2: #6f4520;
-  --wood-3: #52310f;
-  --wood-seam: rgb(0 0 0 / 22%);
-  --wood-edge: #3c2309;
+  /* The one surface everything sits on. */
+  --cream: #f5edcf;
+  --cream-card: #fdf6e5;
 
-  /* Signs, banners and dialogs are torn parchment. */
-  --parchment: #f3e2c0;
-  --parchment-2: #e7d3aa;
-  --parchment-edge: #d9bf8e;
-  --ink: #2c2117;
-  --ink-dim: #7a6a56;
+  /* Ink is text, outline and hard shadow all at once. */
+  --ink: #421a13;
+  --ink-dim: #8a6a55;
+
+  /* The two button fills. */
+  --gold-1: #f7d154;
+  --gold-2: #f0b429;
+  --brick-1: #c0392b;
+  --brick-2: #a5281d;
 
   /* Cards are whole printed faces — the artwork carries its own frame. */
   --card-radius: 14px;
@@ -36,38 +37,36 @@
   --deck-warm: #f5771c;
 
   /* Kept under the old names so existing templates keep working. */
-  --bg: var(--wood-2);
-  --bg-raised: rgb(255 255 255 / 10%);
-  --bg-inset: rgb(0 0 0 / 22%);
-  --border: rgb(0 0 0 / 30%);
-  --text: #fdf6e7;
-  --text-dim: #d7bd95;
-  --accent: #ff7a1a;
-  --accent-dim: #c14a06;
-  --good: #4cc95f;
-  --bad: #e8352e;
-  --warn: #ffc21a;
+  --bg: var(--cream);
+  --bg-raised: rgb(255 255 255 / 60%);
+  --bg-inset: rgb(74 31 24 / 8%);
+  --border: rgb(74 31 24 / 30%);
+  --text: var(--ink);
+  --text-dim: var(--ink-dim);
+  --accent: #f0b429;
+  --accent-dim: #c98d10;
+  --good: #3f8f4a;
+  --bad: #c0392b;
+  --warn: #e0951c;
 
-  --radius: 12px;
-  --shadow: 0 10px 26px rgb(28 12 0 / 55%);
-  --shadow-sm: 0 3px 8px rgb(28 12 0 / 40%);
+  /* Parchment used to be its own surface; it is now the card cream. */
+  --parchment: var(--cream-card);
+  --parchment-2: var(--cream-card);
+  --parchment-edge: var(--ink);
 
-  --font-display: 'Oswald', system-ui, sans-serif;
-  --font-body: 'Oswald', system-ui, sans-serif;
+  --radius: 16px;
+  /* Hard, blur-free shadows — the outline style from the mockup. */
+  --shadow: 0 6px 0 var(--ink);
+  --shadow-sm: 0 3px 0 var(--ink);
+  --outline-width: 3px;
 
-  color-scheme: dark;
+  --font-display: "Oswald", system-ui, sans-serif;
+  --font-body: "Oswald", system-ui, sans-serif;
 
-  /*
-   * Red/maroon plaque theme — landing page + pre-game waiting room only.
-   * See the file header comment.
-   */
-  --red-1: #7a1414;
-  --red-2: #5c0f10;
-  --red-3: #3d0a0c;
-  --maroon-1: #8a1f1f;
-  --maroon-2: #5e1414;
-  --maroon-edge: #4a1010;
-  --outline: #1a0505;
+  color-scheme: light;
+
+  /* PlaqueButton's die-cut outline and its glossy "go" chevron. */
+  --outline: var(--ink);
   --radius-plaque: 10px;
   --chevron-green: #3fae4a;
   --chevron-green-dark: #237a2c;
@@ -86,17 +85,12 @@ body,
 body {
   margin: 0;
   background-color: var(--bg);
-  background-image: url('/common/background-wood.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Everything the pages render sits above the grain. */
+/* Everything the pages render sits above the ground colour. */
 #__nuxt {
   position: relative;
   z-index: 1;
@@ -110,52 +104,55 @@ h3 {
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  color: var(--ink);
 }
 
-/* Buttons are chunky wooden keys with a lit top edge. */
+/*
+ * Bare `button` is the fallback for the few places that still write their own.
+ * New code should reach for `app/components/common/Button.vue` instead, which
+ * owns its whole look in its own scoped block.
+ */
 button {
   font: inherit;
   font-family: var(--font-display);
   font-size: 1.02rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: var(--text);
-  border: none;
-  background: linear-gradient(180deg, #7d4f22, #5c3714);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 25%),
-    inset 0 -2px 0 rgb(0 0 0 / 30%),
-    var(--shadow-sm);
+  color: var(--ink);
+  border: var(--outline-width) solid var(--ink);
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2));
+  box-shadow: var(--shadow-sm);
   border-radius: 999px;
   padding: 0.55rem 1.15rem;
   cursor: pointer;
-  transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 button:hover:not(:disabled) {
-  filter: brightness(1.15);
+  filter: brightness(1.06);
 }
 
 button:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 15%), var(--shadow-sm);
+  box-shadow: 0 1px 0 var(--ink);
 }
 
 button:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 button.primary {
-  background: linear-gradient(180deg, #ffa02b, var(--accent) 45%, var(--accent-dim));
-  color: #33180a;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 35%);
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2));
+  color: var(--ink);
 }
 
 button.danger {
-  background: linear-gradient(180deg, #ff5a4d, var(--bad) 45%, #96281b);
-  color: #fff;
-  text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
+  background: linear-gradient(180deg, var(--brick-1), var(--brick-2));
+  color: var(--cream);
 }
 
 /* Inputs are carved into the surface they sit on. */
@@ -163,10 +160,10 @@ input,
 select {
   font: inherit;
   color: var(--ink);
-  background: linear-gradient(180deg, #fffaf0, var(--parchment));
-  border: 2px solid var(--parchment-edge);
+  background: var(--cream-card);
+  border: var(--outline-width) solid var(--ink);
   border-radius: var(--radius);
-  box-shadow: inset 0 2px 5px rgb(80 55 20 / 25%);
+  box-shadow: none;
   padding: 0.55rem 0.8rem;
   width: 100%;
 }
@@ -178,20 +175,20 @@ input::placeholder {
 input:focus,
 select:focus,
 button:focus-visible {
-  outline: 3px solid var(--warn);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
 /*
- * `.panel` is the shared parchment sign. Every screen already uses it, so
- * reskinning it here re-themes the lobby, the modals and the log at once.
+ * `.panel` is the shared card. Every screen already uses it, so reskinning it
+ * here re-themes the lobby, the modals and the log at once.
  */
 .panel {
   position: relative;
-  background: linear-gradient(180deg, var(--parchment), var(--parchment-2));
-  border: none;
+  background: var(--cream-card);
+  border: var(--outline-width) solid var(--ink);
   border-radius: var(--radius);
-  box-shadow: var(--shadow), inset 0 0 0 2px rgb(255 255 255 / 45%);
+  box-shadow: var(--shadow);
   color: var(--ink);
   padding: 1rem 1.1rem;
 }
@@ -202,14 +199,10 @@ button:focus-visible {
   color: var(--ink);
 }
 
-/* Inside parchment, "muted" has to darken rather than lighten. */
 .panel .muted,
-.panel.muted {
-  color: var(--ink-dim);
-}
-
+.panel.muted,
 .muted {
-  color: var(--text-dim);
+  color: var(--ink-dim);
 }
 
 .row {
@@ -231,17 +224,18 @@ button:focus-visible {
 }
 
 .panel .error {
-  color: #a5201a;
+  color: var(--bad);
 }
 
-/* A small wooden plaque for counts and captions on the table surface. */
+/* A small plaque for counts and captions on the table surface. */
 .plaque {
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text);
-  background: linear-gradient(180deg, #6b4118, #4a2a0c);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), var(--shadow-sm);
+  color: var(--ink);
+  background: var(--cream-card);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
   border-radius: 999px;
   padding: 0.25rem 0.8rem;
   white-space: nowrap;

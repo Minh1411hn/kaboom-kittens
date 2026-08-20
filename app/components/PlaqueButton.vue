@@ -43,11 +43,10 @@ button.plaque-btn(
 
 <style scoped lang="scss">
   /*
- * The die-cut menu button from the mobile app's main menu: a notched
- * corner, a thick outline that traces the notch, a hexagon icon badge, a
- * two-line label and an optional glossy green "go" chevron. Only used on
- * the landing page and the pre-game waiting room, so its red/maroon look
- * is self-contained here rather than living in the global stylesheet.
+ * The die-cut menu button: a notched corner, a thick outline that traces the
+ * notch, a hexagon icon badge, a two-line label and an optional glossy green
+ * "go" chevron. Only NicknameGate and ProfileDialog still use it; new call
+ * sites should reach for `common/Button.vue` instead.
  */
   .plaque-btn {
     position: relative;
@@ -58,8 +57,8 @@ button.plaque-btn(
     min-height: 64px;
     padding: 0.7rem 1.1rem;
     border: none;
-    background: linear-gradient(135deg, var(--maroon-1), var(--maroon-2));
-    color: var(--text);
+    background: linear-gradient(135deg, $brick-1, $brick-2);
+    color: $cream;
     text-align: left;
     clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
     border-radius: var(--radius-plaque) 0 var(--radius-plaque) var(--radius-plaque);
@@ -99,20 +98,18 @@ button.plaque-btn(
     }
 
     &--primary {
-      background: linear-gradient(135deg, #ffcf5c, var(--accent) 55%, var(--accent-dim));
+      background: linear-gradient(135deg, $gold-1, $gold-2);
 
       .plaque-btn__title,
-      .plaque-btn__badge {
-        color: #33180a;
-      }
-
+      .plaque-btn__badge,
       .plaque-btn__subtitle {
-        color: #6b3a0a;
+        color: $ink;
       }
     }
 
     &--danger {
-      background: linear-gradient(135deg, #ff7a6a, var(--bad) 55%, #7a1414);
+      background: linear-gradient(135deg, $brick-1, $brick-2);
+      color: $cream;
     }
 
     &--compact {
@@ -130,7 +127,7 @@ button.plaque-btn(
       justify-content: center;
       font-size: 1.25rem;
       line-height: 1;
-      background: var(--red-3);
+      background: $brick-2;
       clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
 
       &::before {
@@ -157,7 +154,7 @@ button.plaque-btn(
       font-weight: 700;
       letter-spacing: 0.5px;
       text-transform: uppercase;
-      color: var(--text);
+      color: inherit;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -169,7 +166,7 @@ button.plaque-btn(
       font-weight: 600;
       letter-spacing: 0.4px;
       text-transform: uppercase;
-      color: var(--accent);
+      color: $gold-1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

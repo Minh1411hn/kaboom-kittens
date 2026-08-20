@@ -8,6 +8,7 @@ import { favor } from './favor'
 import { garbageCollection } from './garbage-collection'
 import { nope } from './nope'
 import { drawFromTheBottom, reverse, seeTheFuture3x, seeTheFuture5x, shuffleCard, skip } from './simple'
+import { stealACard } from './steal-a-card'
 
 let registered = false
 
@@ -29,6 +30,7 @@ export function registerAllCards(): void {
     reverse,
     shuffleCard,
     favor,
+    stealACard,
     drawFromTheBottom,
     seeTheFuture3x,
     seeTheFuture5x,

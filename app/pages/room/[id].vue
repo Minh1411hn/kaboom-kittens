@@ -1,3 +1,356 @@
+<template lang="pug">
+  .room
+    NicknameGate(v-if="ready && !nickname" @done="onNicknameSet")
+
+    template(v-else-if="ready")
+      CommonHeader.room__header(
+        :avatar-id="avatarId"
+        :clickable="inLobby"
+        :nickname="nickname"
+        :status="status"
+        @profile-click="profileDialogOpen = true"
+      )
+        template(#left)
+          CommonButton(
+            aria-label="Quay lại sảnh chờ"
+            icon="lucide:arrow-left"
+            size="sm"
+            variant="ghost"
+            @click="leaveToLobby"
+          )
+          CommonButton(
+            v-if="canQuit"
+            aria-label="Rời trận — bạn sẽ bị xử thua"
+            icon="lucide:log-out"
+            label="Rời trận"
+            size="sm"
+            variant="red"
+            @click="askToQuit"
+          )
+          .room__title
+            strong.room__name {{ roomName || "Đang tải…" }}
+            span.room__id Phòng {{ roomId }}
+
+        template(#actions)
+          CommonButton(
+            v-if="voiceAvailable"
+            :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
+            aria-label="Cài đặt âm thanh"
+            size="sm"
+            variant="ghost"
+            @click="audioDialogOpen = true"
+          )
+
+      ProfileDialog(
+        v-if="profileDialogOpen"
+        :avatar-id="avatarId"
+        :nickname="nickname"
+        :saving="savingProfile"
+        @cancel="profileDialogOpen = false"
+        @save="onProfileSave"
+      )
+
+      AudioSettingsDialog(v-if="audioDialogOpen" @cancel="audioDialogOpen = false")
+
+      VoiceAudioSinks(ref="voiceSinks")
+
+      button.room__gesture-prompt.panel(v-if="voiceNeedsGesture" @click="voiceSinks?.resume()")
+        Icon(aria-hidden="true" name="lucide:volume-2")
+        |
+        | Bấm để bật tiếng người chơi khác
+
+      p.room__notice.panel(v-if="kicked") {{ kicked }}
+      p.room__banner.error(v-if="error") {{ error }}
+      p.room__notice.panel(v-if="spectating")
+        | {{ state?.status === "lobby" ? "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống." : "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc." }}
+
+      p.room__notice.panel.muted(v-if="!state") Đang tham gia phòng chơi…
+
+      //- ------------------------------------------------ pre-game lobby
+      section.lobby(v-else-if="inLobby")
+        .lobby__content
+          .lobby__col.panel
+            h2.lobby__heading Danh sách player
+            .lobby__seats
+              .lobby__seat(v-for="player in state.players" :key="player.id")
+                PlayerSeat(
+                  :is-current="false"
+                  :is-host="player.id === hostId"
+                  :is-you="player.id === you?.id"
+                  :player="player"
+                  :turns-remaining="0"
+                  :voice-mic-on="voiceMicOnFor(player.id)"
+                  :voice-muted="voiceIsMuted(player.id)"
+                  :voice-interactive="player.id !== you?.id"
+                  :voice-speaking="voiceIsSpeaking(player.id === you?.id ? 'self' : player.id)"
+                  layout="horizontal"
+                  @toggle-voice-mute="voiceToggleMute"
+                )
+                span.lobby__conn(:class="player.connected ? 'lobby__conn--online' : 'lobby__conn--offline'")
+                  | {{ player.connected ? "Đã kết nối" : "Mất kết nối" }}
+                CommonButton.lobby__kick(
+                  v-if="isHost && player.id !== you?.id"
+                  aria-label="Mời ra khỏi phòng"
+                  label="Kick"
+                  size="sm"
+                  variant="red"
+                  @click="kickPlayer(player.id)"
+                )
+
+          .lobby__col.lobby__col--settings.panel
+            h2.lobby__heading Cài đặt phòng
+            .lobby__actions
+              p.muted
+                | Đã có {{ state.players.length }}/10 người tham gia. Chia sẻ liên kết này để rủ bạn bè cùng chơi:
+              ShareLink(:room-id="roomId")
+
+              .lobby__start
+                CommonButton(
+                  v-if="isHost"
+                  :disabled="state.players.length < 2 || state.status === 'over'"
+                  :label="state.status === 'over' ? 'Đang chờ mọi người…' : 'Bắt đầu ván đấu'"
+                  size="lg"
+                  variant="gold"
+                  @click="startGame"
+                )
+                p.muted(v-else)
+                  | {{ state.status === "over" ? "Đang chờ mọi người…" : "Đang chờ chủ phòng bắt đầu ván đấu…" }}
+
+            DeckSettingsPanel(:deck="state.deck" :is-host="isHost" @update="setDeckOverrides")
+
+      //- ------------------------------------------------------ the table
+      section.stage(v-else)
+        //- Everyone else, arced across the far side of the table.
+        .stage__arc
+          .stage__arc-slot(
+            v-for="(player, index) in others"
+            :key="player.id"
+            :style="{ transform: arcOffset(index, others.length) }"
+          )
+            PlayerSeat(
+              :is-current="player.id === state.currentPlayerId"
+              :is-host="player.id === hostId"
+              :is-you="false"
+              :player="player"
+              :selected="targetId === player.id"
+              :targetable="targetablePlayers.has(player.id)"
+              :turns-remaining="state.turn.turnsRemaining"
+              :voice-mic-on="voiceMicOnFor(player.id)"
+              :voice-muted="voiceIsMuted(player.id)"
+              :voice-speaking="voiceIsSpeaking(player.id)"
+              voice-interactive
+              @pick="pickTarget"
+              @toggle-voice-mute="voiceToggleMute"
+            )
+
+        .stage__center
+          TableCenter(
+            ref="tableCenter"
+            :can-draw="canDraw"
+            :deadline="state.turnDeadline"
+            :direction="state.turn.direction"
+            :discard-count="state.discardCount"
+            :discard-top="state.discardTop"
+            :draw-count="state.drawCount"
+            :dragging="drawDrag.dragging.value"
+            @draw="draw"
+            @draw-pointer-down="drawDrag.start"
+          )
+
+        .stage__banner
+          TurnBanner(
+            :actor-color="currentPlayerColor"
+            :current-player-name="currentPlayerName"
+            :deadline="state.turnDeadline"
+            :hint="bannerHint"
+            :is-your-turn="isYourTurn"
+          )
+            template(v-if="youAreSeated && alive && !isOver")
+              select(v-if="intent.needsNamedCard" v-model="namedCardId" aria-label="Card to demand")
+                option(:value="null" disabled) Chọn loại bài muốn đòi?
+                option(v-for="option in namedCardOptions" :key="option.id" :value="option.id") {{ option.name }}
+
+              CommonButton(
+                :disabled="!intent.ok"
+                :label="`Đánh ${selectedUids.length || ''}`"
+                size="sm"
+                variant="gold"
+                @click="play"
+              )
+
+              CommonButton(
+                :disabled="!selectedUids.length"
+                label="Bỏ chọn"
+                size="sm"
+                variant="ghost"
+                @click="selectedUids = []"
+              )
+
+        //- Your own seat, bottom-left.
+        .stage__self
+          PlayerSeat(
+            v-if="selfPlayer"
+            :is-current="isYourTurn"
+            :is-host="isHost"
+            :is-you="true"
+            :player="selfPlayer"
+            :turns-remaining="state.turn.turnsRemaining"
+            :voice-mic-on="voiceMicOnFor(selfPlayer.id)"
+            :voice-speaking="voiceIsSpeaking('self')"
+          )
+
+        .stage__hand(
+          ref="handArea"
+          :class="{ 'stage__hand--drop-active': drawDrag.dragging.value }"
+        )
+          HandFan(
+            v-if="youAreSeated && alive && !isOver"
+            ref="handFan"
+            :disabled="!isYourTurn && !hasNope"
+            :flip-uid="flipUid"
+            :hand="hand"
+            :hold-leave="kitten.holdLeave.value"
+            :selected="selectedUids"
+            @toggle="toggle"
+          )
+          p.stage__watching(v-else-if="!youAreSeated")
+            | Ván đấu đang diễn ra — bạn đang theo dõi với tư cách khán giả.
+          p.stage__watching(v-else-if="!alive")
+            Icon(aria-hidden="true" name="lucide:bomb")
+            |
+            | Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống sót cuối cùng!
+
+        DrawGhost(
+          v-if="drawDrag.ghostVisible.value"
+          :phase="drawDrag.phase.value"
+          :reduced-motion="drawDrag.reducedMotion"
+          :x="drawDrag.x.value"
+          :y="drawDrag.y.value"
+        )
+
+        Transition(name="slide")
+          NopeBar.stage__nope(
+            v-if="nopeWindow"
+            :deadline="nopeWindow.deadline"
+            :has-nope="hasNope"
+            :passed="passedAlready"
+            :players="state.players"
+            :stack="state.actionStack"
+            :you-played-top="youPlayedTop"
+            @nope="playNope"
+            @pass="send({ type: 'pass-nope' })"
+          )
+
+        //-
+          Only the end of the game draws the curtain. Being eliminated leaves the
+          table visible, because watching the rest burn is the consolation prize.
+        Transition(name="fade")
+          .stage__curtain(v-if="isOver")
+            .stage__result.panel
+              h2
+                Icon(v-if="winner" aria-hidden="true" name="lucide:trophy")
+                | {{ winner ? `${winner} đã chiến thắng!` : "Ván đấu kết thúc" }}
+              .stage__result-seats
+                PlayerSeat(
+                  v-for="player in state.players"
+                  :key="player.id"
+                  :is-current="false"
+                  :is-host="player.id === hostId"
+                  :is-you="player.id === you?.id"
+                  :player="player"
+                  :turns-remaining="0"
+                )
+              .row(v-if="youAreSeated")
+                CommonButton(label="Rời phòng" size="sm" variant="ghost" @click="leaveToLobby")
+                CommonButton.stage__ready(
+                  :disabled="youAreReady"
+                  :label="youAreReady ? `Đang chờ người chơi khác (${readyCount}/${connectedCount})…` : 'Sẵn sàng ván mới'"
+                  size="sm"
+                  variant="gold"
+                  @click="returnToLobby"
+                )
+              .row(v-else)
+                CommonButton(label="Rời phòng" size="sm" variant="gold" @click="leaveToLobby")
+
+      //- Chat and the story of the game, tucked into a corner.
+      .log-dock(v-if="state" :class="{ 'log-dock--open': logOpen }")
+        button.log-dock__toggle(@click="logOpen = !logOpen")
+          | {{ logOpen ? "Ẩn lịch sử" : "Lịch sử & Chat" }}
+          Icon(:name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true")
+        EventLog(v-show="logOpen" :chat="chat" :events="pending" @say="say")
+
+      InteractionModal(
+        v-if="state?.interaction && !['reorder-cards', 'choose-deck-position'].includes(state.interaction.kind)"
+        :hand="hand"
+        :interaction="state.interaction"
+        :players="state.players"
+        :you-id="state.you?.id ?? null"
+        @submit="submitInteraction"
+      )
+
+      SeeFutureModal(
+        v-if="showAlterFutureModal"
+        :cards="state?.interaction?.cards ?? []"
+        editable
+        @submit="onAlterFutureSubmit"
+      )
+
+      SeeFutureModal(v-if="showPeekModal" :cards="you?.peek ?? []" @close="peekDismissed = true")
+
+      DeckPositionModal(
+        v-if="deckPositionInteraction"
+        :interaction="deckPositionInteraction"
+        @submit="onDeckPositionSubmit"
+      )
+
+      TargetSelectModal(
+        v-if="targetModalOpen"
+        :card-id="selectedCards[0]?.id"
+        :combo="intent.combo"
+        :initial-named-card-id="namedCardId"
+        :initial-target-id="targetId"
+        :needs-named-card="intent.needsNamedCard"
+        :players="state?.players ?? []"
+        :you-id="you?.id"
+        @cancel="targetModalOpen = false"
+        @confirm="onTargetConfirmed"
+      )
+
+      CardArrivalFlyer(
+        :arriving-cards="arrivingCards"
+        :hand-area-rect="handAreaRect"
+        @landed="onCardLanded"
+      )
+
+      //-
+        Drawing an Exploding Kitten, staged: the whole table sees the
+        reveal, then the drawer's Defuse flies to the discard, and only
+        then does DeckPositionModal above get its turn.
+      KittenRevealOverlay(
+        v-if="kitten.revealSeq.value !== null"
+        :defused="kitten.revealDefused.value"
+        :player-name="kitten.revealPlayerName.value"
+        :uid="`kitten-${kitten.revealSeq.value}`"
+      )
+
+      CardDepartureFlyer(
+        :card="kitten.defuseCard.value"
+        :from-rect="kitten.defuseFromRect.value"
+        :measure-to="discardRect"
+        @done="kitten.onDefuseFlightDone"
+      )
+
+      ConfirmDialog(
+        v-if="confirmingQuit"
+        cancel-label="Ở lại"
+        confirm-label="Rời trận"
+        message="Bạn sẽ bị loại khỏi ván này và không thể tham gia lại cho đến khi ván mới bắt đầu."
+        title="Rời khỏi trận đấu?"
+        @cancel="cancelQuit"
+        @confirm="quitGame"
+      )
+</template>
+
 <script setup lang="ts">
 import type {
     Card,
@@ -431,6 +784,14 @@ const showDeckPositionModal = computed(() =>
     ),
 );
 
+/**
+ * The same guard as a value, so the template can pass the interaction without a
+ * non-null assertion — TS syntax inside a pug template is not compiled away.
+ */
+const deckPositionInteraction = computed(() =>
+    showDeckPositionModal.value ? (state.value?.interaction ?? null) : null,
+);
+
 // --- actions ---------------------------------------------------------------
 
 function toggle(uid: string) {
@@ -544,496 +905,13 @@ function cancelQuit() {
 }
 </script>
 
-<template>
-    <div class="room" :class="{ 'red-theme': !state || inLobby }">
-        <NicknameGate v-if="ready && !nickname" @done="onNicknameSet" />
-
-        <template v-else-if="ready">
-            <header class="topbar">
-                <div class="row">
-                    <button
-                        class="icon"
-                        title="Quay lại sảnh chờ"
-                        @click="leaveToLobby"
-                    >
-                        <Icon name="lucide:arrow-left" aria-hidden="true" />
-                    </button>
-                    <button
-                        v-if="canQuit"
-                        class="icon danger"
-                        title="Rời trận — bạn sẽ bị xử thua"
-                        @click="askToQuit"
-                    >
-                        <Icon name="lucide:log-out" aria-hidden="true" /> Rời trận
-                    </button>
-                    <div class="stack tight">
-                        <strong class="room-title">{{
-                            roomName || "Đang tải…"
-                        }}</strong>
-                        <span class="muted small">Phòng {{ roomId }}</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <button
-                        v-if="voiceAvailable"
-                        class="icon"
-                        title="Cài đặt âm thanh"
-                        @click="audioDialogOpen = true"
-                    >
-                        <Icon :name="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'" aria-hidden="true" />
-                    </button>
-                    <span
-                        class="dot"
-                        :class="status"
-                        :title="`Trạng thái: ${status}`"
-                    />
-                    <CurrentUserButton
-                        :nickname="nickname"
-                        :avatar-id="avatarId"
-                        :clickable="inLobby"
-                        @click="inLobby && (profileDialogOpen = true)"
-                    />
-                </div>
-            </header>
-
-            <ProfileDialog
-                v-if="profileDialogOpen"
-                :nickname="nickname"
-                :avatar-id="avatarId"
-                :saving="savingProfile"
-                @save="onProfileSave"
-                @cancel="profileDialogOpen = false"
-            />
-
-            <AudioSettingsDialog
-                v-if="audioDialogOpen"
-                @cancel="audioDialogOpen = false"
-            />
-
-            <VoiceAudioSinks ref="voiceSinks" />
-
-            <button
-                v-if="voiceNeedsGesture"
-                class="panel notice gesture-prompt"
-                @click="voiceSinks?.resume()"
-            >
-                <Icon name="lucide:volume-2" aria-hidden="true" /> Bấm để bật tiếng người chơi khác
-            </button>
-
-            <p v-if="kicked" class="panel notice">{{ kicked }}</p>
-            <p v-if="error" class="error banner">{{ error }}</p>
-            <p v-if="spectating" class="panel notice">
-                {{
-                    state?.status === "lobby"
-                        ? "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống."
-                        : "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
-                }}
-            </p>
-
-            <p v-if="!state" class="panel muted">Đang tham gia phòng chơi…</p>
-
-            <!-- ------------------------------------------------ pre-game lobby -->
-            <section v-else-if="inLobby" class="lobby">
-                <div class="lobby-content">
-                    <div class="lobby-left panel">
-                        <h2 class="lobby-heading">Danh sách player</h2>
-                        <div class="lobby-seats vertical">
-                            <div
-                                v-for="player in state.players"
-                                :key="player.id"
-                                class="lobby-seat-wrap"
-                            >
-                                <PlayerSeat
-                                    :player="player"
-                                    :is-current="false"
-                                    :is-host="player.id === hostId"
-                                    :is-you="player.id === you?.id"
-                                    :turns-remaining="0"
-                                    layout="horizontal"
-                                    :voice-mic-on="voiceMicOnFor(player.id)"
-                                    :voice-speaking="
-                                        voiceIsSpeaking(
-                                            player.id === you?.id
-                                                ? 'self'
-                                                : player.id,
-                                        )
-                                    "
-                                    :voice-muted="voiceIsMuted(player.id)"
-                                    :voice-interactive="player.id !== you?.id"
-                                    @toggle-voice-mute="voiceToggleMute"
-                                />
-                                <span
-                                    class="conn-tag"
-                                    :class="
-                                        player.connected ? 'online' : 'offline'
-                                    "
-                                >
-                                    {{
-                                        player.connected
-                                            ? "Đã kết nối"
-                                            : "Mất kết nối"
-                                    }}
-                                </span>
-                                <button
-                                    v-if="isHost && player.id !== you?.id"
-                                    class="kick-btn"
-                                    title="Mời ra khỏi phòng"
-                                    @click="kickPlayer(player.id)"
-                                >
-                                    Kick
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="lobby-right panel">
-                        <h2 class="lobby-heading">Cài đặt phòng</h2>
-                        <div class="lobby-actions">
-                            <p class="muted">
-                                Đã có {{ state.players.length }}/10 người tham
-                                gia. Chia sẻ liên kết này để rủ bạn bè cùng
-                                chơi:
-                            </p>
-                            <ShareLink :room-id="roomId" />
-
-                            <div class="start-game-container">
-                                <button
-                                    v-if="isHost"
-                                    class="primary start-btn"
-                                    :disabled="
-                                        state.players.length < 2 ||
-                                        state.status === 'over'
-                                    "
-                                    @click="startGame"
-                                >
-                                    {{
-                                        state.status === "over"
-                                            ? "Đang chờ mọi người…"
-                                            : "Bắt đầu ván đấu"
-                                    }}
-                                </button>
-                                <p v-else class="muted">
-                                    {{
-                                        state.status === "over"
-                                            ? "Đang chờ mọi người…"
-                                            : "Đang chờ chủ phòng bắt đầu ván đấu…"
-                                    }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <DeckSettingsPanel
-                            :deck="state.deck"
-                            :is-host="isHost"
-                            @update="setDeckOverrides"
-                        />
-                    </div>
-                </div>
-            </section>
-
-            <!-- ------------------------------------------------------ the table -->
-            <section v-else class="stage">
-                <!-- Everyone else, arced across the far side of the table. -->
-                <div class="seat-arc">
-                    <div
-                        v-for="(player, index) in others"
-                        :key="player.id"
-                        class="arc-slot"
-                        :style="{ transform: arcOffset(index, others.length) }"
-                    >
-                        <PlayerSeat
-                            :player="player"
-                            :is-current="player.id === state.currentPlayerId"
-                            :is-host="player.id === hostId"
-                            :is-you="false"
-                            :turns-remaining="state.turn.turnsRemaining"
-                            :targetable="targetablePlayers.has(player.id)"
-                            :selected="targetId === player.id"
-                            :voice-mic-on="voiceMicOnFor(player.id)"
-                            :voice-speaking="voiceIsSpeaking(player.id)"
-                            :voice-muted="voiceIsMuted(player.id)"
-                            voice-interactive
-                            @pick="pickTarget"
-                            @toggle-voice-mute="voiceToggleMute"
-                        />
-                    </div>
-                </div>
-
-                <div class="center-area">
-                    <TableCenter
-                        ref="tableCenter"
-                        :draw-count="state.drawCount"
-                        :discard-top="state.discardTop"
-                        :discard-count="state.discardCount"
-                        :direction="state.turn.direction"
-                        :can-draw="canDraw"
-                        :deadline="state.turnDeadline"
-                        :dragging="drawDrag.dragging.value"
-                        @draw="draw"
-                        @draw-pointer-down="drawDrag.start"
-                    />
-                </div>
-
-                <div class="banner-area">
-                    <TurnBanner
-                        :is-your-turn="isYourTurn"
-                        :current-player-name="currentPlayerName"
-                        :hint="bannerHint"
-                        :deadline="state.turnDeadline"
-                        :actor-color="currentPlayerColor"
-                    >
-                        <template v-if="youAreSeated && alive && !isOver">
-                            <select
-                                v-if="intent.needsNamedCard"
-                                v-model="namedCardId"
-                                aria-label="Card to demand"
-                            >
-                                <option :value="null" disabled>
-                                    Chọn loại bài muốn đòi?
-                                </option>
-                                <option
-                                    v-for="option in namedCardOptions"
-                                    :key="option.id"
-                                    :value="option.id"
-                                >
-                                    {{ option.name }}
-                                </option>
-                            </select>
-
-                            <button
-                                class="primary"
-                                :disabled="!intent.ok"
-                                @click="play"
-                            >
-                                Đánh {{ selectedUids.length || "" }}
-                            </button>
-
-                            <button
-                                :disabled="!selectedUids.length"
-                                @click="selectedUids = []"
-                            >
-                                Bỏ chọn
-                            </button>
-                        </template>
-                    </TurnBanner>
-                </div>
-
-                <!-- Your own seat, bottom-left. -->
-                <div class="self-area">
-                    <PlayerSeat
-                        v-if="selfPlayer"
-                        :player="selfPlayer"
-                        :is-current="isYourTurn"
-                        :is-host="isHost"
-                        :is-you="true"
-                        :turns-remaining="state.turn.turnsRemaining"
-                        :voice-mic-on="voiceMicOnFor(selfPlayer.id)"
-                        :voice-speaking="voiceIsSpeaking('self')"
-                    />
-                </div>
-
-                <div
-                    ref="handArea"
-                    class="hand-area"
-                    :class="{ 'drop-active': drawDrag.dragging.value }"
-                >
-                    <HandFan
-                        v-if="youAreSeated && alive && !isOver"
-                        ref="handFan"
-                        :hand="hand"
-                        :selected="selectedUids"
-                        :disabled="!isYourTurn && !hasNope"
-                        :flip-uid="flipUid"
-                        :hold-leave="kitten.holdLeave.value"
-                        @toggle="toggle"
-                    />
-                    <p v-else-if="!youAreSeated" class="watching">
-                        Ván đấu đang diễn ra — bạn đang theo dõi với tư cách
-                        khán giả.
-                    </p>
-                    <p v-else-if="!alive" class="watching">
-                        <Icon name="lucide:bomb" aria-hidden="true" /> Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống
-                        sót cuối cùng!
-                    </p>
-                </div>
-
-                <DrawGhost
-                    v-if="drawDrag.ghostVisible.value"
-                    :phase="drawDrag.phase.value"
-                    :x="drawDrag.x.value"
-                    :y="drawDrag.y.value"
-                    :reduced-motion="drawDrag.reducedMotion"
-                />
-
-                <Transition name="slide">
-                    <NopeBar
-                        v-if="nopeWindow"
-                        class="nope-overlay"
-                        :stack="state.actionStack"
-                        :deadline="nopeWindow.deadline"
-                        :players="state.players"
-                        :has-nope="hasNope"
-                        :you-played-top="youPlayedTop"
-                        :passed="passedAlready"
-                        @nope="playNope"
-                        @pass="send({ type: 'pass-nope' })"
-                    />
-                </Transition>
-
-                <!--
-          Only the end of the game draws the curtain. Being eliminated leaves the
-          table visible, because watching the rest burn is the consolation prize.
-        -->
-                <Transition name="fade">
-                    <div v-if="isOver" class="curtain">
-                        <div class="panel result">
-                            <h2>
-                                <Icon v-if="winner" name="lucide:trophy" aria-hidden="true" />
-                                {{ winner ? `${winner} đã chiến thắng!` : "Ván đấu kết thúc" }}
-                            </h2>
-                            <div class="lobby-seats">
-                                <PlayerSeat
-                                    v-for="player in state.players"
-                                    :key="player.id"
-                                    :player="player"
-                                    :is-current="false"
-                                    :is-host="player.id === hostId"
-                                    :is-you="player.id === you?.id"
-                                    :turns-remaining="0"
-                                />
-                            </div>
-                            <div v-if="youAreSeated" class="row">
-                                <button class="secondary" @click="leaveToLobby">
-                                    Rời phòng
-                                </button>
-                                <button
-                                    class="primary"
-                                    :disabled="youAreReady"
-                                    @click="returnToLobby"
-                                >
-                                    {{
-                                        youAreReady
-                                            ? `Đang chờ người chơi khác (${readyCount}/${connectedCount})…`
-                                            : "Sẵn sàng ván mới"
-                                    }}
-                                </button>
-                            </div>
-                            <div v-else class="row">
-                                <button class="primary" @click="leaveToLobby">
-                                    Rời phòng
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-            </section>
-
-            <!-- Chat and the story of the game, tucked into a corner. -->
-            <div v-if="state" class="log-dock" :class="{ open: logOpen }">
-                <button class="log-toggle" @click="logOpen = !logOpen">
-                    {{ logOpen ? "Ẩn lịch sử" : "Lịch sử & Chat" }}
-                    <Icon :name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true" />
-                </button>
-                <EventLog
-                    v-show="logOpen"
-                    :events="pending"
-                    :chat="chat"
-                    @say="say"
-                />
-            </div>
-
-            <InteractionModal
-                v-if="
-                    state?.interaction &&
-                    !['reorder-cards', 'choose-deck-position'].includes(
-                        state.interaction.kind,
-                    )
-                "
-                :interaction="state.interaction"
-                :hand="hand"
-                :players="state.players"
-                :you-id="state.you?.id ?? null"
-                @submit="submitInteraction"
-            />
-
-            <SeeFutureModal
-                v-if="showAlterFutureModal"
-                :cards="state?.interaction?.cards ?? []"
-                editable
-                @submit="onAlterFutureSubmit"
-            />
-
-            <SeeFutureModal
-                v-if="showPeekModal"
-                :cards="you?.peek ?? []"
-                @close="peekDismissed = true"
-            />
-
-            <DeckPositionModal
-                v-if="showDeckPositionModal"
-                :interaction="state!.interaction!"
-                @submit="onDeckPositionSubmit"
-            />
-
-            <TargetSelectModal
-                v-if="targetModalOpen"
-                :players="state?.players ?? []"
-                :you-id="you?.id"
-                :combo="intent.combo"
-                :card-id="selectedCards[0]?.id"
-                :needs-named-card="intent.needsNamedCard"
-                :initial-target-id="targetId"
-                :initial-named-card-id="namedCardId"
-                @confirm="onTargetConfirmed"
-                @cancel="targetModalOpen = false"
-            />
-
-            <CardArrivalFlyer
-                :arriving-cards="arrivingCards"
-                :hand-area-rect="handAreaRect"
-                @landed="onCardLanded"
-            />
-
-            <!--
-              Drawing an Exploding Kitten, staged: the whole table sees the
-              reveal, then the drawer's Defuse flies to the discard, and only
-              then does DeckPositionModal above get its turn.
-            -->
-            <KittenRevealOverlay
-                v-if="kitten.revealSeq.value !== null"
-                :uid="`kitten-${kitten.revealSeq.value}`"
-                :player-name="kitten.revealPlayerName.value"
-                :defused="kitten.revealDefused.value"
-            />
-
-            <CardDepartureFlyer
-                :card="kitten.defuseCard.value"
-                :from-rect="kitten.defuseFromRect.value"
-                :measure-to="discardRect"
-                @done="kitten.onDefuseFlightDone"
-            />
-
-            <ConfirmDialog
-                v-if="confirmingQuit"
-                title="Rời khỏi trận đấu?"
-                message="Bạn sẽ bị loại khỏi ván này và không thể tham gia lại cho đến khi ván mới bắt đầu."
-                confirm-label="Rời trận"
-                cancel-label="Ở lại"
-                @confirm="quitGame"
-                @cancel="cancelQuit"
-            />
-        </template>
-    </div>
-</template>
-
-<style scoped>
-/*
- * `.red-theme` is toggled on `.room` for the pre-game states only (no
- * session state yet, or the waiting-room lobby) — never while `.stage`
- * (the live table, including the post-game curtain) is showing. Scoped
- * entirely to this file so it can't affect the live game table.
- */
-.room {
+<style scoped lang="scss">
+  /*
+   * The room page paints no background of its own — the cream field comes from
+   * `layouts/default.vue`. Everything here is layout plus the few surfaces the
+   * table needs on top of that field.
+   */
+  .room {
     position: relative;
     max-width: 1400px;
     margin: 0 auto;
@@ -1041,218 +919,147 @@ function cancelQuit() {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
-}
 
-.room.red-theme::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image: url("/common/background-red-texture.png");
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-}
+    // The shared header, given the room's own pill ground.
+    &__header {
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      background: $cream-card;
+      border: $outline-width solid $ink;
+      box-shadow: $shadow-sm;
+    }
 
-.red-theme .panel {
-    background: rgba(30, 5, 5, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    color: var(--text);
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
+    &__title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      min-width: 0;
+    }
 
-.start-game-container {
-    display: flex;
-    justify-content: center;
-    margin: 1.5rem 0 0.5rem;
-}
+    &__name {
+      font-family: $font-display;
+      font-size: 1.1rem;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: $ink;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.start-btn {
-    font-size: 1.5rem;
-    padding: 1rem 2.5rem;
-    box-shadow: 0 8px 24px rgba(255, 122, 26, 0.4);
-}
+    &__id {
+      font-size: 0.78rem;
+      color: $ink-dim;
+    }
 
-.red-theme .panel h2 {
-    color: var(--text);
-}
+    /* Autoplay was blocked; one click on this wakes every remote audio element. */
+    &__gesture-prompt {
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+    }
 
-.red-theme .panel .muted {
-    color: var(--text-dim);
-}
+    &__notice,
+    &__banner {
+      margin: 0;
+    }
 
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
-    background: linear-gradient(
-        180deg,
-        rgb(255 255 255 / 10%),
-        rgb(0 0 0 / 18%)
-    );
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 18%),
-        var(--shadow-sm);
-}
+    &__banner {
+      font-weight: 600;
+    }
+  }
 
-.room-title {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-}
+  /* ------------------------------------------------------- pre-game lobby */
 
-.icon {
-    padding: 0.35rem 0.8rem;
-    font-size: 1.05rem;
-}
-
-.tight {
-    gap: 0.05rem;
-}
-
-.small {
-    font-size: 0.78rem;
-}
-
-/* Autoplay was blocked; one click on this wakes every remote audio element. */
-.gesture-prompt {
-    display: block;
-    width: 100%;
-    text-align: center;
-    cursor: pointer;
-}
-
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--text-dim);
-}
-
-.dot.open {
-    background: var(--good);
-}
-
-.dot.connecting {
-    background: var(--warn);
-}
-
-.dot.closed {
-    background: var(--bad);
-}
-
-.banner,
-.notice {
-    margin: 0;
-}
-
-.red-theme .error.banner {
-    text-shadow: 0 1px 3px rgb(0 0 0 / 60%);
-    font-weight: 600;
-}
-
-.lobby {
+  .lobby {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-}
 
-.lobby-heading {
-    color: var(--accent);
-}
+    &__content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
 
-.lobby-content {
-    display: flex;
-    gap: 2rem;
-}
+      @include respond-to("lg") {
+        flex-direction: row;
+        gap: 2rem;
+      }
+    }
 
-.lobby-left,
-.lobby-right {
-    flex: 1;
-}
+    &__col {
+      flex: 1;
+      min-width: 0;
 
-.lobby-right {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+      &--settings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+    }
 
-.lobby-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
+    &__heading {
+      color: $ink;
+    }
 
-.lobby-seats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.9rem;
-    justify-content: center;
-    padding: 0.5rem 0;
-}
+    &__seats {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.9rem;
+      width: 100%;
+      padding: 0.5rem 0;
+    }
 
-.lobby-seats.vertical {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-}
+    &__seat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
 
-.lobby-seat-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-}
+    &__conn {
+      flex: none;
+      padding: 0.25rem 0.6rem;
+      border: 1.5px solid;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
 
-.conn-tag {
-    flex: none;
-    padding: 0.25rem 0.6rem;
-    border: 1.5px solid;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
+      &--online {
+        color: $good;
+        border-color: $good;
+      }
 
-.conn-tag.online {
-    color: var(--good);
-    border-color: var(--good);
-}
+      &--offline {
+        color: $bad;
+        border-color: $bad;
+      }
+    }
 
-.conn-tag.offline {
-    color: var(--bad);
-    border-color: var(--bad);
-}
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
 
-.kick-btn {
-    flex: none;
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    font-family: var(--font-display);
-    font-size: 0.78rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    background: var(--bad);
-    color: var(--text);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
-}
+    &__start {
+      display: flex;
+      justify-content: center;
+      margin: 1.5rem 0 0.5rem;
+    }
 
-.kick-btn:hover {
-    background: #ff4b43;
-}
+    &__kick {
+      flex: none;
+    }
+  }
 
-/* ------------------------------------------------------------ the table */
+  /* ------------------------------------------------------------ the table */
 
-.stage {
+  .stage {
     position: relative;
     display: grid;
     grid-template-columns: 132px minmax(0, 1fr) 300px;
@@ -1262,106 +1069,114 @@ function cancelQuit() {
     min-height: 74vh;
     padding: 1.25rem 1.5rem 1.5rem;
     border-radius: 26px;
-}
 
-.seat-arc {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 0.5rem 1.4rem;
-    padding-top: 0.5rem;
-    min-height: 132px;
-}
+    &__arc {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 0.5rem 1.4rem;
+      padding-top: 0.5rem;
+      min-height: 132px;
+    }
 
-.center-area {
-    grid-column: 1 / 3;
-    display: grid;
-    place-items: center;
-}
+    &__center {
+      grid-column: 1 / 3;
+      display: grid;
+      place-items: center;
+    }
 
-.banner-area {
-    grid-column: 3;
-    display: flex;
-    justify-content: center;
-    align-self: start;
-    padding-top: 0.5rem;
-}
+    &__banner {
+      grid-column: 3;
+      display: flex;
+      justify-content: center;
+      align-self: start;
+      padding-top: 0.5rem;
+    }
 
-.self-area {
-    grid-column: 1;
-    display: grid;
-    place-items: center;
-    align-self: end;
-}
+    &__self {
+      grid-column: 1;
+      display: grid;
+      place-items: center;
+      align-self: end;
+    }
 
-.hand-area {
-    grid-column: 2 / -1;
-    align-self: end;
-    min-height: 150px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    border-radius: 22px;
-    border: 2px dashed transparent;
-    transition:
+    &__hand {
+      grid-column: 2 / -1;
+      align-self: end;
+      min-height: 150px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-radius: 22px;
+      border: 2px dashed transparent;
+      transition:
         border-color 0.15s ease,
         background 0.15s ease,
         box-shadow 0.15s ease;
-}
 
-/* The drop target for a draw. Same warm accent as the deck's own glow, so it
-   reads as "this is where that card goes". */
-.hand-area.drop-active {
-    border-color: rgb(255 194 26 / 70%);
-    background: rgb(255 194 26 / 8%);
-    box-shadow: inset 0 0 34px rgb(255 140 40 / 30%);
-}
+      /* The drop target for a draw. Same warm accent as the deck's own glow,
+         so it reads as "this is where that card goes". */
+      &--drop-active {
+        border-color: rgb(255 194 26 / 70%);
+        background: rgb(255 194 26 / 8%);
+        box-shadow: inset 0 0 34px rgb(255 140 40 / 30%);
+      }
+    }
 
-.watching {
-    margin: 0 0 1.5rem;
-    color: var(--text-dim);
-    text-align: center;
-}
+    &__watching {
+      margin: 0 0 1.5rem;
+      color: $ink-dim;
+      text-align: center;
+    }
 
-/* The Nope window is urgent, so it floats over the piles. */
-.nope-overlay {
-    position: absolute;
-    left: 50%;
-    top: 46%;
-    transform: translate(-50%, -50%);
-    width: min(680px, 82%);
-    z-index: 8;
-}
+    /* The Nope window is urgent, so it floats over the piles. */
+    &__nope {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      width: min(680px, 82%);
+      z-index: 8;
+    }
 
-.curtain {
-    position: absolute;
-    inset: 0;
-    z-index: 12;
-    display: grid;
-    place-items: center;
-    border-radius: 26px;
-    background: rgb(20 8 0 / 62%);
-    backdrop-filter: blur(2px);
-}
+    &__curtain {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      display: grid;
+      place-items: center;
+      border-radius: 26px;
+      background: rgb(249 237 212 / 82%);
+      backdrop-filter: blur(2px);
+    }
 
-.result {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    align-items: center;
-    padding: 1.6rem 2.2rem;
-}
+    &__result {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 1.6rem 2.2rem;
 
-.result h2 {
-    font-size: 2rem;
-}
+      h2 {
+        font-size: 2rem;
+      }
+    }
 
-/* --------------------------------------------------------- log and chat */
+    &__result-seats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      justify-content: center;
+      padding: 0.5rem 0;
+    }
+  }
 
-.log-dock {
+  /* --------------------------------------------------------- log and chat */
+
+  .log-dock {
     position: fixed;
     right: 1rem;
     bottom: 1rem;
@@ -1371,61 +1186,65 @@ function cancelQuit() {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.4rem;
-    opacity: 0.8;
+    opacity: 0.85;
     transition: opacity 0.2s ease;
-}
 
-.log-dock:hover,
-.log-dock:focus-within {
-    opacity: 1;
-}
+    &:hover,
+    &:focus-within,
+    &--open {
+      opacity: 1;
+    }
 
-.log-toggle {
-    font-family: var(--font-display);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 0.45rem 1rem;
-    background: linear-gradient(180deg, #4a2810, #2c1607);
-    color: #fdf6e7;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    cursor: pointer;
-    transition:
+    &__toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: $font-display;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 0.45rem 1rem;
+      background: $cream-card;
+      color: $ink;
+      border: $outline-width solid $ink;
+      border-radius: 999px;
+      box-shadow: $shadow-sm;
+      cursor: pointer;
+      transition:
         filter 0.15s ease,
         transform 0.08s ease;
-}
 
-.log-toggle:hover {
-    filter: brightness(1.2);
-    transform: translateY(-1px);
-}
+      &:hover {
+        filter: brightness(1.04);
+      }
 
-.log-toggle:active {
-    transform: translateY(1px);
-}
+      &:active {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 $ink;
+      }
+    }
+  }
 
-.slide-enter-active,
-.slide-leave-active {
+  .slide-enter-active,
+  .slide-leave-active {
     transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
 
-.slide-enter-from,
-.slide-leave-to {
+  .slide-enter-from,
+  .slide-leave-to {
     opacity: 0;
     transform: translate(-50%, calc(-50% - 10px));
-}
+  }
 
-.fade-enter-active,
-.fade-leave-active {
+  .fade-enter-active,
+  .fade-leave-active {
     transition: opacity 0.25s ease;
-}
+  }
 
-.fade-enter-from,
-.fade-leave-to {
+  .fade-enter-from,
+  .fade-leave-to {
     opacity: 0;
-}
+  }
 </style>

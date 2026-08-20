@@ -88,11 +88,9 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: linear-gradient(180deg, rgb(255 255 255 / 12%), rgb(0 0 0 / 25%));
-      border: 2px solid rgb(255 255 255 / 18%);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 25%),
-        0 4px 14px rgb(20 8 0 / 50%);
+      background: $cream-card;
+      border: 2px solid $ink;
+      box-shadow: $shadow-sm;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -218,25 +216,24 @@
       display: block;
     }
 
-    /* A wooden nameplate under each pile. */
+    /* A nameplate under each pile. */
     &__ribbon {
       font-family: var(--font-display);
       text-transform: uppercase;
       letter-spacing: 1.2px;
       font-size: 0.95rem;
-      color: var(--text);
-      background: linear-gradient(180deg, #6b4118, #45260a);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 20%),
-        var(--shadow-sm);
+      color: $ink;
+      background: $cream-card;
+      border: 2px solid $ink;
+      box-shadow: $shadow-sm;
       border-radius: 999px;
       padding: 0.28rem 0.9rem;
       white-space: nowrap;
 
       &--quiet {
         font-size: 0.8rem;
-        color: var(--text-dim);
-        background: linear-gradient(180deg, rgb(255 255 255 / 10%), rgb(0 0 0 / 18%));
+        color: $ink-dim;
+        background: $cream;
       }
     }
 

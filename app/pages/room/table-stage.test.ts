@@ -122,18 +122,18 @@ describe('the table stage', () => {
     expect(wrapper.find('.stage').exists()).toBe(true)
 
     // Three players, but only the two opponents belong in the arc.
-    const arc = wrapper.findAll('.seat-arc .seat')
+    const arc = wrapper.findAll('.stage__arc .seat')
     expect(arc).toHaveLength(2)
-    expect(wrapper.get('.seat-arc').text()).toContain('Mittens')
-    expect(wrapper.get('.seat-arc').text()).toContain('Boots')
-    expect(wrapper.get('.seat-arc').text()).not.toContain('Whiskers')
+    expect(wrapper.get('.stage__arc').text()).toContain('Mittens')
+    expect(wrapper.get('.stage__arc').text()).toContain('Boots')
+    expect(wrapper.get('.stage__arc').text()).not.toContain('Whiskers')
 
-    const self = wrapper.get('.self-area .seat')
+    const self = wrapper.get('.stage__self .seat')
     expect(self.classes()).toContain('you')
     expect(self.text()).toContain('Whiskers')
 
     // The middle of the arc is lifted, the ends are not.
-    expect(wrapper.findAll('.arc-slot')[0]!.attributes('style')).toContain('none')
+    expect(wrapper.findAll('.stage__arc-slot')[0]!.attributes('style')).toContain('none')
   })
 
   it('shows the deck, the discard and your hand', async () => {
@@ -145,7 +145,7 @@ describe('the table stage', () => {
     // The discard top prints no text — its name only reaches the DOM as the
     // artwork's alt, which is what a screen reader reads out.
     expect(wrapper.get('.discard img').attributes('alt')).toBe('Defuse')
-    expect(wrapper.findAll('.hand-area .slot')).toHaveLength(3)
+    expect(wrapper.findAll('.stage__hand .slot')).toHaveLength(3)
   })
 
   it('offers no button that draws — the deck has to be dragged onto the hand', async () => {
@@ -158,7 +158,7 @@ describe('the table stage', () => {
     expect(controls).not.toContain('Rút bài')
 
     // The hand only lights up as a target while a card is being dragged.
-    expect(wrapper.get('.hand-area').classes()).not.toContain('drop-active')
+    expect(wrapper.get('.stage__hand').classes()).not.toContain('stage__hand--drop-active')
     // And pressing the deck starts a gesture rather than drawing outright.
     await wrapper.get('.deck').trigger('pointerdown')
     expect(wrapper.find('.ghost').exists()).toBe(false)
@@ -168,7 +168,7 @@ describe('the table stage', () => {
     fixture = playing()
     const yours = await mount()
     expect(yours.get('.headline').text()).toBe('Đến lượt của bạn!')
-    expect(yours.get('.banner-area .banner').classes()).toContain('live')
+    expect(yours.get('.stage__banner .banner').classes()).toContain('live')
 
     fixture = playing({ currentPlayerId: 'p2' })
     const theirs = await mount()
@@ -185,13 +185,13 @@ describe('the table stage', () => {
       currentPlayerId: 'p2',
     })
     const dead = await mount()
-    expect(dead.find('.curtain').exists()).toBe(false)
-    expect(dead.find('.hand-area .slot').exists()).toBe(false)
-    expect(dead.get('.watching').text()).toContain('Bạn đã bị nổ tung')
+    expect(dead.find('.stage__curtain').exists()).toBe(false)
+    expect(dead.find('.stage__hand .slot').exists()).toBe(false)
+    expect(dead.get('.stage__watching').text()).toContain('Bạn đã bị nổ tung')
 
     fixture = playing({ status: 'over', winnerId: 'p2', currentPlayerId: null })
     const over = await mount()
-    expect(over.get('.curtain').text()).toContain('Mittens đã chiến thắng!')
+    expect(over.get('.stage__curtain').text()).toContain('Mittens đã chiến thắng!')
   })
 
   it('offers a way back to the waiting room, gated on being ready', async () => {
@@ -206,8 +206,8 @@ describe('the table stage', () => {
       ],
     })
     const notReady = await mount()
-    const curtain = notReady.get('.curtain')
-    const button = curtain.get('button.primary')
+    const curtain = notReady.get('.stage__curtain')
+    const button = curtain.get('.stage__ready')
     expect(button.text()).toBe('Sẵn sàng ván mới')
     expect(button.attributes('disabled')).toBeUndefined()
     // Only Mittens (ready: true) has readied up so far.
@@ -224,9 +224,9 @@ describe('the table stage', () => {
       ],
     })
     const ready = await mount()
-    expect(ready.find('.curtain').exists()).toBe(false)
+    expect(ready.find('.stage__curtain').exists()).toBe(false)
     expect(ready.find('.lobby').exists()).toBe(true)
-    const waitingButton = ready.get('.lobby button.start-btn')
+    const waitingButton = ready.get('.lobby__start button')
     expect(waitingButton.text()).toBe('Đang chờ mọi người…')
     expect(waitingButton.attributes('disabled')).toBeDefined()
   })
@@ -238,7 +238,7 @@ describe('the table stage', () => {
     expect(wrapper.find('.stage').exists()).toBe(false)
     expect(wrapper.get('.lobby').text()).toContain('Cài đặt phòng')
     // Everyone shows in the lobby, including you.
-    expect(wrapper.findAll('.lobby-seats .seat')).toHaveLength(3)
+    expect(wrapper.findAll('.lobby__seats .seat')).toHaveLength(3)
   })
 
   it('lets the host kick another player from the waiting room, but not themself', async () => {
@@ -246,13 +246,13 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     // p1 is you and the host: no kick button on your own seat.
-    const seats = wrapper.findAll('.lobby-seat-wrap')
+    const seats = wrapper.findAll('.lobby__seat')
     expect(seats).toHaveLength(3)
-    expect(seats[0]!.find('.kick-btn').exists()).toBe(false)
-    expect(seats[1]!.find('.kick-btn').exists()).toBe(true)
-    expect(seats[2]!.find('.kick-btn').exists()).toBe(true)
+    expect(seats[0]!.find('.lobby__kick').exists()).toBe(false)
+    expect(seats[1]!.find('.lobby__kick').exists()).toBe(true)
+    expect(seats[2]!.find('.lobby__kick').exists()).toBe(true)
 
-    await seats[1]!.get('.kick-btn').trigger('click')
+    await seats[1]!.get('.lobby__kick').trigger('click')
     expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
   })
 
@@ -321,9 +321,9 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     const dock = wrapper.get('.log-dock')
-    expect(dock.classes()).toContain('open')
+    expect(dock.classes()).toContain('log-dock--open')
 
-    await wrapper.get('.log-toggle').trigger('click')
-    expect(wrapper.get('.log-dock').classes()).not.toContain('open')
+    await wrapper.get('.log-dock__toggle').trigger('click')
+    expect(wrapper.get('.log-dock').classes()).not.toContain('log-dock--open')
   })
 })

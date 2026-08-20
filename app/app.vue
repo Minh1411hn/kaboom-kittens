@@ -1,3 +1,4 @@
-<template>
-  <NuxtPage />
+<template lang="pug">
+  NuxtLayout
+    NuxtPage
 </template>
