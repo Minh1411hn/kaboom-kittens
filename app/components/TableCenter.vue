@@ -23,13 +23,13 @@
     )
       span.table-center__pile-face
         img.table-center__card-back(:src="back" alt="" draggable="false")
-    span.table-center__ribbon Còn {{ drawCount }} lá
+    span.table-center.mt-2 Còn {{ drawCount }} lá
 
   .table-center__pile
     .table-center__discard.discard(ref="discardEl")
       CardImage(v-if="discardTop" :card-id="discardTop.id" :uid="discardTop.uid" width="140px")
       .table-center__empty(v-else) Trống
-    span.table-center__ribbon.table-center__ribbon--quiet Bài đã đánh · {{ discardCount }}
+    span.table-center.table-center__ribbon--quiet Bài đã đánh · {{ discardCount }}
 </template>
 
 <script setup lang="ts">
