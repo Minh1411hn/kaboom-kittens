@@ -12,14 +12,14 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<{ nickname?: string; avatarId?: string }>(event)
   const parsed = nicknameSchema.safeParse(body?.nickname ?? '')
   if (!parsed.success) {
-    throw createError({ statusCode: 400, statusMessage: parsed.error.issues[0]!.message })
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request', data: { code: parsed.error.issues[0]!.message } })
   }
 
   let avatarId: string | undefined
   if (body?.avatarId !== undefined) {
     const avatarParsed = avatarIdSchema.safeParse(body.avatarId)
     if (!avatarParsed.success) {
-      throw createError({ statusCode: 400, statusMessage: 'Ảnh đại diện không hợp lệ.' })
+      throw createError({ statusCode: 400, statusMessage: 'Bad Request', data: { code: 'avatar-invalid' } })
     }
     avatarId = avatarParsed.data
   }

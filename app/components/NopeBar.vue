@@ -3,7 +3,7 @@
   .nope-bar__fill(:style="{ transform: `scaleX(${fraction})` }")
   .nope-bar__content
     // 1. The Stack of Cards with z-index ordering and PlayerAvatar on Nope cards
-    .nope-bar__stack(aria-label="Chuỗi bài đang xử lý")
+    .nope-bar__stack(:aria-label="$t('table.nope_bar.stack_aria')")
       .nope-bar__stack-item(
         v-for="(action, i) in stack"
         :class="{ 'nope-bar__stack-item--nope': action.cardId === 'nope' || i > 0, 'nope-bar__stack-item--base': i === 0 }"
@@ -14,7 +14,7 @@
         // Mini avatar of the player who played this Nope card at the bottom-right corner
         .nope-bar__badge(
           v-if="action.cardId === 'nope' || i > 0"
-          :title="`Nope bởi ${playerById(action.playerId)?.nickname ?? 'Người chơi'}`"
+          :title="$t('table.nope_bar.noped_by_title', { name: playerById(action.playerId)?.nickname ?? $t('table.nope_bar.unknown_player') })"
         )
           PlayerAvatar(
             :alive="playerById(action.playerId)?.alive"
@@ -26,21 +26,21 @@
     .nope-bar__info
       .nope-bar__players-flow
         // Caster
-        .nope-bar__pill.nope-bar__pill--caster(:title="`Người đánh: ${caster?.nickname ?? ''}`")
+        .nope-bar__pill.nope-bar__pill--caster(:title="$t('table.nope_bar.caster_title', { name: caster?.nickname ?? '' })")
           PlayerAvatar(:alive="caster?.alive" :avatar-id="caster?.avatarId" :size="26")
-          span.nope-bar__pill-name {{ caster?.nickname ?? "Ai đó" }}
+          span.nope-bar__pill-name {{ caster?.nickname ?? $t('table.nope_bar.someone') }}
 
         // Target (if exists)
         template(v-if="target")
           span.nope-bar__target-arrow(aria-hidden="true")
             Icon(name="lucide:arrow-right")
-          .nope-bar__pill.nope-bar__pill--target(:title="`Mục tiêu: ${target.nickname}`")
+          .nope-bar__pill.nope-bar__pill--target(:title="$t('table.nope_bar.target_title', { name: target.nickname })")
             PlayerAvatar(:alive="target.alive" :avatar-id="target.avatarId" :size="26")
             span.nope-bar__pill-name {{ target.nickname }}
 
       .nope-bar__details
         .nope-bar__title-row
-          span.nope-bar__prefix đã dùng
+          span.nope-bar__prefix {{ $t('table.nope_bar.used_prefix') }}
           strong.nope-bar__action-name {{ actionTitle }}
 
         .nope-bar__status-row
@@ -50,17 +50,17 @@
           )
             span.nope-bar__status-dot
             | {{ verdictText }}
-          span.nope-bar__countdown.muted {{ remaining }}s để phản hồi
+          span.nope-bar__countdown.muted {{ $t('table.nope_bar.responding_countdown', { seconds: remaining }) }}
 
     // 3. Interaction Actions
     .nope-bar__actions
-      button.nope-bar__btn.nope-bar__btn--nope.danger(v-if="hasNope && !youPlayedTop" @click="$emit('nope')") NOPE!
+      button.nope-bar__btn.nope-bar__btn--nope.danger(v-if="hasNope && !youPlayedTop" @click="$emit('nope')") {{ $t('table.nope_bar.nope') }}
       button.nope-bar__btn.nope-bar__btn--pass(
         v-if="hasNope && !youPlayedTop"
         :disabled="passed"
         @click="$emit('pass')"
-      ) {{ passed ? "Đã bỏ qua" : "Bỏ qua" }}
-      span.nope-bar__waiting.muted.small(v-else) Đang chờ…
+      ) {{ passed ? $t('table.nope_bar.passed') : $t('table.nope_bar.pass') }}
+      span.nope-bar__waiting.muted.small(v-else) {{ $t('table.nope_bar.waiting') }}
 </template>
 
 <script setup lang="ts">
@@ -78,6 +78,8 @@
 
   defineEmits<{ nope: []; pass: [] }>()
 
+  const { t } = useI18n()
+  const { cardName } = useCardText()
   const { remaining, fraction } = useCountdown(() => props.deadline)
 
   const playerById = (id: string | null | undefined): PublicPlayer | undefined => props.players.find((p) => p.id === id)
@@ -100,12 +102,12 @@
   const actionTitle = computed(() => {
     const base = baseAction.value
     if (!base) return ""
-    if (base.combo === "pair") return "Combo 2 lá mèo"
+    if (base.combo === "pair") return t("table.nope_bar.combo_pair")
     if (base.combo === "triple") {
       const demanded = base.namedCardId ? ` (${cardName(base.namedCardId)})` : ""
-      return `Combo 3 lá mèo${demanded}`
+      return t("table.nope_bar.combo_triple", { demanded })
     }
-    if (base.combo === "five-different") return "Combo 5 lá mèo"
+    if (base.combo === "five-different") return t("table.nope_bar.combo_five")
     return cardName(base.cardId)
   })
 
@@ -113,9 +115,9 @@
     if (nopesCount.value === 0) return ""
     if (isBlocked.value) {
       const noperName = lastNoper.value?.nickname ?? "NOPE"
-      return `Bị chặn bởi ${noperName} (${nopesCount.value} Nope)`
+      return t("table.nope_bar.blocked_by", { name: noperName, count: nopesCount.value })
     }
-    return `Đang có hiệu lực (${nopesCount.value} Nope triệt tiêu)`
+    return t("table.nope_bar.in_effect", { count: nopesCount.value })
   })
 </script>
 

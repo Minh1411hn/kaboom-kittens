@@ -12,7 +12,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
     | {{ name }}
     slot(name="nameSuffix")
 
-  span.player-avatar__host-tag(v-if="host") Host
+  span.player-avatar__host-tag(v-if="host") {{ $t('app.host_tag') }}
 
   span.player-avatar__corner(v-if="$slots.corner")
     slot(name="corner")

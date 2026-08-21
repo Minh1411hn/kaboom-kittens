@@ -12,7 +12,7 @@
     )
       template(#left)
         CommonButton(
-          aria-label="Quay lại sảnh chờ"
+          :aria-label="$t('table.topbar.back_to_lobby')"
           icon="lucide:arrow-left"
           size="sm"
           variant="ghost"
@@ -20,22 +20,22 @@
         )
         CommonButton(
           v-if="canQuit"
-          aria-label="Rời trận — bạn sẽ bị xử thua"
+          :aria-label="$t('table.topbar.leave_match_title')"
+          :label="$t('table.topbar.leave_match')"
           icon="lucide:log-out"
-          label="Rời trận"
           size="sm"
           variant="red"
           @click="askToQuit"
         )
         .room__title
-          strong.room__name {{ roomName || "Đang tải…" }}
-          span.room__id Phòng {{ roomId }}
+          strong.room__name {{ roomName || $t('table.topbar.loading_room') }}
+          span.room__id {{ $t('table.topbar.room_label', { id: roomId }) }}
 
       template(#actions)
         CommonButton(
           v-if="voiceAvailable"
           :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
-          aria-label="Cài đặt âm thanh"
+          :aria-label="$t('table.topbar.audio_settings')"
           size="sm"
           variant="ghost"
           @click="audioDialogOpen = true"
@@ -57,20 +57,20 @@
     button.room__gesture-prompt.panel(v-if="voiceNeedsGesture" @click="voiceSinks?.resume()")
       Icon(aria-hidden="true" name="lucide:volume-2")
       |
-      | Bấm để bật tiếng người chơi khác
+      | {{ $t('table.voice.tap_to_unmute') }}
 
     p.room__notice.panel(v-if="kicked") {{ kicked }}
     p.room__banner.error(v-if="error") {{ error }}
     p.room__notice.panel(v-if="spectating")
-      | {{ state?.status === "lobby" ? "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống." : "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc." }}
+      | {{ state?.status === "lobby" ? $t('table.spectating.lobby_full') : $t('table.spectating.game_in_progress') }}
 
-    p.room__notice.panel.muted(v-if="!state") Đang tham gia phòng chơi…
+    p.room__notice.panel.muted(v-if="!state") {{ $t('table.joining_room') }}
 
     //- ------------------------------------------------ pre-game lobby
     section.lobby(v-else-if="inLobby")
       .lobby__content
         .lobby__col.panel
-          h2.lobby__heading Danh sách player
+          h2.lobby__heading {{ $t('table.lobby.player_list') }}
           .lobby__seats
             .lobby__seat(v-for="player in state.players" :key="player.id")
               PlayerSeat(
@@ -87,34 +87,34 @@
                 @toggle-voice-mute="voiceToggleMute"
               )
               span.lobby__conn(:class="player.connected ? 'lobby__conn--online' : 'lobby__conn--offline'")
-                | {{ player.connected ? "Đã kết nối" : "Mất kết nối" }}
+                | {{ player.connected ? $t('table.lobby.connected') : $t('table.lobby.disconnected') }}
               CommonButton.lobby__kick(
                 v-if="isHost && player.id !== you?.id"
-                aria-label="Mời ra khỏi phòng"
-                label="Kick"
+                :aria-label="$t('table.lobby.kick_title')"
+                :label="$t('table.lobby.kick')"
                 size="sm"
                 variant="red"
                 @click="kickPlayer(player.id)"
               )
 
         .lobby__col.lobby__col--settings.panel
-          h2.lobby__heading Cài đặt phòng
+          h2.lobby__heading {{ $t('table.lobby.room_settings') }}
           .lobby__actions
             p.muted
-              | Đã có {{ state.players.length }}/10 người tham gia. Chia sẻ liên kết này để rủ bạn bè cùng chơi:
+              | {{ $t('table.lobby.share_intro', { count: state.players.length }) }}
             ShareLink(:room-id="roomId")
 
             .lobby__start
               CommonButton(
                 v-if="isHost"
                 :disabled="state.players.length < 2 || state.status === 'over'"
-                :label="state.status === 'over' ? 'Đang chờ mọi người…' : 'Bắt đầu ván đấu'"
+                :label="state.status === 'over' ? $t('table.lobby.waiting_for_players') : $t('table.lobby.start_game')"
                 size="lg"
                 variant="gold"
                 @click="startGame"
               )
               p.muted(v-else)
-                | {{ state.status === "over" ? "Đang chờ mọi người…" : "Đang chờ chủ phòng bắt đầu ván đấu…" }}
+                | {{ state.status === "over" ? $t('table.lobby.waiting_for_players') : $t('table.lobby.waiting_for_host') }}
 
           DeckSettingsPanel(:deck="state.deck" :is-host="isHost" @update="setDeckOverrides")
 
@@ -166,13 +166,13 @@
           :is-your-turn="isYourTurn"
         )
           template(v-if="youAreSeated && alive && !isOver")
-            select(v-if="intent.needsNamedCard" v-model="namedCardId" aria-label="Card to demand")
-              option(:value="null" disabled) Chọn loại bài muốn đòi?
+            select(v-if="intent.needsNamedCard" v-model="namedCardId" :aria-label="$t('table.demand_select_aria')")
+              option(:value="null" disabled) {{ $t('table.demand_card_placeholder') }}
               option(v-for="option in namedCardOptions" :key="option.id" :value="option.id") {{ option.name }}
 
             CommonButton(
               :disabled="!intent.ok"
-              :label="`Đánh ${selectedUids.length || ''}`"
+              :label="selectedUids.length ? $t('table.play_button_count', { count: selectedUids.length }) : $t('table.play_button')"
               size="sm"
               variant="gold"
               @click="play"
@@ -180,7 +180,7 @@
 
             CommonButton(
               :disabled="!selectedUids.length"
-              label="Bỏ chọn"
+              :label="$t('table.deselect')"
               size="sm"
               variant="ghost"
               @click="selectedUids = []"
@@ -211,11 +211,11 @@
           @toggle="toggle"
         )
         p.stage__watching(v-else-if="!youAreSeated")
-          | Ván đấu đang diễn ra — bạn đang theo dõi với tư cách khán giả.
+          | {{ $t('table.watching_spectator') }}
         p.stage__watching(v-else-if="!alive")
           Icon(aria-hidden="true" name="lucide:bomb")
           |
-          | Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống sót cuối cùng!
+          | {{ $t('table.you_exploded') }}
 
       DrawGhost(
         v-if="drawDrag.ghostVisible.value"
@@ -246,7 +246,7 @@
           .stage__result.panel
             h2
               Icon(v-if="winner" aria-hidden="true" name="lucide:trophy")
-              | {{ winner ? `${winner} đã chiến thắng!` : "Ván đấu kết thúc" }}
+              | {{ winner ? $t('table.game_over.winner', { name: winner }) : $t('table.game_over.ended') }}
             .stage__result-seats
               PlayerSeat(
                 v-for="player in state.players"
@@ -258,21 +258,21 @@
                 :turns-remaining="0"
               )
             .row(v-if="youAreSeated")
-              CommonButton(label="Rời phòng" size="sm" variant="ghost" @click="leaveToLobby")
+              CommonButton(:label="$t('table.game_over.leave_room')" size="sm" variant="ghost" @click="leaveToLobby")
               CommonButton.stage__ready(
                 :disabled="youAreReady"
-                :label="youAreReady ? `Đang chờ người chơi khác (${readyCount}/${connectedCount})…` : 'Sẵn sàng ván mới'"
+                :label="youAreReady ? $t('table.game_over.waiting_for_players', { ready: readyCount, connected: connectedCount }) : $t('table.game_over.ready_new_game')"
                 size="sm"
                 variant="gold"
                 @click="returnToLobby"
               )
             .row(v-else)
-              CommonButton(label="Rời phòng" size="sm" variant="gold" @click="leaveToLobby")
+              CommonButton(:label="$t('table.game_over.leave_room')" size="sm" variant="gold" @click="leaveToLobby")
 
     //- Chat and the story of the game, tucked into a corner.
     .log-dock(v-if="state" :class="{ 'log-dock--open': logOpen }")
       button.log-dock__toggle(@click="logOpen = !logOpen")
-        | {{ logOpen ? "Ẩn lịch sử" : "Lịch sử & Chat" }}
+        | {{ logOpen ? $t('table.log.hide') : $t('table.log.show') }}
         Icon(:name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true")
       EventLog(v-show="logOpen" :chat="chat" :events="pending" @say="say")
 
@@ -335,10 +335,10 @@
 
     ConfirmDialog(
       v-if="confirmingQuit"
-      cancel-label="Ở lại"
-      confirm-label="Rời trận"
-      message="Bạn sẽ bị loại khỏi ván này và không thể tham gia lại cho đến khi ván mới bắt đầu."
-      title="Rời khỏi trận đấu?"
+      :cancel-label="$t('table.quit_dialog.cancel')"
+      :confirm-label="$t('table.quit_dialog.confirm')"
+      :message="$t('table.quit_dialog.message')"
+      :title="$t('table.quit_dialog.title')"
       @cancel="cancelQuit"
       @confirm="quitGame"
     )
@@ -460,6 +460,8 @@
   } = useVoiceChat()
   const audioDialogOpen = ref(false)
   const voiceSinks = useTemplateRef<{ resume: () => void }>("voiceSinks")
+  const { t } = useI18n()
+  const { cardName } = useCardText()
 
   const discardRect = () => tableCenter.value?.discardRect() ?? null
 
@@ -543,15 +545,15 @@
   /** One line of guidance, in priority order, for the banner. */
   const bannerHint = computed(() => {
     if (intent.value.reason) return intent.value.reason
-    if (pickingTarget.value) return "Hãy chọn một người chơi ở phía trên."
-    if (drawDrag.dragging.value) return "Thả vào bộ bài trên tay để rút."
-    if (isYourTurn.value) return "Đánh bài hoặc kéo chồng bài rút về tay để kết thúc lượt."
+    if (pickingTarget.value) return t("table.pick_a_player_above")
+    if (drawDrag.dragging.value) return t("table.drop_to_draw")
+    if (isYourTurn.value) return t("table.play_or_draw_hint")
     return ""
   })
 
   const winner = computed(() => state.value?.players.find((p) => p.id === state.value?.winnerId)?.nickname ?? null)
 
-  const namedCardOptions = CARD_CATALOG.map((c) => ({ id: c.id, name: c.name }))
+  const namedCardOptions = computed(() => CARD_CATALOG.map((c) => ({ id: c.id, name: cardName(c.id) })))
 
   /**
    * A shallow arch across the top of the table: the middle seats sit highest, as

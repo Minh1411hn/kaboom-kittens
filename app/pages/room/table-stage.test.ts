@@ -140,8 +140,8 @@ describe('the table stage', () => {
     fixture = playing()
     const wrapper = await mount()
 
-    expect(wrapper.text()).toContain('Còn 14 lá')
-    expect(wrapper.text()).toContain('Bài đã đánh · 2')
+    expect(wrapper.text()).toContain('14 left')
+    expect(wrapper.text()).toContain('Discarded · 2')
     // The discard top prints no text — its name only reaches the DOM as the
     // artwork's alt, which is what a screen reader reads out.
     expect(wrapper.get('.discard img').attributes('alt')).toBe('Defuse')
@@ -153,9 +153,8 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     const controls = wrapper.get('.controls').text()
-    expect(controls).toContain('Bỏ chọn')
+    expect(controls).toContain('Deselect')
     expect(controls).not.toContain('Draw')
-    expect(controls).not.toContain('Rút bài')
 
     // The hand only lights up as a target while a card is being dragged.
     expect(wrapper.get('.stage__hand').classes()).not.toContain('stage__hand--drop-active')
@@ -172,7 +171,7 @@ describe('the table stage', () => {
 
     fixture = playing({ currentPlayerId: 'p2' })
     const theirs = await mount()
-    expect(theirs.get('.headline').text()).toBe('Đang chờ Mittens đi…')
+    expect(theirs.get('.headline').text()).toBe('Waiting for Mittens…')
   })
 
   it('keeps the table visible after you explode, and curtains it when the game ends', async () => {
@@ -187,11 +186,11 @@ describe('the table stage', () => {
     const dead = await mount()
     expect(dead.find('.stage__curtain').exists()).toBe(false)
     expect(dead.find('.stage__hand .slot').exists()).toBe(false)
-    expect(dead.get('.stage__watching').text()).toContain('Bạn đã bị nổ tung')
+    expect(dead.get('.stage__watching').text()).toContain('You exploded')
 
     fixture = playing({ status: 'over', winnerId: 'p2', currentPlayerId: null })
     const over = await mount()
-    expect(over.get('.stage__curtain').text()).toContain('Mittens đã chiến thắng!')
+    expect(over.get('.stage__curtain').text()).toContain('Mittens won!')
   })
 
   it('offers a way back to the waiting room, gated on being ready', async () => {
@@ -208,7 +207,7 @@ describe('the table stage', () => {
     const notReady = await mount()
     const curtain = notReady.get('.stage__curtain')
     const button = curtain.get('.stage__ready')
-    expect(button.text()).toBe('Sẵn sàng ván mới')
+    expect(button.text()).toBe('Ready for new game')
     expect(button.attributes('disabled')).toBeUndefined()
     // Only Mittens (ready: true) has readied up so far.
     expect(curtain.findAll('.ready-badge')).toHaveLength(1)
@@ -227,7 +226,7 @@ describe('the table stage', () => {
     expect(ready.find('.stage__curtain').exists()).toBe(false)
     expect(ready.find('.lobby').exists()).toBe(true)
     const waitingButton = ready.get('.lobby__start button')
-    expect(waitingButton.text()).toBe('Đang chờ mọi người…')
+    expect(waitingButton.text()).toBe('Waiting for everyone…')
     expect(waitingButton.attributes('disabled')).toBeDefined()
   })
 
@@ -236,7 +235,7 @@ describe('the table stage', () => {
     const wrapper = await mount()
 
     expect(wrapper.find('.stage').exists()).toBe(false)
-    expect(wrapper.get('.lobby').text()).toContain('Cài đặt phòng')
+    expect(wrapper.get('.lobby').text()).toContain('Room settings')
     // Everyone shows in the lobby, including you.
     expect(wrapper.findAll('.lobby__seats .seat')).toHaveLength(3)
   })
@@ -270,7 +269,7 @@ describe('the table stage', () => {
         peek: null,
         isHost: true,
       },
-      log: [{ seq: 1, at: 1, type: 'card-drawn', playerId: 'p2', message: '' }],
+      log: [{ seq: 1, at: 1, type: 'card-drawn', playerId: 'p2' }],
     } as Partial<PublicGameState>)
     await nextTick()
 
@@ -285,16 +284,15 @@ describe('the table stage', () => {
           kind: 'choose-deck-position',
           cardId: 'defuse',
           requiredFrom: ['p1'],
-          prompt: 'Secretly put the Exploding Kitten back into the deck',
           deadline: Date.now() + 30000,
           isForYou: true,
           answered: [],
           maxPosition: 14,
         },
         log: [
-          { seq: 1, at: 1, type: 'card-drawn', playerId: 'p2', message: '' },
-          { seq: 2, at: 2, type: 'kitten-drawn', playerId: 'p1', message: '' },
-          { seq: 3, at: 3, type: 'kitten-defused', playerId: 'p1', message: '' },
+          { seq: 1, at: 1, type: 'card-drawn', playerId: 'p2' },
+          { seq: 2, at: 2, type: 'kitten-drawn', playerId: 'p1' },
+          { seq: 3, at: 3, type: 'kitten-defused', playerId: 'p1' },
         ],
       } as Partial<PublicGameState>)
       await nextTick()

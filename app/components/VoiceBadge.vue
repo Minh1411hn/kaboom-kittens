@@ -2,7 +2,7 @@
 component.voice-badge(
   :class="{ 'voice-badge--speaking': speaking && !muted, 'voice-badge--muted': muted, 'voice-badge--off': !micOn }"
   :is="interactive ? 'button' : 'span'"
-  :title="muted ? 'Đang tắt tiếng người này — bấm để nghe lại' : !micOn ? 'Micro đang tắt' : interactive ? 'Bấm để tắt tiếng người này' : 'Micro đang bật'"
+  :title="muted ? $t('table.voice_badge.muted_title') : !micOn ? $t('table.voice_badge.mic_off_title') : interactive ? $t('table.voice_badge.click_to_mute_title') : $t('table.voice_badge.mic_on_title')"
   :type="interactive ? 'button' : undefined"
   @click.stop="interactive && $emit('toggle')"
 )

@@ -1,4 +1,5 @@
 // @vitest-environment nuxt
+import { defineComponent } from "vue";
 import { describe, expect, it } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import type {
@@ -52,7 +53,7 @@ describe("CardImage", () => {
     expect(img.attributes("src")).toContain("/cards/skip/artworks/");
     expect(img.attributes("alt")).toBe("Skip");
     expect(wrapper.get(".card").attributes("title")).toContain(
-      "Kết thúc lượt của bạn mà không cần rút bài.",
+      "Ends your turn without drawing a card.",
     );
   });
 
@@ -142,8 +143,8 @@ describe("PlayerSeat", () => {
     });
     expect(current.get(".seat").classes()).toContain("current");
     expect(current.text()).toContain("Whiskers");
-    expect(current.text()).toContain("5 lá bài");
-    expect(current.text()).toContain("còn 2 lượt");
+    expect(current.text()).toContain("5 cards");
+    expect(current.text()).toContain("2 turns left");
 
     const dead = await mountSuspended(PlayerSeat, {
       props: {
@@ -261,7 +262,7 @@ describe("HandFan", () => {
     const wrapper = await mountSuspended(HandFan, {
       props: { hand: [], selected: [] },
     });
-    expect(wrapper.text()).toContain("Không còn lá bài nào trên tay.");
+    expect(wrapper.text()).toContain("You have no cards left in hand.");
   });
 
   it("flips over only the card the drag just delivered", async () => {
@@ -410,8 +411,8 @@ describe("TableCenter", () => {
       },
     });
     expect(wrapper.get(".direction-badge").classes()).toContain("ccw");
-    expect(wrapper.text()).toContain("Còn 10 lá");
-    expect(wrapper.text()).toContain("Chiều bốc bài");
+    expect(wrapper.text()).toContain("10 left");
+    expect(wrapper.text()).toContain("Draw direction");
   });
 });
 
@@ -422,8 +423,8 @@ describe("SeeFutureModal", () => {
         cards: [card("skip", "p1"), card("defuse", "p2")],
       },
     });
-    expect(wrapper.text()).toContain("Nhìn thấu tương lai");
-    expect(wrapper.text()).toContain("Top #1 (Trên cùng)");
+    expect(wrapper.text()).toContain("See the Future");
+    expect(wrapper.text()).toContain("Top #1");
     expect(wrapper.text()).toContain("#2");
     expect(wrapper.findAll(".card")).toHaveLength(2);
   });
@@ -453,7 +454,7 @@ describe("SeeFutureModal", () => {
     const wrapper = await mountSuspended(SeeFutureModal, {
       props: { cards, editable: true },
     });
-    expect(wrapper.text()).toContain("Sắp xếp lại tương lai");
+    expect(wrapper.text()).toContain("Alter the Future");
     expect(wrapper.find(".close-btn").exists()).toBe(false);
 
     await wrapper.get(".dialog-footer button").trigger("click");
@@ -471,13 +472,13 @@ describe("TurnBanner", () => {
 
   it("names whoever is on the clock, and shouts when it is you", async () => {
     const waiting = await mountSuspended(TurnBanner, { props: base });
-    expect(waiting.text()).toContain("Đang chờ Mittens đi…");
+    expect(waiting.text()).toContain("Waiting for Mittens");
     expect(waiting.classes()).not.toContain("live");
 
     const yours = await mountSuspended(TurnBanner, {
       props: { ...base, isYourTurn: true },
     });
-    expect(yours.text()).toContain("Đến lượt của bạn!");
+    expect(yours.text()).toContain("Your turn!");
     expect(yours.classes()).toContain("live");
   });
 
@@ -527,7 +528,7 @@ describe("NopeBar", () => {
       },
     });
     expect(wrapper.text()).toContain("Whiskers");
-    expect(wrapper.text()).toContain("đã dùng");
+    expect(wrapper.text()).toContain("used");
     await wrapper.get("button.danger").trigger("click");
     expect(wrapper.emitted("nope")).toHaveLength(1);
 
@@ -542,7 +543,7 @@ describe("NopeBar", () => {
       },
     });
     expect(own.find("button.danger").exists()).toBe(false);
-    expect(own.text()).toContain("Đang chờ");
+    expect(own.text()).toContain("Waiting");
   });
 
   it("shows target player when action has a target", async () => {
@@ -585,7 +586,7 @@ describe("NopeBar", () => {
       },
     });
     expect(wrapper.text()).toContain("2 Nope");
-    expect(wrapper.text()).toContain("Đang có hiệu lực");
+    expect(wrapper.text()).toContain("In effect");
     expect(wrapper.findAll(".card-avatar-badge")).toHaveLength(2);
   });
 });
@@ -596,7 +597,7 @@ describe("InteractionModal", () => {
     kind: "choose-card-from-hand" as const,
     cardId: "favor" as const,
     requiredFrom: ["p1"],
-    prompt: "Choose a card to give to Mittens",
+    forPlayerId: "p2",
     deadline: Date.now() + 30000,
     isForYou: true,
     answered: [] as string[],
@@ -639,7 +640,7 @@ describe("InteractionModal", () => {
         youId: "p2",
       },
     });
-    expect(wrapper.text()).toContain("Đang chờ Whiskers chọn bài…");
+    expect(wrapper.text()).toContain("Waiting on Whiskers");
     expect(wrapper.findAll(".choice")).toHaveLength(0);
   });
 });
@@ -650,7 +651,6 @@ describe("DeckPositionModal", () => {
     kind: "choose-deck-position" as const,
     cardId: "defuse" as const,
     requiredFrom: ["p1"],
-    prompt: "Secretly put the Exploding Kitten back into the deck",
     deadline: Date.now() + 30000,
     isForYou: true,
     answered: [] as string[],
@@ -680,9 +680,9 @@ describe("DeckPositionModal", () => {
     });
     const bottom = wrapper
       .findAll("button")
-      .find((b) => b.text() === "Đặt ở cuối")!;
+      .find((b) => b.text() === "Put at the bottom")!;
     await bottom.trigger("click");
-    expect(wrapper.text()).toContain("Dưới cùng");
+    expect(wrapper.text()).toContain("Bottom");
 
     await wrapper.findAll("button").at(-1)!.trigger("click");
     expect(wrapper.emitted("submit")?.[0]).toEqual([20]);
@@ -715,7 +715,7 @@ describe("DeckPositionModal", () => {
     expect(labels).not.toContain("3");
     expect(labels).not.toContain("4");
     expect(labels).not.toContain("5");
-    expect(labels).toContain("Đặt ở cuối");
+    expect(labels).toContain("Put at the bottom");
   });
 });
 
@@ -728,23 +728,47 @@ describe("usePlayIntent", () => {
       ...overrides,
     } as unknown as PublicGameState);
 
-  it("accepts a lone action card on your turn and refuses it off-turn", () => {
+  /**
+   * `usePlayIntent` calls `useI18n()`, which requires an active component
+   * `setup()` — so it cannot be invoked as a bare function here. This mounts
+   * a throwaway host component just to capture the returned computed ref;
+   * the ref stays reactive after mounting, so assertions can read `.value`
+   * freely afterwards.
+   */
+  async function setupPlayIntent(
+    selected: ReturnType<typeof ref<Card[]>>,
+    gameState: ReturnType<typeof state>,
+    isYourTurn: ReturnType<typeof ref<boolean>>,
+  ) {
+    let intent!: ReturnType<typeof usePlayIntent>;
+    await mountSuspended(
+      defineComponent({
+        setup() {
+          intent = usePlayIntent(selected, gameState, isYourTurn);
+          return () => null;
+        },
+      }),
+    );
+    return intent;
+  }
+
+  it("accepts a lone action card on your turn and refuses it off-turn", async () => {
     const selected = ref([card("skip", "s1")]);
-    expect(usePlayIntent(selected, state(), ref(true)).value.ok).toBe(true);
-    expect(usePlayIntent(selected, state(), ref(false)).value.reason).toMatch(
-      /đến lượt|wait for your turn/i,
-    );
+    expect((await setupPlayIntent(selected, state(), ref(true))).value.ok).toBe(true);
+    expect(
+      (await setupPlayIntent(selected, state(), ref(false))).value.reason,
+    ).toContain("Wait for your turn");
   });
 
-  it("refuses a lone cat card and explains why", () => {
+  it("refuses a lone cat card and explains why", async () => {
     const selected = ref([card("tacocat", "c1")]);
-    expect(usePlayIntent(selected, state(), ref(true)).value.reason).toMatch(
-      /combo 2, 3 hoặc 5|combo of 2, 3 or 5/i,
-    );
+    expect(
+      (await setupPlayIntent(selected, state(), ref(true))).value.reason,
+    ).toContain("combo of 2, 3 or 5");
   });
 
-  it("accepts matching cat pairs, including with Feral Cat", () => {
-    const pair = usePlayIntent(
+  it("accepts matching cat pairs, including with Feral Cat", async () => {
+    const pair = await setupPlayIntent(
       ref([card("tacocat", "a"), card("tacocat", "b")]),
       state(),
       ref(true),
@@ -755,14 +779,14 @@ describe("usePlayIntent", () => {
       needsTarget: true,
     });
 
-    const feral = usePlayIntent(
+    const feral = await setupPlayIntent(
       ref([card("beard-cat", "a"), card("feral-cat", "b")]),
       state(),
       ref(true),
     );
     expect(feral.value.combo).toBe("pair");
 
-    const mismatch = usePlayIntent(
+    const mismatch = await setupPlayIntent(
       ref([card("beard-cat", "a"), card("tacocat", "b")]),
       state(),
       ref(true),
@@ -770,8 +794,8 @@ describe("usePlayIntent", () => {
     expect(mismatch.value.ok).toBe(false);
   });
 
-  it("asks for a named card on a three-of-a-kind", () => {
-    const triple = usePlayIntent(
+  it("asks for a named card on a three-of-a-kind", async () => {
+    const triple = await setupPlayIntent(
       ref([card("tacocat", "a"), card("tacocat", "b"), card("feral-cat", "c")]),
       state(),
       ref(true),
@@ -783,7 +807,7 @@ describe("usePlayIntent", () => {
     });
   });
 
-  it("needs a non-empty discard pile for the five-card combo", () => {
+  it("needs a non-empty discard pile for the five-card combo", async () => {
     const five = [
       card("skip", "a"),
       card("favor", "b"),
@@ -791,30 +815,30 @@ describe("usePlayIntent", () => {
       card("nope", "d"),
       card("reverse", "e"),
     ];
-    expect(usePlayIntent(ref(five), state(), ref(true)).value.combo).toBe(
+    expect((await setupPlayIntent(ref(five), state(), ref(true))).value.combo).toBe(
       "five-different",
     );
     expect(
-      usePlayIntent(ref(five), state({ discardCount: 0 }), ref(true)).value
+      (await setupPlayIntent(ref(five), state({ discardCount: 0 }), ref(true))).value
         .reason,
-    ).toMatch(/đang trống|discard pile is empty/i);
+    ).toContain("discard pile is empty");
   });
 
-  it("allows Nope out of turn, but not against your own card", () => {
+  it("allows Nope out of turn, but not against your own card", async () => {
     const nope = ref([card("nope", "n1")]);
     const withAction = state({
       actionStack: [{ playerId: "p2" } as PendingAction],
     });
-    expect(usePlayIntent(nope, withAction, ref(false)).value.ok).toBe(true);
+    expect((await setupPlayIntent(nope, withAction, ref(false))).value.ok).toBe(true);
 
     const yours = state({ actionStack: [{ playerId: "p1" } as PendingAction] });
-    expect(usePlayIntent(nope, yours, ref(false)).value.reason).toMatch(
-      /chính mình|your own card/i,
-    );
+    expect(
+      (await setupPlayIntent(nope, yours, ref(false))).value.reason,
+    ).toContain("your own card");
 
-    expect(usePlayIntent(nope, state(), ref(false)).value.reason).toMatch(
-      /không có hành động|nothing to Nope/i,
-    );
+    expect(
+      (await setupPlayIntent(nope, state(), ref(false))).value.reason,
+    ).toContain("nothing to Nope");
   });
 });
 
@@ -833,7 +857,7 @@ describe("TargetSelectModal", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Cướp 1 lá bài ngẫu nhiên");
+    expect(wrapper.text()).toContain("Steal a random card");
     expect(wrapper.findAll(".target-card")).toHaveLength(1);
     expect(wrapper.text()).toContain("Mittens");
 
@@ -861,7 +885,7 @@ describe("TargetSelectModal", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Đòi 1 lá bài cụ thể");
+    expect(wrapper.text()).toContain("Demand a specific card");
     expect(wrapper.findAll(".card-choice-btn").length).toBeGreaterThan(5);
 
     const confirmBtn = wrapper.find("button.confirm-btn");

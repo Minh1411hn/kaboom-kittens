@@ -15,15 +15,15 @@ export default defineEventHandler(async (event) => {
   const session = await sessionFromEvent(event)
   if (!session) throw createError({ statusCode: 401, statusMessage: 'Pick a nickname first.' })
   if (!realtimeConfigured()) {
-    throw createError({ statusCode: 503, statusMessage: 'Voice chat chưa được cấu hình.' })
+    throw createError({ statusCode: 503, statusMessage: 'Voice chat is not configured.' })
   }
 
   const parsed = voiceTracksBodySchema.safeParse(await readBody(event))
-  if (!parsed.success) throw createError({ statusCode: 400, statusMessage: 'Yêu cầu không hợp lệ.' })
+  if (!parsed.success) throw createError({ statusCode: 400, statusMessage: 'Invalid request.' })
 
   const { sessionId, ...rest } = parsed.data
   if (!(await ownsVoiceSession(sessionId, session.playerId))) {
-    throw createError({ statusCode: 403, statusMessage: 'Phiên thoại này không phải của bạn.' })
+    throw createError({ statusCode: 403, statusMessage: "That voice session isn't yours." })
   }
 
   return await newTracks(sessionId, rest)

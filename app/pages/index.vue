@@ -11,13 +11,13 @@
     )
       template(#actions)
         CommonButton(
-          aria-label="Cài đặt âm thanh"
+          :aria-label="$t('table.topbar.audio_settings')"
           icon="lucide:volume-2"
           variant="gold"
           @click="audioDialogOpen = true"
         )
         CommonButton(
-          aria-label="Hồ sơ của bạn"
+          :aria-label="$t('app.your_profile')"
           icon="lucide:settings"
           variant="gold"
           @click="profileDialogOpen = true"
@@ -31,9 +31,9 @@
 
         CommonButton.home__create(
           :disabled="creating"
+          :label="$t('app.create_room')"
           :loading="creating"
           icon="lucide:users"
-          label="Tạo phòng"
           size="lg"
           variant="gold"
           @click="createRoom"
@@ -43,22 +43,22 @@
 
       //- Right column: who you are, then the live room list.
       section.home__lobby
-        h2.home__heading Danh sách phòng
+        h2.home__heading {{ $t('app.room_list_heading') }}
 
         p.home__empty(v-if="!openRooms.length")
-          | Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!
+          | {{ $t('app.no_rooms') }}
 
         ul.home__rooms(v-else)
           li.home__room(v-for="room in openRooms" :key="room.id")
             .home__room-main
               strong.home__room-name {{ room.name }}
               span.home__room-meta
-                | - {{ room.playerCount }}/{{ room.maxPlayers }} người ·
-                | {{ room.status === "playing" ? "đang chơi" : "đang chờ" }} ·
+                | - {{ $t('app.room_player_count', { count: room.playerCount, max: room.maxPlayers }) }} ·
+                | {{ room.status === "playing" ? $t('app.status_playing') : $t('app.status_waiting') }} ·
                 | {{ since(room.createdAt) }}
             CommonButton.home__room-join(
               :disabled="room.playerCount >= room.maxPlayers && room.status === 'lobby'"
-              :label="room.status === 'playing' ? 'Xem' : 'Vào phòng'"
+              :label="room.status === 'playing' ? $t('app.room_view') : $t('app.room_enter')"
               size="sm"
               variant="red"
               @click="navigateTo(`/room/${room.id}`)"
@@ -81,6 +81,7 @@
 
   const { nickname, avatarId, ready, load, setProfile } = useSession()
   const { rooms, connect, send, status, error, resetRoom } = useGameSocket()
+  const { t } = useI18n()
 
   const creating = ref(false)
   const profileDialogOpen = ref(false)
@@ -132,7 +133,8 @@
       })
       await navigateTo(`/room/${roomId}`)
     } catch (caught) {
-      error.value = (caught as { statusMessage?: string }).statusMessage ?? "Không thể tạo phòng chơi."
+      const code = (caught as { data?: { data?: { code?: string } } }).data?.data?.code
+      error.value = code ? t(`errors.${code}`) : t("errors.room-create-failed")
     } finally {
       creating.value = false
     }
@@ -142,9 +144,9 @@
 
   function since(at: number): string {
     const minutes = Math.round((Date.now() - at) / 60000)
-    if (minutes < 1) return "vừa xong"
-    if (minutes < 60) return `${minutes} phút trước`
-    return `${Math.round(minutes / 60)} giờ trước`
+    if (minutes < 1) return t("app.time_just_now")
+    if (minutes < 60) return t("app.time_minutes_ago", { minutes })
+    return t("app.time_hours_ago", { hours: Math.round(minutes / 60) })
   }
 </script>
 

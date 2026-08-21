@@ -42,7 +42,10 @@
 
   const back = cardBackUrl()
 
-  const headline = computed(() => (props.isYourTurn ? "Đến lượt của bạn!" : `Đang chờ ${props.currentPlayerName} đi…`))
+  const { t } = useI18n()
+  const headline = computed(() =>
+    props.isYourTurn ? t("table.turn_banner.your_turn") : t("table.turn_banner.waiting_for", { name: props.currentPlayerName })
+  )
 </script>
 
 <style scoped lang="scss">

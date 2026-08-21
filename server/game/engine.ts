@@ -1,18 +1,16 @@
 import {
-    CARD_BY_ID,
     HAND_SIZE,
     STATE_VERSION,
     type Card,
     type Command,
-    type ComboKind,
     type DeckOverrides,
     type GameEvent,
     type GameState,
     type InteractionKind,
     type InteractionResponse,
     type PendingAction,
-    type Player,
 } from "#shared/types/game";
+import type { Rejection } from "#shared/types/errors";
 import { registerAllCards } from "./cards";
 import { resolveComboInteraction, validateCombo } from "./cards/cats";
 import {
@@ -59,7 +57,7 @@ export interface ReduceResult {
     /** Events appended by this command, for animation on the client. */
     events: GameEvent[];
     /** Set when the command was rejected; state is returned unchanged. */
-    error?: string;
+    error?: Rejection;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,11 +93,11 @@ export function addPlayer(
     id: string,
     nickname: string,
     avatarId: string,
-): string | null {
+): Rejection | null {
     if (state.players.some((p) => p.id === id)) return null;
-    if (state.status !== "lobby") return "Trò chơi đã bắt đầu rồi.";
+    if (state.status !== "lobby") return { code: "game-already-started" };
     if (state.players.length >= MAX_PLAYERS)
-        return `Phòng chơi đã đầy (tối đa ${MAX_PLAYERS} người).`;
+        return { code: "room-full", params: { max: MAX_PLAYERS } };
     state.players.push({
         id,
         nickname,
@@ -181,7 +179,7 @@ function dispatch(
     command: Command,
     config: EngineConfig,
     env: EffectEnv,
-): string | undefined {
+): Rejection | undefined {
     switch (command.type) {
         case "start-game":
             return startGame(state, command.now, config);
@@ -193,13 +191,14 @@ function dispatch(
             return playCard(state, command, config, env);
 
         case "draw-card": {
-            if (state.status !== "playing") return "Trò chơi chưa bắt đầu.";
+            if (state.status !== "playing")
+                return { code: "game-not-started" };
             if (state.interaction)
-                return "Đang có người chơi khác thực hiện thao tác.";
-            if (state.nopeWindow) return "Hãy đợi lượt Nope kết thúc.";
+                return { code: "interaction-in-progress" };
+            if (state.nopeWindow) return { code: "nope-window-open" };
             const player = currentPlayer(state);
             if (!player || player.id !== command.playerId)
-                return "Chưa đến lượt của bạn.";
+                return { code: "not-your-turn" };
             applyEffects(
                 state,
                 [{ t: "DRAW", playerId: player.id, from: "top" }],
@@ -209,8 +208,7 @@ function dispatch(
         }
 
         case "pass-nope": {
-            if (!state.nopeWindow)
-                return "Hiện không có lượt Nope nào đang mở.";
+            if (!state.nopeWindow) return { code: "no-nope-window" };
             if (!state.nopeWindow.passed.includes(command.playerId)) {
                 state.nopeWindow.passed.push(command.playerId);
             }
@@ -236,15 +234,8 @@ function dispatch(
                 return undefined;
             const player = currentPlayer(state);
             if (!player) return undefined;
-            logEvent(
-                state,
-                {
-                    type: "card-drawn",
-                    playerId: player.id,
-                    message: `${player.nickname} hết thời gian và tự động rút 1 lá bài.`,
-                },
-                env.now,
-            );
+            // The DRAW effect below logs its own "card-drawn" event — no need
+            // for a second one here just to note the timeout triggered it.
             applyEffects(
                 state,
                 [{ t: "DRAW", playerId: player.id, from: "top" }],
@@ -260,19 +251,19 @@ function dispatch(
         }
 
         case "quit-game": {
-            if (state.status !== "playing") return "Trò chơi chưa bắt đầu.";
+            if (state.status !== "playing")
+                return { code: "game-not-started" };
             const player = playerById(state, command.playerId);
-            if (!player) return "Bạn không có trong ván chơi này.";
-            if (!player.alive) return "Bạn đã rời khỏi ván chơi.";
+            if (!player) return { code: "not-in-game" };
+            if (!player.alive) return { code: "already-left" };
             // No interaction/nopeWindow guard here, unlike draw-card — a player
             // quitting should go through even mid-prompt or mid-Nope-window.
             removePlayer(state, command.playerId);
             logEvent(
                 state,
                 {
-                    type: "player-exploded",
+                    type: "player-quit",
                     playerId: command.playerId,
-                    message: `${player.nickname} đã rời khỏi ván đấu.`,
                 },
                 env.now,
             );
@@ -284,9 +275,9 @@ function dispatch(
         }
 
         case "return-to-lobby": {
-            if (state.status !== "over") return "Ván đấu vẫn chưa kết thúc.";
+            if (state.status !== "over") return { code: "game-not-over" };
             const player = playerById(state, command.playerId);
-            if (!player) return "Bạn không có trong ván chơi này.";
+            if (!player) return { code: "not-in-game" };
             player.ready = true;
             const connected = state.players.filter((p) => p.connected);
             if (connected.length && connected.every((p) => p.ready)) {
@@ -310,9 +301,8 @@ function dispatch(
 function setDeckOverrides(
     state: GameState,
     overrides: DeckOverrides,
-): string | undefined {
-    if (state.status !== "lobby")
-        return "Chỉ có thể đổi bộ bài khi đang ở phòng chờ.";
+): Rejection | undefined {
+    if (state.status !== "lobby") return { code: "not-in-lobby" };
     const error = validateDeckOverrides(overrides);
     if (error) return error;
     const next: DeckOverrides = {};
@@ -327,10 +317,10 @@ function startGame(
     state: GameState,
     now: number,
     config: EngineConfig,
-): string | undefined {
-    if (state.status !== "lobby") return "Trò chơi đã bắt đầu rồi.";
+): Rejection | undefined {
+    if (state.status !== "lobby") return { code: "game-already-started" };
     if (state.players.length < MIN_PLAYERS)
-        return `Cần ít nhất ${MIN_PLAYERS} người chơi để bắt đầu.`;
+        return { code: "min-players", params: { min: MIN_PLAYERS } };
 
     const playerCount = state.players.length;
     const overrides = state.deckOverrides;
@@ -375,7 +365,6 @@ function startGame(
         {
             type: "game-started",
             count: playerCount,
-            message: `Trận đấu bắt đầu — ${playerCount} người chơi, ${state.drawPile.length} lá bài trong chồng bài rút.`,
         },
         now,
     );
@@ -386,7 +375,6 @@ function startGame(
             {
                 type: "turn-changed",
                 playerId: first.id,
-                message: `${first.nickname} là người đi đầu tiên.`,
             },
             now,
         );
@@ -421,8 +409,6 @@ export function resetToLobby(state: GameState, now: number): void {
         state,
         {
             type: "returned-to-lobby",
-            message:
-                "Quay lại phòng chờ — giữ nguyên danh sách người chơi, sẵn sàng cho ván mới.",
         },
         now,
     );
@@ -433,28 +419,28 @@ function playCard(
     command: Extract<Command, { type: "play-card" }>,
     config: EngineConfig,
     env: EffectEnv,
-): string | undefined {
-    if (state.status !== "playing") return "Trò chơi chưa bắt đầu.";
-    if (state.interaction) return "Đang có người chơi khác thực hiện thao tác.";
+): Rejection | undefined {
+    if (state.status !== "playing") return { code: "game-not-started" };
+    if (state.interaction) return { code: "interaction-in-progress" };
 
     const player = playerById(state, command.playerId);
-    if (!player) return "Bạn không có trong ván chơi này.";
-    if (!player.alive) return "Bạn đã bị nổ tung và bị loại.";
-    if (!command.uids.length) return "Hãy chọn lá bài muốn đánh.";
+    if (!player) return { code: "not-in-game" };
+    if (!player.alive) return { code: "you-are-eliminated" };
+    if (!command.uids.length) return { code: "no-cards-selected" };
 
     const cards = command.uids.map((uid) =>
         player.hand.find((c) => c.uid === uid),
     );
-    if (cards.some((c) => !c)) return "Bạn không sở hữu những lá bài đó.";
+    if (cards.some((c) => !c)) return { code: "not-your-cards" };
     const played = cards as Card[];
     const ids = played.map((c) => c.id);
     const leadId = ids[0]!;
     const action = buildAction(state, command, played);
 
     if (command.combo) {
-        if (state.nopeWindow) return "Hãy đợi lượt Nope kết thúc.";
+        if (state.nopeWindow) return { code: "nope-window-open" };
         if (currentPlayer(state)?.id !== player.id)
-            return "Chưa đến lượt của bạn.";
+            return { code: "not-your-turn" };
         const valid = validateCombo(
             command.combo,
             ids,
@@ -465,16 +451,15 @@ function playCard(
         );
         if (valid !== true) return valid;
     } else {
-        if (played.length !== 1)
-            return "Hãy đánh 1 lá bài, hoặc một combo hợp lệ.";
+        if (played.length !== 1) return { code: "invalid-play-count" };
         const definition = getCardDefinition(leadId);
         if (definition.playWindow === "own-turn") {
-            if (state.nopeWindow) return "Hãy đợi lượt Nope kết thúc.";
+            if (state.nopeWindow) return { code: "nope-window-open" };
             if (currentPlayer(state)?.id !== player.id)
-                return "Chưa đến lượt của bạn.";
+                return { code: "not-your-turn" };
         }
         if (definition.requiresTarget && !command.targetPlayerId)
-            return "Hãy chọn một người chơi mục tiêu.";
+            return { code: "target-required" };
 
         const allowed = definition.canPlay?.({ state, player, action });
         if (allowed !== undefined && allowed !== true) return allowed;
@@ -497,7 +482,6 @@ function playCard(
                 type: "card-played",
                 playerId: player.id,
                 cardId: "nope",
-                message: `${player.nickname} đã đánh lá NOPE!`,
             },
             env.now,
         );
@@ -514,23 +498,13 @@ function playCard(
                   playerId: player.id,
                   targetId: command.targetPlayerId,
                   cardIds: ids,
-                  message: comboMessage(
-                      player,
-                      command.combo,
-                      state,
-                      command.targetPlayerId,
-                  ),
+                  combo: command.combo,
               }
             : {
                   type: "card-played",
                   playerId: player.id,
                   targetId: command.targetPlayerId,
                   cardId: leadId,
-                  message: `${player.nickname} đã đánh ${CARD_BY_ID[leadId].name}${
-                      command.targetPlayerId
-                          ? ` lên ${playerById(state, command.targetPlayerId)?.nickname}`
-                          : ""
-                  }.`,
               },
         env.now,
     );
@@ -556,20 +530,6 @@ function buildAction(
     };
 }
 
-function comboMessage(
-    player: Player,
-    combo: ComboKind,
-    state: GameState,
-    targetId?: string,
-): string {
-    const target = targetId ? playerById(state, targetId)?.nickname : "ai đó";
-    if (combo === "pair")
-        return `${player.nickname} đã đánh combo đôi mèo lên ${target}.`;
-    if (combo === "triple")
-        return `${player.nickname} đã đánh combo bộ 3 mèo lên ${target}.`;
-    return `${player.nickname} đã đánh 5 lá bài khác nhau để lấy 1 lá từ chồng bài đã đánh.`;
-}
-
 /** Open a Nope window, unless nobody could Nope — then resolve immediately. */
 function openOrCloseWindow(
     state: GameState,
@@ -589,20 +549,20 @@ function submitInteraction(
     state: GameState,
     command: Extract<Command, { type: "submit-interaction" }>,
     env: EffectEnv,
-): string | undefined {
+): Rejection | undefined {
     const interaction = state.interaction;
-    if (!interaction) return "Hiện không có yêu cầu nào cần phản hồi.";
+    if (!interaction) return { code: "no-interaction" };
     if (interaction.id !== command.interactionId)
-        return "Yêu cầu này đã được hoàn thành.";
+        return { code: "interaction-completed" };
     if (!interaction.requiredFrom.includes(command.playerId))
-        return "Yêu cầu này không dành cho bạn.";
-    // Garbage Collection cho phép đổi lá tự do cho tới khi hết giờ; các
-    // interaction khác vẫn chặn gửi lại.
+        return { code: "not-your-interaction" };
+    // Garbage Collection allows switching cards freely until the deadline;
+    // every other interaction still refuses a second submission.
     if (
         interaction.responses[command.playerId] &&
         interaction.kind !== "simultaneous-choose-card"
     )
-        return "Bạn đã phản hồi rồi.";
+        return { code: "already-responded" };
 
     const invalid = validateResponse(
         state,
@@ -621,36 +581,36 @@ function validateResponse(
     playerId: string,
     response: InteractionResponse,
     kind: InteractionKind,
-): string | undefined {
+): Rejection | undefined {
     const player = playerById(state, playerId);
-    if (!player) return "Bạn không có trong ván chơi này.";
+    if (!player) return { code: "not-in-game" };
 
     if (kind === "simultaneous-choose-card") {
-        if (response.type !== "card") return "Hãy chọn 1 lá bài.";
+        if (response.type !== "card") return { code: "choose-a-card" };
         if (!player.hand.some((c) => c.uid === response.uid))
-            return "Bạn không có lá bài đó trên tay.";
+            return { code: "not-in-hand" };
         return undefined;
     }
     if (kind === "choose-card-from-hand") {
-        if (response.type !== "card") return "Hãy chọn 1 lá bài.";
+        if (response.type !== "card") return { code: "choose-a-card" };
         if (!player.hand.some((c) => c.uid === response.uid))
-            return "Bạn không có lá bài đó trên tay.";
+            return { code: "not-in-hand" };
         return undefined;
     }
     if (kind === "choose-from-discard") {
-        if (response.type !== "card") return "Hãy chọn 1 lá bài.";
+        if (response.type !== "card") return { code: "choose-a-card" };
         if (!state.discardPile.some((c) => c.uid === response.uid))
-            return "Lá bài đó không có trong chồng bài đã đánh.";
+            return { code: "not-in-discard" };
         return undefined;
     }
     if (kind === "choose-deck-position") {
-        if (response.type !== "position") return "Hãy chọn vị trí đặt bài.";
+        if (response.type !== "position") return { code: "choose-a-position" };
         if (response.index < 0 || response.index > state.drawPile.length)
-            return "Vị trí đặt bài không hợp lệ.";
+            return { code: "invalid-position" };
         return undefined;
     }
     if (kind === "reorder-cards") {
-        if (response.type !== "order") return "Hãy gửi thứ tự sắp xếp bài.";
+        if (response.type !== "order") return { code: "choose-an-order" };
         const expected = new Set(
             (state.interaction?.cards ?? []).map((c) => c.uid),
         );
@@ -661,7 +621,7 @@ function validateResponse(
             got.size !== expected.size ||
             response.uids.some((uid) => !expected.has(uid))
         ) {
-            return "Thứ tự sắp xếp không hợp lệ.";
+            return { code: "invalid-order" };
         }
         return undefined;
     }
@@ -731,7 +691,7 @@ function completeInteractionIfReady(
     state: GameState,
     env: EffectEnv,
     force = false,
-): string | undefined {
+): Rejection | undefined {
     const interaction = state.interaction;
     if (!interaction) return undefined;
     if (!force && interaction.kind === "simultaneous-choose-card")

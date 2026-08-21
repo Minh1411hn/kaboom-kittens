@@ -1,5 +1,6 @@
 import type { Peer } from 'crossws'
 import type { Command, GameState } from '#shared/types/game'
+import type { Rejection } from '#shared/types/errors'
 import type { ServerMessage } from '#shared/protocol/messages'
 import type { VoiceMember } from '#shared/protocol/voice'
 import { addPlayer, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby, setConnected, type EngineConfig } from '../game/engine'
@@ -34,10 +35,10 @@ export function engineConfig(): EngineConfig {
  * Returns an error string when the engine rejected the command, so the caller
  * can report it to the one player who tried it rather than the whole table.
  */
-export async function applyCommand(roomId: string, command: Command): Promise<string | undefined> {
+export async function applyCommand(roomId: string, command: Command): Promise<Rejection | undefined> {
   const result = await withRoomLock(roomId, async () => {
     const state = await loadState(roomId)
-    if (!state) return { error: 'This room no longer exists.' }
+    if (!state) return { error: { code: 'room-gone' } as Rejection }
 
     const reduced = reduce(state, command, engineConfig())
     if (reduced.error) return { error: reduced.error }
@@ -58,11 +59,11 @@ export async function applyCommand(roomId: string, command: Command): Promise<st
 /** Mutations that are not engine commands (joining, connection flags). */
 export async function mutateRoom(
   roomId: string,
-  mutate: (state: GameState) => string | undefined | void,
-): Promise<string | undefined> {
+  mutate: (state: GameState) => Rejection | undefined | void,
+): Promise<Rejection | undefined> {
   const result = await withRoomLock(roomId, async () => {
     const state = await loadState(roomId)
-    if (!state) return { error: 'Phòng chơi này không còn tồn tại.' }
+    if (!state) return { error: { code: 'room-gone' } as Rejection }
     const error = mutate(state)
     if (error) return { error }
     await saveState(state)
@@ -81,7 +82,7 @@ export async function joinRoom(
   playerId: string,
   nickname: string,
   avatarId: string,
-): Promise<string | undefined> {
+): Promise<Rejection | undefined> {
   const error = await mutateRoom(roomId, (state) => {
     const existing = state.players.find((p) => p.id === playerId)
     if (existing) {
@@ -120,10 +121,10 @@ export async function updateProfile(
   playerId: string,
   nickname: string,
   avatarId: string,
-): Promise<string | undefined> {
+): Promise<Rejection | undefined> {
   return mutateRoom(roomId, (state) => {
     const existing = state.players.find((p) => p.id === playerId)
-    if (!existing) return 'not-seated'
+    if (!existing) return { code: 'not-seated' }
     existing.nickname = nickname
     existing.avatarId = avatarId
   })
@@ -142,9 +143,9 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
 
   await mutateRoom(roomId, (state) => {
     const now = Date.now()
-    // Spectators hold no seat; returning a string keeps `mutateRoom` from
+    // Spectators hold no seat; returning a Rejection keeps `mutateRoom` from
     // saving and broadcasting a state that did not change.
-    if (!state.players.some((p) => p.id === playerId)) return 'not-seated'
+    if (!state.players.some((p) => p.id === playerId)) return { code: 'not-seated' }
     if (state.status === 'playing') {
       setConnected(state, playerId, false, now)
       return
@@ -187,12 +188,12 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
  * `removePlayer` (lobby branch) drops their entry outright rather than
  * flagging it.
  */
-export async function kickPlayer(roomId: string, targetPlayerId: string): Promise<string | undefined> {
+export async function kickPlayer(roomId: string, targetPlayerId: string): Promise<Rejection | undefined> {
   const error = await mutateRoom(roomId, (state) => {
-    if (state.status !== 'lobby' && state.status !== 'over') return 'Chỉ có thể mời người chơi ra khỏi phòng khi ở phòng chờ.'
-    if (!state.players.some((p) => p.id === targetPlayerId)) return 'Người chơi đó không có trong phòng này.'
+    if (state.status !== 'lobby' && state.status !== 'over') return { code: 'kick-not-in-lobby' }
+    if (!state.players.some((p) => p.id === targetPlayerId)) return { code: 'kick-target-not-found' }
     removePlayer(state, targetPlayerId)
-    
+
     if (state.status === 'over') {
       const remaining = state.players.filter((p) => p.connected)
       if (remaining.length && remaining.every((p) => p.ready)) {
@@ -203,7 +204,7 @@ export async function kickPlayer(roomId: string, targetPlayerId: string): Promis
   if (error) return error
 
   const target = peersInRoom(roomId).find((l) => l.context.playerId === targetPlayerId)
-  if (target) send(target.peer, { type: 'kicked', reason: 'Chủ phòng đã mời bạn ra khỏi phòng chơi.' })
+  if (target) send(target.peer, { type: 'kicked', code: 'kicked-by-host' })
   return undefined
 }
 
@@ -223,7 +224,7 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   ])
   if (!state) {
     for (const { peer } of listeners) {
-      send(peer, { type: 'kicked', reason: 'Phòng chơi này đã bị đóng.' })
+      send(peer, { type: 'kicked', code: 'room-closed' })
     }
     return
   }
@@ -245,7 +246,9 @@ export function snapshotFor(
     type: 'snapshot',
     state: projected,
     hostId: meta?.hostId ?? '',
-    roomName: meta?.name ?? 'Phòng chơi',
+    // Every room gets a name at creation; an empty string here means "still
+    // loading" to the client, same as a room whose name has not arrived yet.
+    roomName: meta?.name ?? '',
     voice,
   }
 }
@@ -257,7 +260,7 @@ export async function sendSnapshot(peer: Peer, roomId: string, viewerId: string)
     loadVoice(roomId),
   ])
   if (!state) {
-    send(peer, { type: 'kicked', reason: 'Phòng chơi này không còn tồn tại.' })
+    send(peer, { type: 'kicked', code: 'room-gone' })
     return
   }
   send(peer, snapshotFor(state, meta, viewerId, voice))

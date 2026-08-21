@@ -13,12 +13,16 @@ import { rtcSessionIdSchema, trackNameSchema, type VoiceMember } from './voice'
 export const cardIdSchema = z.enum(ALL_CARD_IDS as [CardId, ...CardId[]])
 export const comboSchema = z.enum(['pair', 'triple', 'five-different'])
 
+// Messages here are stable codes, not finished text — resolved client-side
+// via i18n (`errors.<code>`) or, for the REST validation path, threaded
+// through `createError`'s `data.code`. See AGENTS.md: `server/game/` and the
+// protocol layer never resolve strings themselves.
 export const nicknameSchema = z
   .string()
   .trim()
-  .min(2, 'Biệt danh phải có ít nhất 2 ký tự.')
-  .max(16, 'Biệt danh tối đa 16 ký tự.')
-  .regex(/^[\p{L}\p{N} _'-]+$/u, 'Biệt danh chỉ được dùng chữ cái, chữ số, khoảng trắng, - và _.')
+  .min(2, 'nickname-too-short')
+  .max(16, 'nickname-too-long')
+  .regex(/^[\p{L}\p{N} _'-]+$/u, 'nickname-invalid-chars')
 
 export const roomNameSchema = z.string().trim().min(2).max(32)
 
@@ -123,8 +127,8 @@ export type ServerMessage =
     }
   | { type: 'room-list'; rooms: RoomSummary[] }
   | { type: 'chat'; message: ChatMessage }
-  | { type: 'error'; code: string; message: string }
-  | { type: 'kicked'; reason: string }
+  | { type: 'error'; code: string; params?: Record<string, string | number> }
+  | { type: 'kicked'; code: string }
   | { type: 'pong'; at: number }
 
 export const parseClientMessage = (raw: unknown) => clientMessageSchema.safeParse(raw)

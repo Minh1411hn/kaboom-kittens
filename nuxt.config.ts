@@ -11,7 +11,21 @@ export default defineNuxtConfig({
     compatibilityDate: "2025-01-01",
     devtools: { enabled: true },
 
-    modules: ["@pinia/nuxt", "@nuxt/icon"],
+    modules: ["@pinia/nuxt", "@nuxt/icon", "@nuxtjs/i18n"],
+
+    i18n: {
+        locales: [
+            { code: "en", name: "English", file: "en.json" },
+            { code: "vi", name: "Tiếng Việt", file: "vi.json" },
+        ],
+        defaultLocale: "vi",
+        strategy: "no_prefix",
+        langDir: "locales/",
+        detectBrowserLanguage: {
+            useCookie: true,
+            cookieKey: "kk_locale",
+        },
+    },
 
     icon: {
         serverBundle: {

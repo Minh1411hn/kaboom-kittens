@@ -4,8 +4,8 @@
     h2.confirm-dialog__title {{ title }}
     p.confirm-dialog__message.muted {{ message }}
     .confirm-dialog__actions
-      button.confirm-dialog__btn(@click="emit('cancel')") {{ cancelLabel }}
-      button.confirm-dialog__btn.confirm-dialog__btn--danger.danger(@click="emit('confirm')") {{ confirmLabel }}
+      button.confirm-dialog__btn(@click="emit('cancel')") {{ cancelText }}
+      button.confirm-dialog__btn.confirm-dialog__btn--danger.danger(@click="emit('confirm')") {{ confirmText }}
 </template>
 
 <script setup lang="ts">
@@ -15,20 +15,18 @@
    * any stacking (e.g. confirming a quit while an interaction happens to be
    * open).
    */
-  withDefaults(
-    defineProps<{
-      title: string
-      message: string
-      confirmLabel?: string
-      cancelLabel?: string
-    }>(),
-    {
-      confirmLabel: "Xác nhận",
-      cancelLabel: "Hủy"
-    }
-  )
+  const props = defineProps<{
+    title: string
+    message: string
+    confirmLabel?: string
+    cancelLabel?: string
+  }>()
 
   const emit = defineEmits<{ confirm: []; cancel: [] }>()
+
+  const { t } = useI18n()
+  const confirmText = computed(() => props.confirmLabel ?? t("app.confirm"))
+  const cancelText = computed(() => props.cancelLabel ?? t("app.cancel"))
 </script>
 
 <style scoped lang="scss">

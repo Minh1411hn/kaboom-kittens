@@ -197,6 +197,7 @@ function resetModuleState(): void {
 
 export function useVoiceChat(deps: VoiceChatDeps = {}) {
     const { voice, playerId, status: socketStatus, send } = useGameSocket();
+    const { t } = useI18n();
 
     /** `false` once the server tells us voice is not configured at all. */
     const available = useState<boolean>("kk:voice:available", () => true);
@@ -381,8 +382,8 @@ export function useVoiceChat(deps: VoiceChatDeps = {}) {
         } catch (error) {
             micError.value =
                 (error as DOMException)?.name === "NotAllowedError"
-                    ? "Bạn đã từ chối quyền micro — bạn vẫn nghe được nhưng không nói được."
-                    : "Không mở được micro. Bạn vẫn nghe được người khác.";
+                    ? t("errors.mic-denied")
+                    : t("errors.mic-unavailable");
             return null;
         }
     }

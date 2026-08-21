@@ -19,7 +19,7 @@
     :targetable="targetable"
   )
     template(#nameSuffix)
-      span.player-seat__disconnected(v-if="!player.connected") (Mất kết nối)
+      span.player-seat__disconnected(v-if="!player.connected") {{ $t('table.player_seat.disconnected') }}
 
     template(v-if="voiceMicOn !== null" #corner)
       VoiceBadge(
@@ -30,20 +30,20 @@
         @toggle="emit('toggleVoiceMute', player.id)"
       )
 
-  span.player-seat__ready-badge.ready-badge(v-if="player.ready" title="Đã sẵn sàng cho ván mới")
+  span.player-seat__ready-badge.ready-badge(v-if="player.ready" :title="$t('table.player_seat.ready_title')")
     Icon(aria-hidden="true" name="lucide:circle-check")
     |
-    | Sẵn sàng
+    | {{ $t('table.player_seat.ready') }}
 
   span.player-seat__fan.fan(v-if="player.alive && player.handCount" aria-hidden="true")
     img.player-seat__mini.mini(v-for="i in fanned" :key="i" :src="back" :style="fanStyle(i)" alt="" draggable="false")
     span.player-seat__more.more(v-if="overflow") +{{ overflow }}
 
   span.player-seat__meta.meta(v-if="layout !== 'horizontal'")
-    | {{ player.handCount }} lá bài
+    | {{ $t('table.player_seat.hand_count', { count: player.handCount }) }}
     template(v-if="isCurrent && turnsRemaining > 1")
       |
-      | · còn {{ turnsRemaining }} lượt
+      | {{ $t('table.player_seat.turns_left', { count: turnsRemaining }) }}
 </template>
 
 <script setup lang="ts">

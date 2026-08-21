@@ -1,27 +1,29 @@
 <template lang="pug">
 form.nickname-gate.panel(@submit.prevent="submit")
+  .nickname-gate__top
+    LocaleSwitcher
   h1.nickname-gate__title
     Icon(aria-hidden="true" name="lucide:cat")
     |
     | Kaboom Kitten
   p.nickname-gate__subtitle.muted
-    | Mèo Cảm Tử online dành cho 2–10 người chơi. Hãy chọn biệt danh để bắt đầu.
+    | {{ $t('app.nickname_gate.subtitle') }}
 
   label.nickname-gate__field.stack
-    span.nickname-gate__label.muted Biệt danh
+    span.nickname-gate__label.muted {{ $t('app.nickname_label') }}
     input.nickname-gate__input(
       v-model="value"
       autocomplete="nickname"
       autofocus
       maxlength="16"
-      placeholder="Hoàng Thượng"
+      :placeholder="$t('app.nickname_placeholder')"
     )
 
   p.nickname-gate__error.error {{ error }}
 
   PlaqueButton(
     :disabled="busy || value.trim().length < 2"
-    :title="busy ? 'Đang xử lý…' : 'Vào sảnh chờ'"
+    :title="busy ? $t('app.nickname_gate.processing') : $t('app.nickname_gate.enter')"
     chevron
     icon="lucide:paw-print"
     type="submit"
@@ -32,6 +34,7 @@ form.nickname-gate.panel(@submit.prevent="submit")
 <script setup lang="ts">
   const emit = defineEmits<{ done: [] }>()
   const { setNickname, remembered } = useSession()
+  const { t } = useI18n()
 
   const value = ref("")
   const error = ref("")
@@ -49,8 +52,8 @@ form.nickname-gate.panel(@submit.prevent="submit")
       await setNickname(value.value)
       emit("done")
     } catch (caught) {
-      const message = caught as { statusMessage?: string; message?: string }
-      error.value = message.statusMessage ?? message.message ?? "Biệt danh không hợp lệ hoặc đã bị từ chối."
+      const code = (caught as { data?: { data?: { code?: string } } }).data?.data?.code
+      error.value = code ? t(`errors.${code}`) : t("app.nickname_gate.fallback_error")
     } finally {
       busy.value = false
     }
@@ -77,6 +80,11 @@ form.nickname-gate.panel(@submit.prevent="submit")
     border-radius: $radius;
     color: $ink;
     box-shadow: $shadow;
+
+    &__top {
+      display: flex;
+      justify-content: flex-end;
+    }
 
     &__title {
       font-size: 2.4rem;

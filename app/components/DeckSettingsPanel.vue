@@ -5,46 +5,46 @@ section.deck-settings
       span.deck-settings__chevron(:class="{ 'deck-settings__chevron--open': open, open }")
         Icon(aria-hidden="true" name="lucide:chevron-right")
       |
-      | Bộ bài của phòng
-    span.deck-settings__summary {{ total }} lá · chia {{ handSize + 1 }} lá mỗi người
+      | {{ $t('table.deck_settings.title') }}
+    span.deck-settings__summary {{ $t('table.deck_settings.summary', { total, perPlayer: handSize + 1 }) }}
 
   .deck-settings__body(v-show="open")
     p.deck-settings__info.muted.small
-      | Mỗi người được chia {{ handSize + 1 }} lá ({{ handSize }} lá ngẫu nhiên + 1 lá Gỡ bom).
+      | {{ $t('table.deck_settings.info', { perPlayer: handSize + 1, handSize }) }}
       |
       template(v-if="isHost")
-        | Chỉnh số lượng bên dưới — cấu hình này giữ nguyên cho mọi ván trong phòng.
+        | {{ $t('table.deck_settings.host_hint') }}
       template(v-else)
-        | Chỉ chủ phòng mới chỉnh được.
+        | {{ $t('table.deck_settings.guest_hint') }}
 
     p.deck-settings__warn.warn.small(v-if="noKittens")
       Icon(aria-hidden="true" name="lucide:triangle-alert")
       |
-      | Không có lá Mèo nổ nào — ván đấu sẽ không thể kết thúc bằng cách nổ.
+      | {{ $t('table.deck_settings.warn_no_kittens') }}
     p.deck-settings__warn.warn.small(v-if="dealable < handSize * 2")
       Icon(aria-hidden="true" name="lucide:triangle-alert")
       |
-      | Không đủ bài để chia — hãy tăng số lượng các lá thường lên.
+      | {{ $t('table.deck_settings.warn_not_enough') }}
 
     .deck-settings__groups
       .deck-settings__group
-        h3.deck-settings__group-title Bom + Defuse
+        h3.deck-settings__group-title {{ $t('table.deck_settings.group_bomb_defuse') }}
         ul.deck-settings__rows
           li.deck-settings__row(v-for="entry in bomDefuseGroup" :key="entry.id")
             CardImage.deck-settings__thumb(:card-id="entry.id" width="30px")
-            span.deck-settings__name(:title="`${entry.name} — ${entry.text}`")
-              | {{ entry.name }}
-              span.deck-settings__pinned(v-if="overrides[entry.id] != null" title="Chủ phòng đã chốt số lượng này") đã chỉnh
+            span.deck-settings__name(:title="`${cardName(entry.id)} — ${cardText(entry.id)}`")
+              | {{ cardName(entry.id) }}
+              span.deck-settings__pinned(v-if="overrides[entry.id] != null" :title="$t('table.deck_settings.pinned_title')") {{ $t('table.deck_settings.pinned') }}
             template(v-if="isHost")
               .deck-settings__stepper
                 button.deck-settings__step-btn(
-                  :aria-label="`Bớt một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.decrease_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) <= 0"
                   @click="bump(entry.id, -1)"
                 )
                   Icon(aria-hidden="true" name="lucide:minus")
                 input.deck-settings__step-input(
-                  :aria-label="`Số lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.count_aria', { name: cardName(entry.id) })"
                   :max="DECK_COUNT_MAX"
                   :value="counts[entry.id] ?? 0"
                   min="0"
@@ -52,37 +52,37 @@ section.deck-settings
                   @change="setCount(entry.id, Number($event.target.value))"
                 )
                 button.deck-settings__step-btn(
-                  :aria-label="`Thêm một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.increase_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                   @click="bump(entry.id, 1)"
                 )
                   Icon(aria-hidden="true" name="lucide:plus")
               button.deck-settings__reset-one(
                 :disabled="overrides[entry.id] == null"
-                title="Trả lá này về số lượng mặc định"
+                :title="$t('table.deck_settings.reset_one_title')"
                 @click="clearOne(entry.id)"
               )
                 Icon(aria-hidden="true" name="lucide:rotate-ccw")
             span.deck-settings__count(v-else) {{ counts[entry.id] ?? 0 }}
 
       .deck-settings__group
-        h3.deck-settings__group-title Chức năng
+        h3.deck-settings__group-title {{ $t('table.deck_settings.group_action') }}
         ul.deck-settings__rows
           li.deck-settings__row(v-for="entry in actionGroup" :key="entry.id")
             CardImage.deck-settings__thumb(:card-id="entry.id" width="30px")
-            span.deck-settings__name(:title="`${entry.name} — ${entry.text}`")
-              | {{ entry.name }}
-              span.deck-settings__pinned(v-if="overrides[entry.id] != null" title="Chủ phòng đã chốt số lượng này") đã chỉnh
+            span.deck-settings__name(:title="`${cardName(entry.id)} — ${cardText(entry.id)}`")
+              | {{ cardName(entry.id) }}
+              span.deck-settings__pinned(v-if="overrides[entry.id] != null" :title="$t('table.deck_settings.pinned_title')") {{ $t('table.deck_settings.pinned') }}
             template(v-if="isHost")
               .deck-settings__stepper
                 button.deck-settings__step-btn(
-                  :aria-label="`Bớt một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.decrease_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) <= 0"
                   @click="bump(entry.id, -1)"
                 )
                   Icon(aria-hidden="true" name="lucide:minus")
                 input.deck-settings__step-input(
-                  :aria-label="`Số lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.count_aria', { name: cardName(entry.id) })"
                   :max="DECK_COUNT_MAX"
                   :value="counts[entry.id] ?? 0"
                   min="0"
@@ -90,37 +90,37 @@ section.deck-settings
                   @change="setCount(entry.id, Number($event.target.value))"
                 )
                 button.deck-settings__step-btn(
-                  :aria-label="`Thêm một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.increase_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                   @click="bump(entry.id, 1)"
                 )
                   Icon(aria-hidden="true" name="lucide:plus")
               button.deck-settings__reset-one(
                 :disabled="overrides[entry.id] == null"
-                title="Trả lá này về số lượng mặc định"
+                :title="$t('table.deck_settings.reset_one_title')"
                 @click="clearOne(entry.id)"
               )
                 Icon(aria-hidden="true" name="lucide:rotate-ccw")
             span.deck-settings__count(v-else) {{ counts[entry.id] ?? 0 }}
 
       .deck-settings__group
-        h3.deck-settings__group-title Normal Cat
+        h3.deck-settings__group-title {{ $t('table.deck_settings.group_cat') }}
         ul.deck-settings__rows
           li.deck-settings__row(v-for="entry in catGroup" :key="entry.id")
             CardImage.deck-settings__thumb(:card-id="entry.id" width="30px")
-            span.deck-settings__name(:title="`${entry.name} — ${entry.text}`")
-              | {{ entry.name }}
-              span.deck-settings__pinned(v-if="overrides[entry.id] != null" title="Chủ phòng đã chốt số lượng này") đã chỉnh
+            span.deck-settings__name(:title="`${cardName(entry.id)} — ${cardText(entry.id)}`")
+              | {{ cardName(entry.id) }}
+              span.deck-settings__pinned(v-if="overrides[entry.id] != null" :title="$t('table.deck_settings.pinned_title')") {{ $t('table.deck_settings.pinned') }}
             template(v-if="isHost")
               .deck-settings__stepper
                 button.deck-settings__step-btn(
-                  :aria-label="`Bớt một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.decrease_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) <= 0"
                   @click="bump(entry.id, -1)"
                 )
                   Icon(aria-hidden="true" name="lucide:minus")
                 input.deck-settings__step-input(
-                  :aria-label="`Số lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.count_aria', { name: cardName(entry.id) })"
                   :max="DECK_COUNT_MAX"
                   :value="counts[entry.id] ?? 0"
                   min="0"
@@ -128,21 +128,21 @@ section.deck-settings
                   @change="setCount(entry.id, Number($event.target.value))"
                 )
                 button.deck-settings__step-btn(
-                  :aria-label="`Thêm một lá ${entry.name}`"
+                  :aria-label="$t('table.deck_settings.increase_aria', { name: cardName(entry.id) })"
                   :disabled="(counts[entry.id] ?? 0) >= DECK_COUNT_MAX"
                   @click="bump(entry.id, 1)"
                 )
                   Icon(aria-hidden="true" name="lucide:plus")
               button.deck-settings__reset-one(
                 :disabled="overrides[entry.id] == null"
-                title="Trả lá này về số lượng mặc định"
+                :title="$t('table.deck_settings.reset_one_title')"
                 @click="clearOne(entry.id)"
               )
                 Icon(aria-hidden="true" name="lucide:rotate-ccw")
             span.deck-settings__count(v-else) {{ counts[entry.id] ?? 0 }}
 
     footer.deck-settings__foot(v-if="isHost")
-      button.deck-settings__reset-all(@click="clearAll") Khôi phục toàn bộ mặc định
+      button.deck-settings__reset-all(@click="clearAll") {{ $t('table.deck_settings.reset_all') }}
 </template>
 
 <script setup lang="ts">
@@ -161,6 +161,7 @@ section.deck-settings
 
   const emit = defineEmits<{ update: [DeckOverrides] }>()
 
+  const { cardName, cardText } = useCardText()
   const open = ref(false)
 
   /**

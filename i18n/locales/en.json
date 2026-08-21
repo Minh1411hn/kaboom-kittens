@@ -1,0 +1,487 @@
+{
+  "app": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "host_tag": "Host",
+    "start_new_game": "Start new game",
+    "open_rooms": "Open rooms",
+    "no_rooms": "No rooms yet. Create one and share the link with friends!",
+    "status_playing": "Playing",
+    "status_waiting": "Waiting",
+    "host_label": "Host: {name} ·",
+    "room_view": "View",
+    "room_join": "Join",
+    "your_profile": "Your profile",
+    "create_room": "Create room",
+    "room_list_heading": "Room list",
+    "room_player_count": "{count}/{max} players",
+    "room_enter": "Enter room",
+    "connection_status": "Connection: {status}",
+    "create_room_error": "Couldn't create a room.",
+    "time_just_now": "just now",
+    "time_minutes_ago": "{minutes}m ago",
+    "time_hours_ago": "{hours}h ago",
+    "nickname_label": "Nickname",
+    "nickname_placeholder": "Your Majesty",
+    "nickname_gate": {
+      "subtitle": "Online Exploding Kittens for 2–10 players. Pick a nickname to start.",
+      "processing": "Working…",
+      "enter": "Enter the lobby",
+      "fallback_error": "Invalid nickname, or it was rejected."
+    },
+    "profile_dialog": {
+      "title": "Edit profile",
+      "avatar_label": "Avatar",
+      "saving": "Saving…",
+      "save": "Save",
+      "nickname_too_short": "Nickname must be at least 2 characters.",
+      "nickname_too_long": "Nickname is at most 16 characters."
+    }
+  },
+  "table": {
+    "topbar": {
+      "back_to_lobby": "Back to lobby",
+      "leave_match": "Leave match",
+      "leave_match_title": "Leave — you will forfeit",
+      "loading_room": "Loading…",
+      "room_label": "Room {id}",
+      "audio_settings": "Audio settings",
+      "connection_status": "Status: {status}"
+    },
+    "voice": {
+      "tap_to_unmute": "Tap to hear other players"
+    },
+    "spectating": {
+      "lobby_full": "The room is full — you're watching, you'll join as soon as a seat opens.",
+      "game_in_progress": "You're watching this game — you'll join once it ends."
+    },
+    "joining_room": "Joining the room…",
+    "lobby": {
+      "player_list": "Player list",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "kick": "Kick",
+      "kick_title": "Remove from room",
+      "room_settings": "Room settings",
+      "share_intro": "{count}/10 players joined. Share this link to invite friends:",
+      "waiting_for_players": "Waiting for everyone…",
+      "start_game": "Start game",
+      "waiting_for_host": "Waiting for the host to start the game…"
+    },
+    "pick_a_player_above": "Pick a player above.",
+    "drop_to_draw": "Drop onto the deck to draw.",
+    "play_or_draw_hint": "Play a card, or drag the draw pile to your hand to end your turn.",
+    "demand_card_placeholder": "Which card do you want to demand?",
+    "demand_select_aria": "Card to demand",
+    "play_button": "Play",
+    "play_button_count": "Play {count}",
+    "deselect": "Deselect",
+    "watching_spectator": "The game is in progress — you're watching as a spectator.",
+    "you_exploded": "You exploded — stick around to see who survives!",
+    "game_over": {
+      "winner": "{name} won!",
+      "ended": "Game over",
+      "leave_room": "Leave room",
+      "waiting_for_players": "Waiting for other players ({ready}/{connected})…",
+      "ready_new_game": "Ready for new game"
+    },
+    "log": {
+      "hide": "Hide history",
+      "show": "History & Chat"
+    },
+    "quit_dialog": {
+      "title": "Leave the match?",
+      "message": "You'll be eliminated from this game and won't be able to rejoin until a new one starts.",
+      "confirm": "Leave match",
+      "cancel": "Stay"
+    },
+    "share_link": {
+      "aria_label": "Room link",
+      "copied": "Copied",
+      "copy": "Copy link"
+    },
+    "hand_fan": {
+      "empty": "You have no cards left in hand."
+    },
+    "player_seat": {
+      "disconnected": "(Disconnected)",
+      "ready_title": "Ready for a new game",
+      "ready": "Ready",
+      "hand_count": "{count} cards",
+      "turns_left": "· {count} turns left"
+    },
+    "kitten_reveal": {
+      "drew": "{name} drew the Exploding Kitten!",
+      "exploded": "{name} exploded!"
+    },
+    "turn_banner": {
+      "your_turn": "Your turn!",
+      "waiting_for": "Waiting for {name}…"
+    },
+    "card_image": {
+      "face_down": "Face-down card"
+    },
+    "audio_dialog": {
+      "title": "Audio settings",
+      "unsupported": "This browser doesn't support voice chat. Use a recent Chrome, Edge, or Safari, and access over HTTPS.",
+      "unavailable": "Voice chat isn't configured on this server.",
+      "mic": "Mic",
+      "on": "On",
+      "off": "Off",
+      "input_device": "Input device",
+      "system_default": "System default",
+      "unnamed_mic": "Unnamed mic",
+      "meter_on_title": "Input level",
+      "meter_off_title": "Mic is off",
+      "speaker": "Speaker",
+      "volume": "Volume",
+      "per_person_hint": "Want to mute just one person? Click the speaker icon on their avatar.",
+      "connect_error": "Couldn't connect to the voice room. Try reloading the page.",
+      "done": "Done"
+    },
+    "deck_position": {
+      "bottom_option": "Put at the bottom",
+      "random": "RANDOM",
+      "preview_prefix": "Put",
+      "preview_placeholder": "Pick a position above.",
+      "hint": "No one else knows where you put this card.",
+      "top_label": "Top — the next player will draw this card",
+      "bottom_label": "Bottom",
+      "nth_from_top": "{n} cards from the top"
+    },
+    "see_future": {
+      "alter_title": "Alter the Future",
+      "see_title": "See the Future",
+      "alter_subtitle": "Drag to reorder the cards on top of the draw pile:",
+      "see_subtitle": "Order of the cards on top of the draw pile:",
+      "top_rank": "Top #1",
+      "empty": "No cards.",
+      "got_it": "Got it",
+      "confirm_order": "Confirm order"
+    },
+    "voice_badge": {
+      "muted_title": "This person is muted for you — click to unmute",
+      "mic_off_title": "Mic is off",
+      "click_to_mute_title": "Click to mute this person",
+      "mic_on_title": "Mic is on"
+    },
+    "table_center": {
+      "direction_cw": "Draw direction: Clockwise",
+      "direction_ccw": "Draw direction: Counterclockwise",
+      "direction_label": "Draw direction",
+      "deck_aria": "Draw pile, {count} cards left. Drag the top card to your hand, or press Space / Enter to draw.",
+      "deck_title": "Drag the top card to your hand to draw",
+      "remaining_ribbon": "{count} left",
+      "discard_empty": "Empty",
+      "discard_ribbon": "Discarded · {count}"
+    },
+    "event_log": {
+      "empty": "The table is quiet.",
+      "placeholder": "Type a message…",
+      "send": "Send"
+    },
+    "nope_bar": {
+      "stack_aria": "Cards in play",
+      "noped_by_title": "Noped by {name}",
+      "unknown_player": "Player",
+      "caster_title": "Played by: {name}",
+      "someone": "Someone",
+      "target_title": "Target: {name}",
+      "used_prefix": "used",
+      "responding_countdown": "{seconds}s to respond",
+      "nope": "NOPE!",
+      "pass": "Pass",
+      "passed": "Passed",
+      "waiting": "Waiting…",
+      "combo_pair": "Cat pair combo",
+      "combo_triple": "Cat triple combo{demanded}",
+      "combo_five": "Five-card combo",
+      "blocked_by": "Blocked by {name} ({count} Nope)",
+      "in_effect": "In effect ({count} Nopes canceled)"
+    },
+    "interaction": {
+      "no_cards": "No cards to choose.",
+      "tap_to_change": "Tap another card to change your pick.",
+      "tap_one": "Tap one card to choose.",
+      "confirm": "Confirm",
+      "chosen_waiting": "Chosen — waiting for others…",
+      "waiting_on": "Waiting on {names} to choose…"
+    },
+    "target_select": {
+      "opponent_list": "Opponents:",
+      "hand_count": "{count} cards",
+      "no_opponents": "No opponents available to choose.",
+      "choose_card_label": "Choose which card to demand:",
+      "search_placeholder": "Search for a card type…",
+      "cancel": "Cancel",
+      "title_pair": "Steal a random card",
+      "title_triple": "Demand a specific card",
+      "title_favor": "Ask an opponent for a card",
+      "title_targeted_attack": "Targeted attack",
+      "title_default": "Choose a target",
+      "subtitle_pair": "Choose the opponent you want to steal a random card from:",
+      "subtitle_triple": "Choose the opponent and the type of card you want to demand:",
+      "subtitle_favor": "Choose the player who must give you a card of their choice:",
+      "subtitle_targeted_attack": "Choose the player who must take the next 2 turns:",
+      "subtitle_default": "Choose a player to aim this card at:",
+      "confirm_demand": "Demand",
+      "confirm_steal": "Steal",
+      "confirm_attack": "Attack",
+      "confirm_favor": "Request",
+      "confirm_default": "Confirm"
+    },
+    "deck_settings": {
+      "title": "Room's deck",
+      "summary": "{total} cards · {perPlayer} dealt per player",
+      "info": "Each player is dealt {perPlayer} cards ({handSize} random + 1 Defuse).",
+      "host_hint": "Adjust the counts below — this configuration stays for every game in the room.",
+      "guest_hint": "Only the host can adjust this.",
+      "warn_no_kittens": "No Exploding Kittens in the deck — the game can't end by exploding.",
+      "warn_not_enough": "Not enough cards to deal — increase the count of regular cards.",
+      "group_bomb_defuse": "Bomb + Defuse",
+      "group_action": "Action",
+      "group_cat": "Normal Cat",
+      "pinned": "adjusted",
+      "pinned_title": "The host has locked this count",
+      "decrease_aria": "Decrease {name} by one",
+      "count_aria": "Count of {name}",
+      "increase_aria": "Increase {name} by one",
+      "reset_one_title": "Reset this card to the default count",
+      "reset_all": "Restore all defaults"
+    }
+  },
+  "cards": {
+    "exploding-kitten": {
+      "name": "Exploding Kitten",
+      "label": "Kaboom",
+      "text": "You'll explode unless you have a Defuse to defuse it."
+    },
+    "defuse": {
+      "name": "Defuse",
+      "label": "Disarm",
+      "text": "Neutralizes an Exploding Kitten. Put it back anywhere in the draw pile."
+    },
+    "nope": {
+      "name": "Nope",
+      "label": "Block",
+      "text": "Stops any action except a Defuse or an Exploding Kitten. Can itself be Noped."
+    },
+    "attack-2x": {
+      "name": "Attack 2x",
+      "label": "Attack",
+      "text": "Ends your turn without drawing a card. The next player must take 2 turns."
+    },
+    "targeted-attack-2x": {
+      "name": "Targeted Attack 2x",
+      "label": "Pick a victim",
+      "text": "Ends your turn without drawing a card. Choose any player who must take 2 turns."
+    },
+    "personal-attack-3x": {
+      "name": "Personal Attack 3x",
+      "label": "Take 3 turns",
+      "text": "Ends your current turn without drawing, then take 3 more turns yourself."
+    },
+    "skip": {
+      "name": "Skip",
+      "label": "Skip",
+      "text": "Ends your turn without drawing a card."
+    },
+    "reverse": {
+      "name": "Reverse",
+      "label": "Reverse direction",
+      "text": "Reverses the play direction and ends your turn without drawing a card."
+    },
+    "shuffle": {
+      "name": "Shuffle",
+      "label": "Shuffle deck",
+      "text": "Shuffles the entire draw pile."
+    },
+    "favor": {
+      "name": "Favor",
+      "label": "Ask a favor",
+      "text": "Choose a player; they must pick one card from their hand to give you."
+    },
+    "steal-a-card": {
+      "name": "Steal a Card",
+      "label": "Steal a card",
+      "text": "Choose a player; randomly steal one card from their hand."
+    },
+    "draw-from-the-bottom": {
+      "name": "Draw From the Bottom",
+      "label": "Draw from the bottom",
+      "text": "Ends your turn by drawing the card from the bottom of the draw pile."
+    },
+    "see-the-future-3x": {
+      "name": "See the Future 3x",
+      "label": "Peek at 3 cards",
+      "text": "Secretly look at the top 3 cards of the draw pile."
+    },
+    "see-the-future-5x": {
+      "name": "See the Future 5x",
+      "label": "Peek at 5 cards",
+      "text": "Secretly look at the top 5 cards of the draw pile."
+    },
+    "alter-the-future-3x": {
+      "name": "Alter the Future 3x",
+      "label": "Reorder 3 cards",
+      "text": "Secretly look at and reorder the top 3 cards of the draw pile."
+    },
+    "alter-the-future-5x": {
+      "name": "Alter the Future 5x",
+      "label": "Reorder 5 cards",
+      "text": "Secretly look at and reorder the top 5 cards of the draw pile."
+    },
+    "garbage-collection": {
+      "name": "Garbage Collection",
+      "label": "Collect the trash",
+      "text": "Every player discards one card into a pile. The pile is shuffled and dealt back out to everyone."
+    },
+    "tacocat": {
+      "name": "Tacocat",
+      "label": "Tacocat cat",
+      "text": "Does nothing on its own. Play a matching set of 2, 3, or 5 to form a combo."
+    },
+    "cattermelon": {
+      "name": "Cattermelon",
+      "label": "Cattermelon cat",
+      "text": "Does nothing on its own. Play a matching set of 2, 3, or 5 to form a combo."
+    },
+    "hairy-potato-cat": {
+      "name": "Hairy Potato Cat",
+      "label": "Hairy Potato cat",
+      "text": "Does nothing on its own. Play a matching set of 2, 3, or 5 to form a combo."
+    },
+    "rainbow-ralphing-cat": {
+      "name": "Rainbow Ralphing Cat",
+      "label": "Rainbow Ralphing cat",
+      "text": "Does nothing on its own. Play a matching set of 2, 3, or 5 to form a combo."
+    },
+    "beard-cat": {
+      "name": "Beard Cat",
+      "label": "Beard cat",
+      "text": "Does nothing on its own. Play a matching set of 2, 3, or 5 to form a combo."
+    },
+    "feral-cat": {
+      "name": "Feral Cat",
+      "label": "Versatile stray cat",
+      "text": "Substitutes for any Cat card to complete a combo."
+    }
+  },
+  "errors": {
+    "card-combo-only": "{card} can only be played as part of a combo of 2, 3 or 5 cards.",
+    "nope-nothing-to-nope": "There's nothing to Nope right now.",
+    "nope-self": "You can't Nope your own card.",
+    "not-your-turn": "Wait for your turn.",
+    "cat-combo-mismatch": "Only matching Cat cards combo — Feral Cat can substitute for any Cat card.",
+    "five-combo-mismatch": "All 5 cards must be 5 different types.",
+    "combo-select-count": "Choose 2, 3, or 5 cards to make a combo.",
+    "discard-empty": "The discard pile is empty.",
+    "mic-denied": "You denied microphone access — you can still hear others but not speak.",
+    "mic-unavailable": "Couldn't open the microphone. You can still hear others.",
+    "room-create-failed": "Couldn't create a room.",
+    "game-already-started": "The game has already started.",
+    "room-full": "The room is full ({max} max).",
+    "game-not-started": "The game hasn't started yet.",
+    "interaction-in-progress": "Another player is currently taking an action.",
+    "nope-window-open": "Wait for the Nope window to close.",
+    "no-nope-window": "There's no open Nope window right now.",
+    "not-in-game": "You're not in this game.",
+    "already-left": "You've already left this game.",
+    "game-not-over": "The game hasn't ended yet.",
+    "not-in-lobby": "The deck can only be changed in the waiting room.",
+    "min-players": "You need at least {min} players to start.",
+    "deck-not-enough": "The deck can't deal a full hand — needs at least {needed} cards (Exploding Kittens and Defuses aside).",
+    "you-are-eliminated": "You've exploded and been eliminated.",
+    "no-cards-selected": "Choose a card to play.",
+    "not-your-cards": "You don't have those cards.",
+    "invalid-play-count": "Play 1 card, or a valid combo.",
+    "target-required": "Choose a target player.",
+    "no-interaction": "There's nothing to respond to right now.",
+    "interaction-completed": "That request has already been completed.",
+    "not-your-interaction": "That request isn't for you.",
+    "already-responded": "You've already responded.",
+    "choose-a-card": "Choose a card.",
+    "not-in-hand": "You don't have that card.",
+    "not-in-discard": "That card isn't in the discard pile.",
+    "choose-a-position": "Choose where to put the card.",
+    "invalid-position": "That's not a valid position.",
+    "choose-an-order": "Send the card order.",
+    "invalid-order": "That's not a valid order.",
+    "unknown-card": "There's no card named \"{id}\".",
+    "count-not-integer": "The count must be a whole number.",
+    "count-out-of-range": "Each card's count must be between 0 and {max}.",
+    "cat-solo-not-allowed": "Cat cards only work combined into a 2, 3, or 5-card combo.",
+    "five-combo-wrong-count": "A 5-card combo needs exactly 5 cards.",
+    "combo-wrong-count": "That combo needs exactly {needed} cards.",
+    "invalid-target": "Choose a player still in the game.",
+    "cant-target-self": "You can't target yourself.",
+    "target-empty-handed": "{name} has no cards in hand.",
+    "named-card-required": "Specify which card you want to demand.",
+    "defuse-auto-only": "Defuse activates automatically when you draw an Exploding Kitten.",
+    "cant-play-kitten": "You can't play an Exploding Kitten.",
+    "cant-favor-self": "You can't ask yourself for a favor.",
+    "not-nopeable": "That action can't be Noped.",
+    "draw-pile-empty": "The draw pile is empty.",
+    "room-gone": "This room no longer exists.",
+    "kick-not-in-lobby": "You can only remove players while in the waiting room.",
+    "kick-target-not-found": "That player isn't in this room.",
+    "not-seated": "You don't have a seat in this room.",
+    "room-closed": "This room has been closed.",
+    "kicked-by-host": "The host removed you from the room.",
+    "nickname-too-short": "Nickname must be at least 2 characters.",
+    "nickname-too-long": "Nickname is at most 16 characters.",
+    "nickname-invalid-chars": "Nickname can only use letters, digits, spaces, - and _.",
+    "avatar-invalid": "That's not a valid avatar.",
+    "room-name-invalid": "That room name will not work.",
+    "no-session": "Pick a nickname first.",
+    "session-expired": "Your session expired — please reload the page.",
+    "open-failed": "Couldn't start a connection. Please reload the page.",
+    "bad-json": "That message wasn't valid.",
+    "bad-message": "That message wasn't in the right format.",
+    "rate-limited": "You're going too fast — wait a moment.",
+    "server-error": "Something went wrong handling that.",
+    "no-room": "That room no longer exists.",
+    "not-in-room": "Join a room first.",
+    "voice-denied": "That voice session isn't yours.",
+    "not-host": "Only the host can do that.",
+    "cant-kick-self": "You can't remove yourself."
+  },
+  "interactions": {
+    "choose-card-from-hand": "Choose a card to give to {name}",
+    "choose-deck-position": "Secretly put the Exploding Kitten back into the draw pile",
+    "choose-from-discard": "Take any card from the discard pile",
+    "simultaneous-choose-card": "Choose a card to put into the pile"
+  },
+  "events": {
+    "game-started": "Game started — {count} players.",
+    "card-played": "{name} played {card}.",
+    "card-played_targeted": "{name} played {card} on {target}.",
+    "combo-played": {
+      "pair": "{name} played a pair combo on {target}.",
+      "triple": "{name} demanded a {card} from {target}.",
+      "five-different": "{name} played five different cards to take a card from the discard pile."
+    },
+    "action-noped": "{name}'s {card} got Noped! | {name}'s {card} got Noped ({count} Nopes stacked)!",
+    "action-resolved": "The Nopes canceled out — {card} went through!",
+    "card-drawn": "{name} drew a card.",
+    "card-stolen": "{name} stole a random card from {target}.",
+    "card-given": "{name} gave {card} to {target}.",
+    "card-demanded": "{name} gave {card} to {target}.",
+    "card-demand-failed": "{name} didn't have any {card}.",
+    "card-taken-from-discard": "{name} took {card} from the discard pile.",
+    "deck-shuffled": "The draw pile was shuffled.",
+    "future-seen": "{name} looked into the future.",
+    "future-altered": "The order of the top of the draw pile was changed.",
+    "garbage-collected": "{name} triggered Garbage Collection — {count} cards were pooled, shuffled, and dealt back out.",
+    "kitten-drawn": "{name} drew the Exploding Kitten!",
+    "kitten-defused": "{name} used a Defuse!",
+    "player-exploded": "{name} exploded!",
+    "player-quit": "{name} left the game.",
+    "turn-changed": "It's {name}'s turn.",
+    "player-attacked": "{target} was attacked and must take {count} turns.",
+    "direction-reversed": "Play direction was reversed.",
+    "game-over": "Game over.",
+    "game-over_winner": "{name} is the last cat standing!",
+    "returned-to-lobby": "Back in the waiting room — same roster, ready for a new game."
+  }
+}

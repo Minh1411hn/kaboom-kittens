@@ -1,35 +1,35 @@
 <template lang="pug">
 .table-center
   .table-center__pile.table-center__direction-indicator(
-    :aria-label="direction === 1 ? 'Chiều bốc bài: Thuận chiều kim đồng hồ' : 'Chiều bốc bài: Ngược chiều kim đồng hồ'"
-    :title="direction === 1 ? 'Chiều bốc bài: Thuận chiều kim đồng hồ' : 'Chiều bốc bài: Ngược chiều kim đồng hồ'"
+    :aria-label="direction === 1 ? $t('table.table_center.direction_cw') : $t('table.table_center.direction_ccw')"
+    :title="direction === 1 ? $t('table.table_center.direction_cw') : $t('table.table_center.direction_ccw')"
   )
     .table-center__direction-badge.direction-badge(
       :class="{ 'table-center__direction-badge--ccw ccw': direction === -1 }"
     )
       span.table-center__direction-icon
         Icon(:name="direction === 1 ? 'lucide:rotate-cw' : 'lucide:rotate-ccw'" aria-hidden="true")
-    span.table-center__ribbon.table-center__ribbon--quiet Chiều bốc bài
+    span.table-center__ribbon.table-center__ribbon--quiet {{ $t('table.table_center.direction_label') }}
 
   .table-center__pile
     button.table-center__deck.deck(
-      :aria-label="`Chồng bài rút, còn ${drawCount} lá. Kéo lá bài trên cùng về tay bạn, hoặc nhấn phím Cách / Enter để rút bài.`"
+      :aria-label="$t('table.table_center.deck_aria', { count: drawCount })"
       :class="{ 'table-center__deck--dragging dragging': dragging }"
       :disabled="!canDraw"
-      :title="canDraw ? 'Kéo lá bài trên cùng về tay của bạn để rút bài' : ''"
+      :title="canDraw ? $t('table.table_center.deck_title') : ''"
       @keydown.enter.prevent="$emit('draw')"
       @keydown.space.prevent="$emit('draw')"
       @pointerdown="$emit('drawPointerDown', $event)"
     )
       span.table-center__pile-face
         img.table-center__card-back(:src="back" alt="" draggable="false")
-    span.table-center.mt-2 Còn {{ drawCount }} lá
+    span.table-center__ribbon {{ $t('table.table_center.remaining_ribbon', { count: drawCount }) }}
 
   .table-center__pile
     .table-center__discard.discard(ref="discardEl")
       CardImage(v-if="discardTop" :card-id="discardTop.id" :uid="discardTop.uid" width="140px")
-      .table-center__empty(v-else) Trống
-    span.table-center.table-center__ribbon--quiet Bài đã đánh · {{ discardCount }}
+      .table-center__empty(v-else) {{ $t('table.table_center.discard_empty') }}
+    span.table-center__ribbon.table-center__ribbon--quiet {{ $t('table.table_center.discard_ribbon', { count: discardCount }) }}
 </template>
 
 <script setup lang="ts">
