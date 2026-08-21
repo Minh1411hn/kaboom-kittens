@@ -1,45 +1,36 @@
 {
-  "$comment": "Single source of truth for card DATA (identity, deck counts, presentation). Behaviour lives in server/game/cards/*.ts, keyed by the same id. Consumed by the engine, the UI and scripts/gen-card-placeholders.mjs. handSize is the number of RANDOM cards dealt to each player; startGame adds one guaranteed Defuse on top, so an opening hand is handSize + 1. Deck counts here are defaults — the room host can override any of them from the waiting room (GameState.deckOverrides).",
+  "$comment": "Single source of truth for card DATA (identity, deck counts, presentation). Behaviour lives in server/game/cards/*.ts, keyed by the same id. Display text (name/label/rules) lives in i18n/locales/*.json under cards.<id>, resolved client-side via useCardText(). Consumed by the engine, the UI and scripts/gen-card-placeholders.mjs. handSize is the number of RANDOM cards dealt to each player; startGame adds one guaranteed Defuse on top, so an opening hand is handSize + 1. Deck counts here are defaults — the room host can override any of them from the waiting room (GameState.deckOverrides).",
   "handSize": 5,
   "cards": [
     {
       "id": "exploding-kitten",
-      "name": "Exploding Kitten",
-      "label": "Bùng nổ",
       "category": "kitten",
       "deck": {
         "formula": "players-minus-1"
       },
       "color": "#c0392b",
-      "text": "Bạn sẽ nổ tung trừ khi có lá Defuse để gỡ bom.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "defuse",
-      "name": "Defuse",
-      "label": "Gỡ bom",
       "category": "defuse",
       "deck": {
         "formula": "defuse"
       },
       "color": "#27ae60",
-      "text": "Vô hiệu hóa Exploding Kitten. Đặt lại mèo nổ vào bất kỳ vị trí nào trong chồng bài rút.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "nope",
-      "name": "Nope",
-      "label": "Chặn đứng",
       "category": "action",
       "deck": {
         "base": 5
       },
       "color": "#e74c3c",
-      "text": "Chặn đứng mọi hành động ngoại trừ Defuse hoặc Exploding Kitten. Có thể bị Nope đè.",
       "play": {
         "solo": true,
         "anytime": true
@@ -47,28 +38,22 @@
     },
     {
       "id": "attack-2x",
-      "name": "Attack 2x",
-      "label": "Tấn công",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#d35400",
-      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Người chơi kế tiếp phải đi 2 lượt.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "targeted-attack-2x",
-      "name": "Targeted Attack 2x",
-      "label": "Chọn nạn nhân",
       "category": "action",
       "deck": {
         "base": 3
       },
       "color": "#e67e22",
-      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Chọn 1 người chơi bất kỳ phải đi 2 lượt.",
       "play": {
         "solo": true,
         "target": true
@@ -76,70 +61,55 @@
     },
     {
       "id": "personal-attack-3x",
-      "name": "Personal Attack 3x",
-      "label": "Đi 3 lượt",
       "category": "action",
       "deck": {
         "base": 3
       },
       "color": "#8e44ad",
-      "text": "Kết thúc lượt hiện tại không cần rút bài, sau đó tự mình thực hiện thêm 3 lượt.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "skip",
-      "name": "Skip",
-      "label": "Bỏ qua",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#16a085",
-      "text": "Kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "reverse",
-      "name": "Reverse",
-      "label": "Đảo chiều",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#2980b9",
-      "text": "Đảo ngược chiều đánh và kết thúc lượt của bạn mà không cần rút bài.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "shuffle",
-      "name": "Shuffle",
-      "label": "Xào bài",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#2c3e50",
-      "text": "Xào lại toàn bộ chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "favor",
-      "name": "Favor",
-      "label": "Xin đểu",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#c2185b",
-      "text": "Chọn 1 người chơi; người đó phải tự chọn 1 lá bài trên tay để đưa cho bạn.",
       "play": {
         "solo": true,
         "target": true
@@ -147,176 +117,140 @@
     },
     {
       "id": "draw-from-the-bottom",
-      "name": "Draw From the Bottom",
-      "label": "Rút từ đáy",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#795548",
-      "text": "Kết thúc lượt của bạn bằng cách rút lá bài ở dưới đáy chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "see-the-future-3x",
-      "name": "See the Future 3x",
-      "label": "Xem trước 3 lá",
       "category": "action",
       "deck": {
         "base": 5
       },
       "color": "#7b1fa2",
-      "text": "Bí mật xem trước 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "see-the-future-5x",
-      "name": "See the Future 5x",
-      "label": "Xem trước 5 lá",
       "category": "action",
       "deck": {
         "base": 2,
         "min": 1
       },
       "color": "#6a1b9a",
-      "text": "Bí mật xem trước 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "alter-the-future-3x",
-      "name": "Alter the Future 3x",
-      "label": "Sắp xếp 3 lá",
       "category": "action",
       "deck": {
         "base": 4
       },
       "color": "#3949ab",
-      "text": "Bí mật xem và sắp xếp lại thứ tự 3 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "alter-the-future-5x",
-      "name": "Alter the Future 5x",
-      "label": "Sắp xếp 5 lá",
       "category": "action",
       "deck": {
         "base": 2,
         "min": 1
       },
       "color": "#283593",
-      "text": "Bí mật xem và sắp xếp lại thứ tự 5 lá bài trên đầu chồng bài rút.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "garbage-collection",
-      "name": "Garbage Collection",
-      "label": "Thu gom rác",
       "category": "action",
       "deck": {
         "base": 2,
         "min": 1
       },
       "color": "#546e7a",
-      "text": "Mọi người chơi bỏ 1 lá bài vào tụ. Tụ bài được xào đều rồi chia lại cho mọi người.",
       "play": {
         "solo": true
       }
     },
     {
       "id": "tacocat",
-      "name": "Tacocat",
-      "label": "Mèo Tacocat",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
         "base": 4
       },
       "color": "#f39c12",
-      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "cattermelon",
-      "name": "Cattermelon",
-      "label": "Mèo Dưa Hấu",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
         "base": 4
       },
       "color": "#2ecc71",
-      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "hairy-potato-cat",
-      "name": "Hairy Potato Cat",
-      "label": "Mèo Khoai Tây",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
         "base": 4
       },
       "color": "#a1887f",
-      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "rainbow-ralphing-cat",
-      "name": "Rainbow Ralphing Cat",
-      "label": "Mèo Cầu Vồng",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
         "base": 4
       },
       "color": "#00bcd4",
-      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "beard-cat",
-      "name": "Beard Cat",
-      "label": "Mèo Râu Rậm",
       "category": "cat",
       "art": "normal-cat",
       "deck": {
         "base": 4
       },
       "color": "#5d4037",
-      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo.",
       "play": {
         "solo": false
       }
     },
     {
       "id": "feral-cat",
-      "name": "Feral Cat",
-      "label": "Mèo Hoang Đa Năng",
       "category": "cat",
       "deck": {
         "base": 4
       },
       "color": "#ff5722",
-      "text": "Dùng thay thế cho bất kỳ lá bài Mèo nào để ghép combo.",
       "play": {
         "solo": false
       }

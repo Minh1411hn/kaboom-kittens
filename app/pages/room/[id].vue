@@ -149,6 +149,8 @@ const {
 } = useVoiceChat();
 const audioDialogOpen = ref(false);
 const voiceSinks = useTemplateRef<{ resume: () => void }>("voiceSinks");
+const { t } = useI18n();
+const { cardName } = useCardText();
 
 const discardRect = () => tableCenter.value?.discardRect() ?? null;
 
@@ -254,10 +256,10 @@ const currentPlayerColor = computed(() =>
 /** One line of guidance, in priority order, for the banner. */
 const bannerHint = computed(() => {
     if (intent.value.reason) return intent.value.reason;
-    if (pickingTarget.value) return "Hãy chọn một người chơi ở phía trên.";
-    if (drawDrag.dragging.value) return "Thả vào bộ bài trên tay để rút.";
+    if (pickingTarget.value) return t("table.pick_a_player_above");
+    if (drawDrag.dragging.value) return t("table.drop_to_draw");
     if (isYourTurn.value)
-        return "Đánh bài hoặc kéo chồng bài rút về tay để kết thúc lượt.";
+        return t("table.play_or_draw_hint");
     return "";
 });
 
@@ -267,7 +269,7 @@ const winner = computed(
             ?.nickname ?? null,
 );
 
-const namedCardOptions = CARD_CATALOG.map((c) => ({ id: c.id, name: c.name }));
+const namedCardOptions = computed(() => CARD_CATALOG.map((c) => ({ id: c.id, name: cardName(c.id) })));
 
 /**
  * A shallow arch across the top of the table: the middle seats sit highest, as
@@ -553,7 +555,7 @@ function cancelQuit() {
                 <div class="row">
                     <button
                         class="icon"
-                        title="Quay lại sảnh chờ"
+                        :title="t('table.topbar.back_to_lobby')"
                         @click="leaveToLobby"
                     >
                         <Icon name="lucide:arrow-left" aria-hidden="true" />
@@ -561,23 +563,24 @@ function cancelQuit() {
                     <button
                         v-if="canQuit"
                         class="icon danger"
-                        title="Rời trận — bạn sẽ bị xử thua"
+                        :title="t('table.topbar.leave_match_title')"
                         @click="askToQuit"
                     >
-                        <Icon name="lucide:log-out" aria-hidden="true" /> Rời trận
+                        <Icon name="lucide:log-out" aria-hidden="true" /> {{ t('table.topbar.leave_match') }}
                     </button>
                     <div class="stack tight">
                         <strong class="room-title">{{
-                            roomName || "Đang tải…"
+                            roomName || t('table.topbar.loading_room')
                         }}</strong>
-                        <span class="muted small">Phòng {{ roomId }}</span>
+                        <span class="muted small">{{ t('table.topbar.room_label', { id: roomId }) }}</span>
                     </div>
                 </div>
                 <div class="row">
+                    <LocaleSwitcher />
                     <button
                         v-if="voiceAvailable"
                         class="icon"
-                        title="Cài đặt âm thanh"
+                        :title="t('table.topbar.audio_settings')"
                         @click="audioDialogOpen = true"
                     >
                         <Icon :name="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'" aria-hidden="true" />
@@ -585,7 +588,7 @@ function cancelQuit() {
                     <span
                         class="dot"
                         :class="status"
-                        :title="`Trạng thái: ${status}`"
+                        :title="t('table.topbar.connection_status', { status })"
                     />
                     <CurrentUserButton
                         :nickname="nickname"
@@ -617,7 +620,7 @@ function cancelQuit() {
                 class="panel notice gesture-prompt"
                 @click="voiceSinks?.resume()"
             >
-                <Icon name="lucide:volume-2" aria-hidden="true" /> Bấm để bật tiếng người chơi khác
+                <Icon name="lucide:volume-2" aria-hidden="true" /> {{ t('table.voice.tap_to_unmute') }}
             </button>
 
             <p v-if="kicked" class="panel notice">{{ kicked }}</p>
@@ -625,18 +628,18 @@ function cancelQuit() {
             <p v-if="spectating" class="panel notice">
                 {{
                     state?.status === "lobby"
-                        ? "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống."
-                        : "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
+                        ? t('table.spectating.lobby_full')
+                        : t('table.spectating.game_in_progress')
                 }}
             </p>
 
-            <p v-if="!state" class="panel muted">Đang tham gia phòng chơi…</p>
+            <p v-if="!state" class="panel muted">{{ t('table.joining_room') }}</p>
 
             <!-- ------------------------------------------------ pre-game lobby -->
             <section v-else-if="inLobby" class="lobby">
                 <div class="lobby-content">
                     <div class="lobby-left panel">
-                        <h2 class="lobby-heading">Danh sách player</h2>
+                        <h2 class="lobby-heading">{{ t('table.lobby.player_list') }}</h2>
                         <div class="lobby-seats vertical">
                             <div
                                 v-for="player in state.players"
@@ -670,29 +673,27 @@ function cancelQuit() {
                                 >
                                     {{
                                         player.connected
-                                            ? "Đã kết nối"
-                                            : "Mất kết nối"
+                                            ? t('table.lobby.connected')
+                                            : t('table.lobby.disconnected')
                                     }}
                                 </span>
                                 <button
                                     v-if="isHost && player.id !== you?.id"
                                     class="kick-btn"
-                                    title="Mời ra khỏi phòng"
+                                    :title="t('table.lobby.kick_title')"
                                     @click="kickPlayer(player.id)"
                                 >
-                                    Kick
+                                    {{ t('table.lobby.kick') }}
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="lobby-right panel">
-                        <h2 class="lobby-heading">Cài đặt phòng</h2>
+                        <h2 class="lobby-heading">{{ t('table.lobby.room_settings') }}</h2>
                         <div class="lobby-actions">
                             <p class="muted">
-                                Đã có {{ state.players.length }}/10 người tham
-                                gia. Chia sẻ liên kết này để rủ bạn bè cùng
-                                chơi:
+                                {{ t('table.lobby.share_intro', { count: state.players.length }) }}
                             </p>
                             <ShareLink :room-id="roomId" />
 
@@ -708,15 +709,15 @@ function cancelQuit() {
                                 >
                                     {{
                                         state.status === "over"
-                                            ? "Đang chờ mọi người…"
-                                            : "Bắt đầu ván đấu"
+                                            ? t('table.lobby.waiting_for_players')
+                                            : t('table.lobby.start_game')
                                     }}
                                 </button>
                                 <p v-else class="muted">
                                     {{
                                         state.status === "over"
-                                            ? "Đang chờ mọi người…"
-                                            : "Đang chờ chủ phòng bắt đầu ván đấu…"
+                                            ? t('table.lobby.waiting_for_players')
+                                            : t('table.lobby.waiting_for_host')
                                     }}
                                 </p>
                             </div>
@@ -786,10 +787,10 @@ function cancelQuit() {
                             <select
                                 v-if="intent.needsNamedCard"
                                 v-model="namedCardId"
-                                aria-label="Card to demand"
+                                :aria-label="t('table.demand_select_aria')"
                             >
                                 <option :value="null" disabled>
-                                    Chọn loại bài muốn đòi?
+                                    {{ t('table.demand_card_placeholder') }}
                                 </option>
                                 <option
                                     v-for="option in namedCardOptions"
@@ -805,14 +806,14 @@ function cancelQuit() {
                                 :disabled="!intent.ok"
                                 @click="play"
                             >
-                                Đánh {{ selectedUids.length || "" }}
+                                {{ selectedUids.length ? t('table.play_button_count', { count: selectedUids.length }) : t('table.play_button') }}
                             </button>
 
                             <button
                                 :disabled="!selectedUids.length"
                                 @click="selectedUids = []"
                             >
-                                Bỏ chọn
+                                {{ t('table.deselect') }}
                             </button>
                         </template>
                     </TurnBanner>
@@ -848,12 +849,10 @@ function cancelQuit() {
                         @toggle="toggle"
                     />
                     <p v-else-if="!youAreSeated" class="watching">
-                        Ván đấu đang diễn ra — bạn đang theo dõi với tư cách
-                        khán giả.
+                        {{ t('table.watching_spectator') }}
                     </p>
                     <p v-else-if="!alive" class="watching">
-                        <Icon name="lucide:bomb" aria-hidden="true" /> Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống
-                        sót cuối cùng!
+                        <Icon name="lucide:bomb" aria-hidden="true" /> {{ t('table.you_exploded') }}
                     </p>
                 </div>
 
@@ -889,7 +888,7 @@ function cancelQuit() {
                         <div class="panel result">
                             <h2>
                                 <Icon v-if="winner" name="lucide:trophy" aria-hidden="true" />
-                                {{ winner ? `${winner} đã chiến thắng!` : "Ván đấu kết thúc" }}
+                                {{ winner ? t('table.game_over.winner', { name: winner }) : t('table.game_over.ended') }}
                             </h2>
                             <div class="lobby-seats">
                                 <PlayerSeat
@@ -904,7 +903,7 @@ function cancelQuit() {
                             </div>
                             <div v-if="youAreSeated" class="row">
                                 <button class="secondary" @click="leaveToLobby">
-                                    Rời phòng
+                                    {{ t('table.game_over.leave_room') }}
                                 </button>
                                 <button
                                     class="primary"
@@ -913,14 +912,14 @@ function cancelQuit() {
                                 >
                                     {{
                                         youAreReady
-                                            ? `Đang chờ người chơi khác (${readyCount}/${connectedCount})…`
-                                            : "Sẵn sàng ván mới"
+                                            ? t('table.game_over.waiting_for_players', { ready: readyCount, connected: connectedCount })
+                                            : t('table.game_over.ready_new_game')
                                     }}
                                 </button>
                             </div>
                             <div v-else class="row">
                                 <button class="primary" @click="leaveToLobby">
-                                    Rời phòng
+                                    {{ t('table.game_over.leave_room') }}
                                 </button>
                             </div>
                         </div>
@@ -931,13 +930,14 @@ function cancelQuit() {
             <!-- Chat and the story of the game, tucked into a corner. -->
             <div v-if="state" class="log-dock" :class="{ open: logOpen }">
                 <button class="log-toggle" @click="logOpen = !logOpen">
-                    {{ logOpen ? "Ẩn lịch sử" : "Lịch sử & Chat" }}
+                    {{ logOpen ? t('table.log.hide') : t('table.log.show') }}
                     <Icon :name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true" />
                 </button>
                 <EventLog
                     v-show="logOpen"
                     :events="pending"
                     :chat="chat"
+                    :players="state.players"
                     @say="say"
                 />
             </div>
@@ -1015,10 +1015,10 @@ function cancelQuit() {
 
             <ConfirmDialog
                 v-if="confirmingQuit"
-                title="Rời khỏi trận đấu?"
-                message="Bạn sẽ bị loại khỏi ván này và không thể tham gia lại cho đến khi ván mới bắt đầu."
-                confirm-label="Rời trận"
-                cancel-label="Ở lại"
+                :title="t('table.quit_dialog.title')"
+                :message="t('table.quit_dialog.message')"
+                :confirm-label="t('table.quit_dialog.confirm')"
+                :cancel-label="t('table.quit_dialog.cancel')"
                 @confirm="quitGame"
                 @cancel="cancelQuit"
             />

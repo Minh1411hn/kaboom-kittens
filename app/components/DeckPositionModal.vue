@@ -1,7 +1,7 @@
 <template lang="pug">
 .deck-position
   section.deck-position__panel.panel(aria-modal="true" role="dialog")
-    h2.deck-position__title {{ interaction.prompt }}
+    h2.deck-position__title {{ $t('interactions.choose-deck-position') }}
 
     .deck-position__choices
       button.deck-position__slot(
@@ -15,7 +15,7 @@
         :class="{ 'deck-position__slot--selected': !pickedByRandom && position === maxPosition }"
         type="button"
         @click="pick(maxPosition)"
-      ) Đặt ở cuối
+      ) {{ $t('table.deck_position.bottom_option') }}
       button.deck-position__slot.deck-position__slot--wide.deck-position__slot--random(
         :class="{ 'deck-position__slot--selected': pickedByRandom }"
         type="button"
@@ -23,16 +23,16 @@
       )
         Icon(aria-hidden="true" name="lucide:dices")
         |
-        | NGẪU NHIÊN
+        | {{ $t('table.deck_position.random') }}
 
     p.deck-position__preview
       template(v-if="position !== null")
-        | Đặt
+        | {{ $t('table.deck_position.preview_prefix') }}
         strong {{ positionLabel }}
-      template(v-else) Chọn một vị trí bên trên.
-    p.deck-position__hint.muted Không ai khác biết bạn đặt lá này ở đâu.
+      template(v-else) {{ $t('table.deck_position.preview_placeholder') }}
+    p.deck-position__hint.muted {{ $t('table.deck_position.hint') }}
 
-    button.deck-position__submit.primary(:disabled="!canSubmit" type="button" @click="submit") Xác nhận
+    button.deck-position__submit.primary(:disabled="!canSubmit" type="button" @click="submit") {{ $t('app.confirm') }}
 </template>
 
 <script setup lang="ts">
@@ -50,6 +50,8 @@
   }>()
 
   const emit = defineEmits<{ submit: [index: number] }>()
+
+  const { t } = useI18n()
 
   // `null` means nothing picked yet — unlike the old slider (which defaulted
   // to "top" and let you confirm immediately), this makes an explicit choice
@@ -90,9 +92,9 @@
 
   const positionLabel = computed(() => {
     if (position.value === null) return ""
-    if (position.value === 0) return "Trên cùng — người chơi kế tiếp sẽ rút lá này"
-    if (position.value >= maxPosition.value) return "Dưới cùng"
-    return `${position.value} lá tính từ trên cùng`
+    if (position.value === 0) return t("table.deck_position.top_label")
+    if (position.value >= maxPosition.value) return t("table.deck_position.bottom_label")
+    return t("table.deck_position.nth_from_top", { n: position.value })
   })
 
   const canSubmit = computed(() => position.value !== null)

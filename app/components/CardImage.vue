@@ -31,8 +31,10 @@ figure.card(
    * also keeps a face-down card's identity out of the DOM entirely: the card id
    * must never reach a viewer who is only allowed to see a back.
    */
+  const { t } = useI18n()
+  const { cardName, cardText } = useCardText()
   const src = computed(() => (props.faceDown || !props.cardId ? cardBackUrl() : cardArtUrl(props.cardId, props.uid)))
-  const label = computed(() => (props.faceDown || !props.cardId ? "Lá bài úp" : cardName(props.cardId)))
+  const label = computed(() => (props.faceDown || !props.cardId ? t("table.card_image.face_down") : cardName(props.cardId)))
   const title = computed(() => {
     if (props.reason) return props.reason
     if (props.faceDown || !props.cardId) return ""

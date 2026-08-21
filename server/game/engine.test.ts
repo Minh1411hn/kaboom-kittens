@@ -8,6 +8,7 @@ import {
   type Command,
   type GameState,
 } from '#shared/types/game'
+import type { Rejection } from '#shared/types/errors'
 import { addPlayer, createGame, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby } from './engine'
 import { cardCount, deckComposition, explodingKittenCount, makeCard } from './deck'
 import { projectStateFor } from './projection'
@@ -38,7 +39,7 @@ function run(state: GameState, command: Omit<Command, 'now'> & { now?: number })
   return result.state
 }
 
-function expectRejected(state: GameState, command: Omit<Command, 'now'> & { now?: number }): string {
+function expectRejected(state: GameState, command: Omit<Command, 'now'> & { now?: number }): Rejection {
   const result = reduce(state, { ...command, now: command.now ?? clock++ } as Command)
   expect(result.error).toBeDefined()
   return result.error!
@@ -179,8 +180,8 @@ describe('deck overrides', () => {
   it('refuses to change the deck once the game is under way', () => {
     const state = started(3)
     expect(
-      expectRejected(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 0 } }),
-    ).toMatch(/phòng chờ/i)
+      expectRejected(state, { type: 'set-deck-overrides', playerId: 'p0', overrides: { nope: 0 } }).code,
+    ).toBe('not-in-lobby')
   })
 
   it('rejects counts that are not sane integers, leaving the deck alone', () => {
@@ -199,9 +200,9 @@ describe('deck overrides', () => {
     )
     let state = newGame(4)
     state = run(state, { type: 'set-deck-overrides', playerId: 'p0', overrides })
-    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(
-      new RegExp(String(4 * HAND_SIZE)),
-    )
+    const rejection = expectRejected(state, { type: 'start-game', playerId: 'p0' })
+    expect(rejection.code).toBe('deck-not-enough')
+    expect(rejection.params?.needed).toBe(4 * HAND_SIZE)
   })
 
   it('still deals every player a Defuse when the host pins fewer than one each', () => {
@@ -241,7 +242,7 @@ describe('turn order', () => {
   it('refuses a draw from anyone but the current player', () => {
     const state = started(4)
     const other = state.players.find((p) => p.seat !== state.turn.seat)!
-    expect(expectRejected(state, { type: 'draw-card', playerId: other.id })).toMatch(/chưa đến lượt/i)
+    expect(expectRejected(state, { type: 'draw-card', playerId: other.id }).code).toBe('not-your-turn')
   })
 
   it('Skip ends the turn without drawing', () => {
@@ -551,8 +552,8 @@ describe('nope', () => {
         playerId: player.id,
         uids: uidsOf(state, player.id, ['nope']),
         combo: null,
-      }),
-    ).toMatch(/chính mình|tự nope/i)
+      }).code,
+    ).toBe('nope-self')
   })
 
   it('discards a Noped card anyway', () => {
@@ -680,19 +681,19 @@ describe('quit game', () => {
 
   it('refuses to quit before the game starts', () => {
     const state = newGame(3)
-    expect(expectRejected(state, { type: 'quit-game', playerId: 'p0' })).toMatch(/chưa bắt đầu/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'p0' }).code).toBe('game-not-started')
   })
 
   it('refuses to quit twice', () => {
     let state = started(3)
     const quitter = currentPlayer(state)!
     state = run(state, { type: 'quit-game', playerId: quitter.id })
-    expect(expectRejected(state, { type: 'quit-game', playerId: quitter.id })).toMatch(/đã rời/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: quitter.id }).code).toBe('already-left')
   })
 
   it('refuses to quit for a player not in the game', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'quit-game', playerId: 'nobody' })).toMatch(/không có trong ván/i)
+    expect(expectRejected(state, { type: 'quit-game', playerId: 'nobody' }).code).toBe('not-in-game')
   })
 })
 
@@ -715,14 +716,12 @@ describe('return to lobby', () => {
 
   it('refuses before the game is over', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'p0' })).toMatch(/chưa kết thúc/i)
+    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'p0' }).code).toBe('game-not-over')
   })
 
   it('refuses for a player not in the game', () => {
     const state = ended(3)
-    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'nobody' })).toMatch(
-      /không có trong ván/i,
-    )
+    expect(expectRejected(state, { type: 'return-to-lobby', playerId: 'nobody' }).code).toBe('not-in-game')
   })
 
   it('marks a player ready idempotently, without transitioning on a single click', () => {
@@ -844,8 +843,8 @@ describe('cat combos', () => {
         uids: uidsOf(state, player.id, ['beard-cat', 'tacocat']),
         combo: 'pair',
         targetPlayerId: victim.id,
-      }),
-    ).toMatch(/không khớp/i)
+      }).code,
+    ).toBe('cat-combo-mismatch')
   })
 
   it('three of a kind demands a named card, and gets nothing if absent', () => {
@@ -915,8 +914,8 @@ describe('cat combos', () => {
         playerId: player.id,
         uids: uidsOf(state, player.id, ['tacocat']),
         combo: null,
-      }),
-    ).toMatch(/combo/i)
+      }).code,
+    ).toBe('cat-solo-not-allowed')
   })
 })
 
@@ -956,15 +955,15 @@ describe('favor', () => {
     const target = state.players.find((p) => p.id !== player.id)!
     setHand(state, player.id, ['favor'])
     setHand(state, target.id, [])
-    expect(
-      expectRejected(state, {
-        type: 'play-card',
-        playerId: player.id,
-        uids: uidsOf(state, player.id, ['favor']),
-        combo: null,
-        targetPlayerId: target.id,
-      }),
-    ).toMatch(/không có lá bài nào/i)
+    const rejection = expectRejected(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['favor']),
+      combo: null,
+      targetPlayerId: target.id,
+    })
+    expect(rejection.code).toBe('target-empty-handed')
+    expect(rejection.params?.name).toBe(target.nickname)
   })
 })
 
@@ -1037,8 +1036,8 @@ describe('the future', () => {
         playerId: player.id,
         interactionId: state.interaction!.id,
         response: { type: 'order', uids: [shown[0]!, shown[0]!, shown[1]!] },
-      }),
-    ).toMatch(/không hợp lệ/i)
+      }).code,
+    ).toBe('invalid-order')
   })
 })
 
@@ -1307,25 +1306,27 @@ describe('determinism', () => {
       finalFirst.players.map((p) => p.hand.map((c) => c.id)),
     )
     expect(replayed.drawPile.map((c) => c.id)).toEqual(finalFirst.drawPile.map((c) => c.id))
-    expect(replayed.log.map((e) => e.message)).toEqual(finalFirst.log.map((e) => e.message))
+    expect(replayed.log).toEqual(finalFirst.log)
   })
 })
 
 describe('lobby rules', () => {
   it('needs at least two players to start', () => {
     const state = newGame(1)
-    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/ít nhất 2/i)
+    const rejection = expectRejected(state, { type: 'start-game', playerId: 'p0' })
+    expect(rejection.code).toBe('min-players')
+    expect(rejection.params?.min).toBe(2)
   })
 
   it('caps the room at ten players', () => {
     const state = newGame(10)
-    expect(addPlayer(state, 'p10', 'Overflow', 'art_02')).toMatch(/đã đầy/i)
+    expect(addPlayer(state, 'p10', 'Overflow', 'art_02')?.code).toBe('room-full')
     expect(state.players).toHaveLength(10)
   })
 
   it('refuses to start twice', () => {
     const state = started(3)
-    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' })).toMatch(/đã bắt đầu/i)
+    expect(expectRejected(state, { type: 'start-game', playerId: 'p0' }).code).toBe('game-already-started')
   })
 
   it('frees the seat of someone who leaves the waiting room', () => {

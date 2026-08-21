@@ -1,0 +1,477 @@
+{
+  "app": {
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "host_tag": "Chủ phòng",
+    "start_new_game": "Bắt đầu ván mới",
+    "open_rooms": "Phòng đang mở",
+    "no_rooms": "Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!",
+    "status_playing": "Đang chơi",
+    "status_waiting": "Đang chờ",
+    "host_label": "Chủ phòng: {name} ·",
+    "room_view": "Xem",
+    "room_join": "Tham gia",
+    "connection_status": "Trạng thái kết nối: {status}",
+    "create_room_error": "Không thể tạo phòng chơi.",
+    "time_just_now": "vừa xong",
+    "time_minutes_ago": "{minutes} phút trước",
+    "time_hours_ago": "{hours} giờ trước",
+    "nickname_label": "Biệt danh",
+    "nickname_placeholder": "Hoàng Thượng",
+    "nickname_gate": {
+      "subtitle": "Mèo Cảm Tử online dành cho 2–10 người chơi. Hãy chọn biệt danh để bắt đầu.",
+      "processing": "Đang xử lý…",
+      "enter": "Vào sảnh chờ",
+      "fallback_error": "Biệt danh không hợp lệ hoặc đã bị từ chối."
+    },
+    "profile_dialog": {
+      "title": "Chỉnh sửa hồ sơ",
+      "avatar_label": "Ảnh đại diện",
+      "saving": "Đang lưu…",
+      "save": "Lưu",
+      "nickname_too_short": "Biệt danh phải có ít nhất 2 ký tự.",
+      "nickname_too_long": "Biệt danh tối đa 16 ký tự."
+    }
+  },
+  "table": {
+    "topbar": {
+      "back_to_lobby": "Quay lại sảnh chờ",
+      "leave_match": "Rời trận",
+      "leave_match_title": "Rời trận — bạn sẽ bị xử thua",
+      "loading_room": "Đang tải…",
+      "room_label": "Phòng {id}",
+      "audio_settings": "Cài đặt âm thanh",
+      "connection_status": "Trạng thái: {status}"
+    },
+    "voice": {
+      "tap_to_unmute": "Bấm để bật tiếng người chơi khác"
+    },
+    "spectating": {
+      "lobby_full": "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống.",
+      "game_in_progress": "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
+    },
+    "joining_room": "Đang tham gia phòng chơi…",
+    "lobby": {
+      "player_list": "Danh sách player",
+      "connected": "Đã kết nối",
+      "disconnected": "Mất kết nối",
+      "kick": "Kick",
+      "kick_title": "Mời ra khỏi phòng",
+      "room_settings": "Cài đặt phòng",
+      "share_intro": "Đã có {count}/10 người tham gia. Chia sẻ liên kết này để rủ bạn bè cùng chơi:",
+      "waiting_for_players": "Đang chờ mọi người…",
+      "start_game": "Bắt đầu ván đấu",
+      "waiting_for_host": "Đang chờ chủ phòng bắt đầu ván đấu…"
+    },
+    "pick_a_player_above": "Hãy chọn một người chơi ở phía trên.",
+    "drop_to_draw": "Thả vào bộ bài trên tay để rút.",
+    "play_or_draw_hint": "Đánh bài hoặc kéo chồng bài rút về tay để kết thúc lượt.",
+    "demand_card_placeholder": "Chọn loại bài muốn đòi?",
+    "demand_select_aria": "Lá bài muốn đòi",
+    "play_button": "Đánh",
+    "play_button_count": "Đánh {count}",
+    "deselect": "Bỏ chọn",
+    "watching_spectator": "Ván đấu đang diễn ra — bạn đang theo dõi với tư cách khán giả.",
+    "you_exploded": "Bạn đã bị nổ tung — hãy ở lại xem ai sẽ là người sống sót cuối cùng!",
+    "game_over": {
+      "winner": "{name} đã chiến thắng!",
+      "ended": "Ván đấu kết thúc",
+      "leave_room": "Rời phòng",
+      "waiting_for_players": "Đang chờ người chơi khác ({ready}/{connected})…",
+      "ready_new_game": "Sẵn sàng ván mới"
+    },
+    "log": {
+      "hide": "Ẩn lịch sử",
+      "show": "Lịch sử & Chat"
+    },
+    "quit_dialog": {
+      "title": "Rời khỏi trận đấu?",
+      "message": "Bạn sẽ bị loại khỏi ván này và không thể tham gia lại cho đến khi ván mới bắt đầu.",
+      "confirm": "Rời trận",
+      "cancel": "Ở lại"
+    },
+    "share_link": {
+      "aria_label": "Liên kết phòng",
+      "copied": "Đã sao chép",
+      "copy": "Sao chép link"
+    },
+    "hand_fan": {
+      "empty": "Không còn lá bài nào trên tay."
+    },
+    "player_seat": {
+      "disconnected": "(Mất kết nối)",
+      "ready_title": "Đã sẵn sàng cho ván mới",
+      "ready": "Sẵn sàng",
+      "hand_count": "{count} lá bài",
+      "turns_left": "· còn {count} lượt"
+    },
+    "kitten_reveal": {
+      "drew": "{name} đã rút phải Exploding Kitten!",
+      "exploded": "{name} nổ tung!"
+    },
+    "turn_banner": {
+      "your_turn": "Đến lượt của bạn!",
+      "waiting_for": "Đang chờ {name} đi…"
+    },
+    "card_image": {
+      "face_down": "Lá bài úp"
+    },
+    "audio_dialog": {
+      "title": "Cài đặt âm thanh",
+      "unsupported": "Trình duyệt này không hỗ trợ gọi thoại. Hãy dùng Chrome, Edge hoặc Safari bản mới, và truy cập qua HTTPS.",
+      "unavailable": "Voice chat chưa được cấu hình trên máy chủ này.",
+      "mic": "Micro",
+      "on": "Đang bật",
+      "off": "Đang tắt",
+      "input_device": "Thiết bị thu",
+      "system_default": "Mặc định của hệ thống",
+      "unnamed_mic": "Micro không tên",
+      "meter_on_title": "Mức tín hiệu vào",
+      "meter_off_title": "Micro đang tắt",
+      "speaker": "Loa",
+      "volume": "Âm lượng",
+      "per_person_hint": "Muốn tắt tiếng riêng một người? Bấm vào biểu tượng loa ở góc ảnh đại diện của họ.",
+      "connect_error": "Không kết nối được vào phòng thoại. Thử tải lại trang.",
+      "done": "Xong"
+    },
+    "deck_position": {
+      "bottom_option": "Đặt ở cuối",
+      "random": "NGẪU NHIÊN",
+      "preview_prefix": "Đặt",
+      "preview_placeholder": "Chọn một vị trí bên trên.",
+      "hint": "Không ai khác biết bạn đặt lá này ở đâu.",
+      "top_label": "Trên cùng — người chơi kế tiếp sẽ rút lá này",
+      "bottom_label": "Dưới cùng",
+      "nth_from_top": "{n} lá tính từ trên cùng"
+    },
+    "see_future": {
+      "alter_title": "Sắp xếp lại tương lai (Alter the Future)",
+      "see_title": "Nhìn thấu tương lai (See the Future)",
+      "alter_subtitle": "Kéo để sắp xếp lại thứ tự các lá bài trên đầu chồng bài rút:",
+      "see_subtitle": "Thứ tự các lá bài trên đầu chồng bài rút:",
+      "top_rank": "Top #1 (Trên cùng)",
+      "empty": "Không có lá bài nào.",
+      "got_it": "Đã rõ",
+      "confirm_order": "Xác nhận thứ tự"
+    },
+    "voice_badge": {
+      "muted_title": "Đang tắt tiếng người này — bấm để nghe lại",
+      "mic_off_title": "Micro đang tắt",
+      "click_to_mute_title": "Bấm để tắt tiếng người này",
+      "mic_on_title": "Micro đang bật"
+    },
+    "table_center": {
+      "direction_cw": "Chiều bốc bài: Thuận chiều kim đồng hồ",
+      "direction_ccw": "Chiều bốc bài: Ngược chiều kim đồng hồ",
+      "direction_label": "Chiều bốc bài",
+      "deck_aria": "Chồng bài rút, còn {count} lá. Kéo lá bài trên cùng về tay bạn, hoặc nhấn phím Cách / Enter để rút bài.",
+      "deck_title": "Kéo lá bài trên cùng về tay của bạn để rút bài",
+      "remaining_ribbon": "Còn {count} lá",
+      "discard_empty": "Trống",
+      "discard_ribbon": "Bài đã đánh · {count}"
+    },
+    "event_log": {
+      "empty": "Bàn chơi đang yên ắng.",
+      "placeholder": "Nhập tin nhắn…",
+      "send": "Gửi"
+    },
+    "nope_bar": {
+      "stack_aria": "Chuỗi bài đang xử lý",
+      "noped_by_title": "Nope bởi {name}",
+      "unknown_player": "Người chơi",
+      "caster_title": "Người đánh: {name}",
+      "someone": "Ai đó",
+      "target_title": "Mục tiêu: {name}",
+      "used_prefix": "đã dùng",
+      "responding_countdown": "{seconds}s để phản hồi",
+      "nope": "NOPE!",
+      "pass": "Bỏ qua",
+      "passed": "Đã bỏ qua",
+      "waiting": "Đang chờ…",
+      "combo_pair": "Combo 2 lá mèo",
+      "combo_triple": "Combo 3 lá mèo{demanded}",
+      "combo_five": "Combo 5 lá mèo",
+      "blocked_by": "Bị chặn bởi {name} ({count} Nope)",
+      "in_effect": "Đang có hiệu lực ({count} Nope triệt tiêu)"
+    },
+    "interaction": {
+      "no_cards": "Không có lá bài nào để chọn.",
+      "tap_to_change": "Chạm lá khác để đổi lựa chọn.",
+      "tap_one": "Chạm 1 lá bài để chọn.",
+      "confirm": "Xác nhận",
+      "chosen_waiting": "Đã chọn — đang chờ người khác…",
+      "waiting_on": "Đang chờ {names} chọn bài…"
+    },
+    "target_select": {
+      "opponent_list": "Danh sách đối thủ:",
+      "hand_count": "{count} lá bài",
+      "no_opponents": "Không có đối thủ nào khả dụng để chọn.",
+      "choose_card_label": "Chọn loại lá bài muốn đòi:",
+      "search_placeholder": "Tìm kiếm loại bài...",
+      "cancel": "Hủy bỏ",
+      "title_pair": "Cướp 1 lá bài ngẫu nhiên",
+      "title_triple": "Đòi 1 lá bài cụ thể",
+      "title_favor": "Yêu cầu đối thủ tặng bài",
+      "title_targeted_attack": "Tấn công có chủ đích",
+      "title_default": "Chọn đối thủ mục tiêu",
+      "subtitle_pair": "Chọn đối thủ bạn muốn cướp bài ngẫu nhiên:",
+      "subtitle_triple": "Chọn đối thủ và loại lá bài bạn muốn đòi:",
+      "subtitle_favor": "Chọn người chơi phải đưa cho bạn 1 lá bài tự chọn:",
+      "subtitle_targeted_attack": "Chọn người chơi phải nhận 2 lượt đi tiếp theo:",
+      "subtitle_default": "Chọn một người chơi để thi triển lá bài:",
+      "confirm_demand": "Đòi bài",
+      "confirm_steal": "Cướp bài",
+      "confirm_attack": "Tấn công",
+      "confirm_favor": "Yêu cầu",
+      "confirm_default": "Xác nhận"
+    },
+    "deck_settings": {
+      "title": "Bộ bài của phòng",
+      "summary": "{total} lá · chia {perPlayer} lá mỗi người",
+      "info": "Mỗi người được chia {perPlayer} lá ({handSize} lá ngẫu nhiên + 1 lá Gỡ bom).",
+      "host_hint": "Chỉnh số lượng bên dưới — cấu hình này giữ nguyên cho mọi ván trong phòng.",
+      "guest_hint": "Chỉ chủ phòng mới chỉnh được.",
+      "warn_no_kittens": "Không có lá Mèo nổ nào — ván đấu sẽ không thể kết thúc bằng cách nổ.",
+      "warn_not_enough": "Không đủ bài để chia — hãy tăng số lượng các lá thường lên.",
+      "group_bomb_defuse": "Bom + Defuse",
+      "group_action": "Chức năng",
+      "group_cat": "Normal Cat",
+      "pinned": "đã chỉnh",
+      "pinned_title": "Chủ phòng đã chốt số lượng này",
+      "decrease_aria": "Bớt một lá {name}",
+      "count_aria": "Số lá {name}",
+      "increase_aria": "Thêm một lá {name}",
+      "reset_one_title": "Trả lá này về số lượng mặc định",
+      "reset_all": "Khôi phục toàn bộ mặc định"
+    }
+  },
+  "cards": {
+    "exploding-kitten": {
+      "name": "Exploding Kitten",
+      "label": "Bùng nổ",
+      "text": "Bạn sẽ nổ tung trừ khi có lá Defuse để gỡ bom."
+    },
+    "defuse": {
+      "name": "Defuse",
+      "label": "Gỡ bom",
+      "text": "Vô hiệu hóa Exploding Kitten. Đặt lại mèo nổ vào bất kỳ vị trí nào trong chồng bài rút."
+    },
+    "nope": {
+      "name": "Nope",
+      "label": "Chặn đứng",
+      "text": "Chặn đứng mọi hành động ngoại trừ Defuse hoặc Exploding Kitten. Có thể bị Nope đè."
+    },
+    "attack-2x": {
+      "name": "Attack 2x",
+      "label": "Tấn công",
+      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Người chơi kế tiếp phải đi 2 lượt."
+    },
+    "targeted-attack-2x": {
+      "name": "Targeted Attack 2x",
+      "label": "Chọn nạn nhân",
+      "text": "Kết thúc các lượt của bạn mà không cần rút bài. Chọn 1 người chơi bất kỳ phải đi 2 lượt."
+    },
+    "personal-attack-3x": {
+      "name": "Personal Attack 3x",
+      "label": "Đi 3 lượt",
+      "text": "Kết thúc lượt hiện tại không cần rút bài, sau đó tự mình thực hiện thêm 3 lượt."
+    },
+    "skip": {
+      "name": "Skip",
+      "label": "Bỏ qua",
+      "text": "Kết thúc lượt của bạn mà không cần rút bài."
+    },
+    "reverse": {
+      "name": "Reverse",
+      "label": "Đảo chiều",
+      "text": "Đảo ngược chiều đánh và kết thúc lượt của bạn mà không cần rút bài."
+    },
+    "shuffle": {
+      "name": "Shuffle",
+      "label": "Xào bài",
+      "text": "Xào lại toàn bộ chồng bài rút."
+    },
+    "favor": {
+      "name": "Favor",
+      "label": "Xin đểu",
+      "text": "Chọn 1 người chơi; người đó phải tự chọn 1 lá bài trên tay để đưa cho bạn."
+    },
+    "draw-from-the-bottom": {
+      "name": "Draw From the Bottom",
+      "label": "Rút từ đáy",
+      "text": "Kết thúc lượt của bạn bằng cách rút lá bài ở dưới đáy chồng bài rút."
+    },
+    "see-the-future-3x": {
+      "name": "See the Future 3x",
+      "label": "Xem trước 3 lá",
+      "text": "Bí mật xem trước 3 lá bài trên đầu chồng bài rút."
+    },
+    "see-the-future-5x": {
+      "name": "See the Future 5x",
+      "label": "Xem trước 5 lá",
+      "text": "Bí mật xem trước 5 lá bài trên đầu chồng bài rút."
+    },
+    "alter-the-future-3x": {
+      "name": "Alter the Future 3x",
+      "label": "Sắp xếp 3 lá",
+      "text": "Bí mật xem và sắp xếp lại thứ tự 3 lá bài trên đầu chồng bài rút."
+    },
+    "alter-the-future-5x": {
+      "name": "Alter the Future 5x",
+      "label": "Sắp xếp 5 lá",
+      "text": "Bí mật xem và sắp xếp lại thứ tự 5 lá bài trên đầu chồng bài rút."
+    },
+    "garbage-collection": {
+      "name": "Garbage Collection",
+      "label": "Thu gom rác",
+      "text": "Mọi người chơi bỏ 1 lá bài vào tụ. Tụ bài được xào đều rồi chia lại cho mọi người."
+    },
+    "tacocat": {
+      "name": "Tacocat",
+      "label": "Mèo Tacocat",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo."
+    },
+    "cattermelon": {
+      "name": "Cattermelon",
+      "label": "Mèo Dưa Hấu",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo."
+    },
+    "hairy-potato-cat": {
+      "name": "Hairy Potato Cat",
+      "label": "Mèo Khoai Tây",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo."
+    },
+    "rainbow-ralphing-cat": {
+      "name": "Rainbow Ralphing Cat",
+      "label": "Mèo Cầu Vồng",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo."
+    },
+    "beard-cat": {
+      "name": "Beard Cat",
+      "label": "Mèo Râu Rậm",
+      "text": "Không có tác dụng khi đánh đơn. Đánh bộ 2, 3 hoặc 5 lá bài cùng loại để tạo combo."
+    },
+    "feral-cat": {
+      "name": "Feral Cat",
+      "label": "Mèo Hoang Đa Năng",
+      "text": "Dùng thay thế cho bất kỳ lá bài Mèo nào để ghép combo."
+    }
+  },
+  "errors": {
+    "card-combo-only": "{card} chỉ có thể đánh theo combo 2, 3 hoặc 5 lá bài.",
+    "nope-nothing-to-nope": "Hiện tại không có hành động nào để Nope.",
+    "nope-self": "Bạn không thể tự Nope lá bài của chính mình.",
+    "not-your-turn": "Hãy đợi đến lượt của bạn.",
+    "cat-combo-mismatch": "Chỉ áp dụng cho các lá bài Mèo cùng loại — Feral Cat có thể thay thế cho bất kỳ lá bài Mèo nào.",
+    "five-combo-mismatch": "Cả 5 lá bài phải thuộc 5 loại khác nhau.",
+    "combo-select-count": "Hãy chọn 2, 3 hoặc 5 lá bài để tạo combo.",
+    "discard-empty": "Chồng bài đã đánh đang trống.",
+    "mic-denied": "Bạn đã từ chối quyền micro — bạn vẫn nghe được nhưng không nói được.",
+    "mic-unavailable": "Không mở được micro. Bạn vẫn nghe được người khác.",
+    "room-create-failed": "Không thể tạo phòng chơi.",
+    "game-already-started": "Trò chơi đã bắt đầu rồi.",
+    "room-full": "Phòng chơi đã đầy (tối đa {max} người).",
+    "game-not-started": "Trò chơi chưa bắt đầu.",
+    "interaction-in-progress": "Đang có người chơi khác thực hiện thao tác.",
+    "nope-window-open": "Hãy đợi lượt Nope kết thúc.",
+    "no-nope-window": "Hiện không có lượt Nope nào đang mở.",
+    "not-in-game": "Bạn không có trong ván chơi này.",
+    "already-left": "Bạn đã rời khỏi ván chơi.",
+    "game-not-over": "Ván đấu vẫn chưa kết thúc.",
+    "not-in-lobby": "Chỉ có thể đổi bộ bài khi đang ở phòng chờ.",
+    "min-players": "Cần ít nhất {min} người chơi để bắt đầu.",
+    "deck-not-enough": "Bộ bài không đủ để chia — cần ít nhất {needed} lá (chưa tính Mèo nổ và Gỡ bom).",
+    "you-are-eliminated": "Bạn đã bị nổ tung và bị loại.",
+    "no-cards-selected": "Hãy chọn lá bài muốn đánh.",
+    "not-your-cards": "Bạn không sở hữu những lá bài đó.",
+    "invalid-play-count": "Hãy đánh 1 lá bài, hoặc một combo hợp lệ.",
+    "target-required": "Hãy chọn một người chơi mục tiêu.",
+    "no-interaction": "Hiện không có yêu cầu nào cần phản hồi.",
+    "interaction-completed": "Yêu cầu này đã được hoàn thành.",
+    "not-your-interaction": "Yêu cầu này không dành cho bạn.",
+    "already-responded": "Bạn đã phản hồi rồi.",
+    "choose-a-card": "Hãy chọn 1 lá bài.",
+    "not-in-hand": "Bạn không có lá bài đó trên tay.",
+    "not-in-discard": "Lá bài đó không có trong chồng bài đã đánh.",
+    "choose-a-position": "Hãy chọn vị trí đặt bài.",
+    "invalid-position": "Vị trí đặt bài không hợp lệ.",
+    "choose-an-order": "Hãy gửi thứ tự sắp xếp bài.",
+    "invalid-order": "Thứ tự sắp xếp không hợp lệ.",
+    "unknown-card": "Không có lá bài nào tên \"{id}\".",
+    "count-not-integer": "Số lượng bài phải là số nguyên.",
+    "count-out-of-range": "Số lượng mỗi loại bài phải nằm trong khoảng 0–{max}.",
+    "cat-solo-not-allowed": "Các lá bài Mèo chỉ có tác dụng khi kết hợp thành combo 2, 3 hoặc 5 lá bài.",
+    "five-combo-wrong-count": "Combo 5 lá cần chính xác 5 lá bài.",
+    "combo-wrong-count": "Combo đó cần chính xác {needed} lá bài.",
+    "invalid-target": "Hãy chọn một người chơi vẫn còn trong ván.",
+    "cant-target-self": "Bạn không thể chọn chính mình.",
+    "target-empty-handed": "{name} không có lá bài nào trên tay.",
+    "named-card-required": "Hãy chỉ định lá bài bạn muốn đòi.",
+    "defuse-auto-only": "Defuse sẽ tự động kích hoạt khi bạn rút phải Exploding Kitten.",
+    "cant-play-kitten": "Bạn không thể tự ý đánh lá Exploding Kitten.",
+    "cant-favor-self": "Bạn không thể tự xin viện trợ từ chính mình.",
+    "not-nopeable": "Hành động đó không thể bị Nope.",
+    "draw-pile-empty": "Chồng bài rút đang trống.",
+    "room-gone": "Phòng chơi này không còn tồn tại.",
+    "kick-not-in-lobby": "Chỉ có thể mời người chơi ra khỏi phòng khi ở phòng chờ.",
+    "kick-target-not-found": "Người chơi đó không có trong phòng này.",
+    "not-seated": "Bạn không có chỗ ngồi trong phòng này.",
+    "room-closed": "Phòng chơi này đã bị đóng.",
+    "kicked-by-host": "Chủ phòng đã mời bạn ra khỏi phòng chơi.",
+    "nickname-too-short": "Biệt danh phải có ít nhất 2 ký tự.",
+    "nickname-too-long": "Biệt danh tối đa 16 ký tự.",
+    "nickname-invalid-chars": "Biệt danh chỉ được dùng chữ cái, chữ số, khoảng trắng, - và _.",
+    "avatar-invalid": "Ảnh đại diện không hợp lệ.",
+    "room-name-invalid": "Tên phòng đó không hợp lệ.",
+    "no-session": "Hãy chọn biệt danh trước.",
+    "session-expired": "Phiên đăng nhập đã hết hạn — vui lòng tải lại trang.",
+    "open-failed": "Không thể khởi tạo phiên kết nối. Vui lòng tải lại trang.",
+    "bad-json": "Tin nhắn không hợp lệ.",
+    "bad-message": "Tin nhắn không đúng định dạng.",
+    "rate-limited": "Thao tác quá nhanh, vui lòng chờ trong giây lát.",
+    "server-error": "Đã xảy ra lỗi khi xử lý yêu cầu.",
+    "no-room": "Phòng chơi đó không còn tồn tại.",
+    "not-in-room": "Hãy tham gia phòng trước.",
+    "voice-denied": "Phiên thoại này không phải của bạn.",
+    "not-host": "Chỉ chủ phòng mới có quyền thực hiện thao tác này.",
+    "cant-kick-self": "Bạn không thể tự mời chính mình ra khỏi phòng."
+  },
+  "interactions": {
+    "choose-card-from-hand": "Chọn 1 lá bài để đưa cho {name}",
+    "choose-deck-position": "Bí mật đặt lại Exploding Kitten vào chồng bài rút",
+    "choose-from-discard": "Lấy 1 lá bài bất kỳ từ chồng bài đã đánh",
+    "simultaneous-choose-card": "Chọn 1 lá bài để bỏ vào tụ rác"
+  },
+  "events": {
+    "game-started": "Trận đấu bắt đầu — {count} người chơi.",
+    "card-played": "{name} đã đánh {card}.",
+    "card-played_targeted": "{name} đã đánh {card} lên {target}.",
+    "combo-played": {
+      "pair": "{name} đã đánh combo đôi mèo lên {target}.",
+      "triple": "{name} đã đòi 1 lá {card} từ {target}.",
+      "five-different": "{name} đã đánh 5 lá bài khác nhau để lấy 1 lá từ chồng bài đã đánh."
+    },
+    "action-noped": "{name} bị Nope chặn lá {card}! | {name} bị Nope chặn lá {card} (qua {count} lần Nope chồng lên nhau)!",
+    "action-resolved": "Các lá Nope đã tự triệt tiêu nhau — {card} được kích hoạt thành công!",
+    "card-drawn": "{name} đã rút 1 lá bài.",
+    "card-stolen": "{name} đã cướp 1 lá bài ngẫu nhiên từ {target}.",
+    "card-given": "{name} đã đưa {card} cho {target}.",
+    "card-demanded": "{name} đã đưa {card} cho {target}.",
+    "card-demand-failed": "{name} không có lá {card} nào.",
+    "card-taken-from-discard": "{name} đã lấy lá {card} từ chồng bài đã đánh.",
+    "deck-shuffled": "Chồng bài rút đã được xào lại.",
+    "future-seen": "{name} đã nhìn trước tương lai.",
+    "future-altered": "Thứ tự các lá bài trên đầu chồng bài rút đã bị thay đổi.",
+    "garbage-collected": "{name} đã kích hoạt Garbage Collection — {count} lá được gom vào bộ, xào cả bộ và chia lại mỗi người 1 lá.",
+    "kitten-drawn": "{name} đã rút phải Exploding Kitten!",
+    "kitten-defused": "{name} đã sử dụng Defuse để gỡ bom!",
+    "player-exploded": "{name} đã bị nổ tung!",
+    "player-quit": "{name} đã rời khỏi ván đấu.",
+    "turn-changed": "Đến lượt của {name}.",
+    "player-attacked": "{target} bị tấn công và phải thực hiện {count} lượt.",
+    "direction-reversed": "Chiều chơi đã bị đảo ngược.",
+    "game-over": "Trò chơi kết thúc.",
+    "game-over_winner": "{name} là chú mèo sống sót cuối cùng!",
+    "returned-to-lobby": "Quay lại phòng chờ — giữ nguyên danh sách người chơi, sẵn sàng cho ván mới."
+  }
+}

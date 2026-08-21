@@ -60,10 +60,18 @@ export function cardBackUrl(): string {
   return art['card-back']?.[0] ?? FALLBACK
 }
 
-export function cardName(cardId: CardId): string {
-  return CARD_BY_ID[cardId]?.name ?? cardId
-}
-
-export function cardText(cardId: CardId): string {
-  return CARD_BY_ID[cardId]?.text ?? ''
+/**
+ * Card name/label/rules text, localized. `catalog.json`'s own `name`/`label`/
+ * `text` fields are frozen Vietnamese and only still read server-side (until
+ * they are dropped for good once nothing depends on them there) — every
+ * display in `app/` goes through this instead, keyed by `CardId` under the
+ * `cards.*` namespace in `i18n/locales/*.json`.
+ */
+export function useCardText() {
+  const { t } = useI18n()
+  return {
+    cardName: (cardId: CardId): string => t(`cards.${cardId}.name`),
+    cardLabel: (cardId: CardId): string => t(`cards.${cardId}.label`),
+    cardText: (cardId: CardId): string => t(`cards.${cardId}.text`),
+  }
 }

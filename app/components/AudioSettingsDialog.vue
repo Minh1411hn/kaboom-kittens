@@ -1,12 +1,12 @@
 <template lang="pug">
 .audio-dialog(@click.self="emit('cancel')")
   section.audio-dialog__panel.panel(aria-modal="true" role="dialog")
-    h2.audio-dialog__title Cài đặt âm thanh
+    h2.audio-dialog__title {{ $t('table.audio_dialog.title') }}
 
     p.audio-dialog__error.error(v-if="!supported")
-      | Trình duyệt này không hỗ trợ gọi thoại. Hãy dùng Chrome, Edge hoặc Safari bản mới, và truy cập qua HTTPS.
+      | {{ $t('table.audio_dialog.unsupported') }}
     p.audio-dialog__error.error(v-else-if="!available")
-      | Voice chat chưa được cấu hình trên máy chủ này.
+      | {{ $t('table.audio_dialog.unavailable') }}
 
     template(v-else)
       .audio-dialog__control
@@ -14,20 +14,20 @@
           span
             Icon(aria-hidden="true" name="lucide:mic")
             |
-            | Micro
+            | {{ $t('table.audio_dialog.mic') }}
           button.audio-dialog__toggle(
             :class="{ 'audio-dialog__toggle--on': micOn, on: micOn }"
             type="button"
             @click="setMicOn(!micOn)"
-          ) {{ micOn ? "Đang bật" : "Đang tắt" }}
+          ) {{ micOn ? $t('table.audio_dialog.on') : $t('table.audio_dialog.off') }}
 
         label.audio-dialog__stack.stack
-          span.audio-dialog__sublabel.muted.small Thiết bị thu
+          span.audio-dialog__sublabel.muted.small {{ $t('table.audio_dialog.input_device') }}
           select.audio-dialog__select(:value="micDeviceId ?? ''" @change="setMicDevice($event.target.value || null)")
-            option(value="") Mặc định của hệ thống
-            option(v-for="device in devices" :key="device.deviceId" :value="device.deviceId") {{ device.label || "Micro không tên" }}
+            option(value="") {{ $t('table.audio_dialog.system_default') }}
+            option(v-for="device in devices" :key="device.deviceId" :value="device.deviceId") {{ device.label || $t('table.audio_dialog.unnamed_mic') }}
 
-        .audio-dialog__meter(:title="micOn ? 'Mức tín hiệu vào' : 'Micro đang tắt'")
+        .audio-dialog__meter(:title="micOn ? $t('table.audio_dialog.meter_on_title') : $t('table.audio_dialog.meter_off_title')")
           span.audio-dialog__meter-fill(:style="{ width: `${meter}%` }")
         p.audio-dialog__error.audio-dialog__error--small.error.small(v-if="micError") {{ micError }}
 
@@ -36,15 +36,15 @@
           span
             Icon(aria-hidden="true" name="lucide:volume-2")
             |
-            | Loa
+            | {{ $t('table.audio_dialog.speaker') }}
           button.audio-dialog__toggle(
             :class="{ 'audio-dialog__toggle--on': speakerOn, on: speakerOn }"
             type="button"
             @click="setSpeakerOn(!speakerOn)"
-          ) {{ speakerOn ? "Đang bật" : "Đang tắt" }}
+          ) {{ speakerOn ? $t('table.audio_dialog.on') : $t('table.audio_dialog.off') }}
 
         label.audio-dialog__stack.stack
-          span.audio-dialog__sublabel.muted.small Âm lượng
+          span.audio-dialog__sublabel.muted.small {{ $t('table.audio_dialog.volume') }}
           input.audio-dialog__slider(
             :disabled="!speakerOn"
             :value="volume"
@@ -56,12 +56,12 @@
           )
 
       p.audio-dialog__hint.muted.small
-        | Muốn tắt tiếng riêng một người? Bấm vào biểu tượng loa ở góc ảnh đại diện của họ.
+        | {{ $t('table.audio_dialog.per_person_hint') }}
       p.audio-dialog__error.audio-dialog__error--small.error.small(v-if="status === 'error'")
-        | Không kết nối được vào phòng thoại. Thử tải lại trang.
+        | {{ $t('table.audio_dialog.connect_error') }}
 
     .audio-dialog__actions
-      button.audio-dialog__btn.primary(type="button" @click="emit('cancel')") Xong
+      button.audio-dialog__btn.primary(type="button" @click="emit('cancel')") {{ $t('table.audio_dialog.done') }}
 </template>
 
 <script setup lang="ts">

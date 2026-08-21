@@ -52,7 +52,7 @@ export class TestClient {
         this.state = message.state
         this.hostId = message.hostId
       }
-      if (message.type === 'error') this.errors.push(message.message)
+      if (message.type === 'error') this.errors.push(message.code)
       this.waiters = this.waiters.filter((waiter) => !waiter(message))
     })
 

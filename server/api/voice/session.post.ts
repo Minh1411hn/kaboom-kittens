@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   if (!realtimeConfigured()) {
     // 503, not 500: the deployment simply has voice switched off, and the
     // client treats this as "hide the voice UI" rather than as a failure.
-    throw createError({ statusCode: 503, statusMessage: 'Voice chat chưa được cấu hình.' })
+    throw createError({ statusCode: 503, statusMessage: 'Voice chat is not configured.' })
   }
 
   const { sessionId } = await newSession()

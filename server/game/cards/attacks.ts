@@ -33,8 +33,8 @@ export const targetedAttack2x: CardDefinition = {
   requiresTarget: true,
   canPlay: ({ state, player, action }) => {
     const target = action.targetPlayerId ? playerById(state, action.targetPlayerId) : undefined
-    if (!target || !target.alive) return 'Hãy chọn một người chơi vẫn còn trong ván.'
-    if (target.id === player.id) return 'Bạn không thể chọn chính mình.'
+    if (!target || !target.alive) return { code: 'invalid-target' }
+    if (target.id === player.id) return { code: 'cant-target-self' }
     return true
   },
   resolve: ({ state, action }) => [

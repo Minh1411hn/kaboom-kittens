@@ -1,10 +1,10 @@
 import {
-  CARD_BY_ID,
   type CardId,
   type ComboKind,
   type GameState,
   type Player,
 } from '#shared/types/game'
+import type { Rejection } from '#shared/types/errors'
 import { isMatchingCatSet } from '#shared/cards/rules'
 import type { Effect } from '../effects'
 import type { CardDefinition, InteractionContext, ResolveContext } from '../registry'
@@ -25,7 +25,7 @@ function catCard(id: CardId): CardDefinition {
     id,
     playWindow: 'own-turn',
     nopeable: true,
-    canPlay: () => 'Các lá bài Mèo chỉ có tác dụng khi kết hợp thành combo 2, 3 hoặc 5 lá bài.',
+    canPlay: () => ({ code: 'cat-solo-not-allowed' }),
     resolve: () => [],
   }
 }
@@ -43,23 +43,23 @@ export function validateCombo(
   player: Player,
   targetPlayerId: string | null,
   namedCardId: CardId | null,
-): true | string {
+): true | Rejection {
   const target = targetPlayerId ? playerById(state, targetPlayerId) : undefined
 
   if (combo === 'five-different') {
-    if (ids.length !== 5) return 'Combo 5 lá cần chính xác 5 lá bài.'
-    if (new Set(ids).size !== 5) return 'Cả 5 lá bài phải thuộc 5 loại khác nhau.'
-    if (!state.discardPile.length) return 'Chồng bài đã đánh đang trống.'
+    if (ids.length !== 5) return { code: 'five-combo-wrong-count' }
+    if (new Set(ids).size !== 5) return { code: 'five-combo-mismatch' }
+    if (!state.discardPile.length) return { code: 'discard-empty' }
     return true
   }
 
   const needed = combo === 'pair' ? 2 : 3
-  if (ids.length !== needed) return `Combo đó cần chính xác ${needed} lá bài.`
-  if (!isMatchingCatSet(ids)) return 'Các lá bài không khớp nhau. Feral Cat có thể dùng để thay thế cho lá Mèo bất kỳ.'
-  if (!target || !target.alive) return 'Hãy chọn một người chơi vẫn còn trong ván.'
-  if (target.id === player.id) return 'Bạn không thể chọn chính mình.'
-  if (!target.hand.length) return `${target.nickname} không có lá bài nào trên tay.`
-  if (combo === 'triple' && !namedCardId) return 'Hãy chỉ định lá bài bạn muốn đòi.'
+  if (ids.length !== needed) return { code: 'combo-wrong-count', params: { needed } }
+  if (!isMatchingCatSet(ids)) return { code: 'cat-combo-mismatch' }
+  if (!target || !target.alive) return { code: 'invalid-target' }
+  if (target.id === player.id) return { code: 'cant-target-self' }
+  if (!target.hand.length) return { code: 'target-empty-handed', params: { name: target.nickname } }
+  if (combo === 'triple' && !namedCardId) return { code: 'named-card-required' }
   return true
 }
 
@@ -82,7 +82,7 @@ export function resolveCombo({ state, player, action }: ResolveContext): Effect[
           playerId: player.id,
           targetId: target.id,
           cardId: action.namedCardId,
-          message: `${player.nickname} đã đòi 1 lá ${CARD_BY_ID[action.namedCardId].name} từ ${target.nickname}.`,
+          combo: 'triple',
         },
         { t: 'DEMAND', fromPlayerId: target.id, toPlayerId: player.id, cardId: action.namedCardId },
       ]
@@ -98,7 +98,6 @@ export function resolveCombo({ state, player, action }: ResolveContext): Effect[
             cardId: action.cardId,
             requiredFrom: [player.id],
             context: { combo: 'five-different' },
-            prompt: 'Lấy 1 lá bài bất kỳ từ chồng bài đã đánh',
             cards: state.discardPile.map((c) => ({ ...c })),
           },
         },

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ALL_CARD_IDS, CARD_BY_ID, assertCatalogMatchesUnion } from '#shared/types/game'
+import en from '~~/i18n/locales/en.json'
+import vi from '~~/i18n/locales/vi.json'
 import { registerAllCards } from './cards'
 import { getCardDefinition } from './registry'
 
@@ -19,9 +21,23 @@ describe('catalog and registry stay in sync', () => {
     for (const id of ALL_CARD_IDS) {
       expect(() => getCardDefinition(id)).not.toThrow()
       const entry = CARD_BY_ID[id]
-      expect(entry.name.length).toBeGreaterThan(0)
-      expect(entry.text.length).toBeGreaterThan(0)
       expect(entry.color).toMatch(/^#[0-9a-f]{6}$/i)
+    }
+  })
+
+  it('has a localized name/label/text for every card, in every locale', () => {
+    const cardStrings: Record<string, Record<string, { name?: string; label?: string; text?: string }>> = {
+      en: en.cards,
+      vi: vi.cards,
+    }
+    for (const [locale, cards] of Object.entries(cardStrings)) {
+      for (const id of ALL_CARD_IDS) {
+        const entry = cards[id]
+        expect(entry, `${locale}.cards.${id}`).toBeDefined()
+        expect(entry!.name?.length, `${locale}.cards.${id}.name`).toBeGreaterThan(0)
+        expect(entry!.label?.length, `${locale}.cards.${id}.label`).toBeGreaterThan(0)
+        expect(entry!.text?.length, `${locale}.cards.${id}.text`).toBeGreaterThan(0)
+      }
     }
   })
 
@@ -60,7 +76,9 @@ describe('catalog and registry stay in sync', () => {
     // And each of those really does refuse a solo play in the engine.
     for (const id of notSolo) {
       const definition = getCardDefinition(id)
-      expect(typeof definition.canPlay?.({} as never)).toBe('string')
+      const result = definition.canPlay?.({} as never)
+      expect(result).not.toBe(true)
+      expect((result as { code?: string } | undefined)?.code).toEqual(expect.any(String))
     }
   })
 })

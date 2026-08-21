@@ -60,12 +60,6 @@ export type CardCategory = 'kitten' | 'defuse' | 'action' | 'cat'
 
 export interface CatalogEntry {
   id: CardId
-  name: string
-  /**
-   * Short effect phrase the card frame prints above the title, e.g. "Skip" or
-   * "Demand a card". Presentation only — the engine never reads it.
-   */
-  label: string
   category: CardCategory
   /**
    * Artwork folder when it is not the card's own id. The five named cat cards
@@ -76,7 +70,6 @@ export interface CatalogEntry {
   art?: string
   deck: { base?: number; min?: number; formula?: 'players-minus-1' | 'defuse' }
   color: string
-  text: string
   /**
    * Hints so the client can grey out illegal cards and prompt for a target
    * before sending. The server is still authoritative and revalidates
@@ -168,7 +161,10 @@ export interface PendingInteraction {
   responses: Record<string, InteractionResponse>
   /** Free-form, card-specific continuation data (target ids, drawn card, ...). */
   context: Record<string, unknown>
-  prompt: string
+  /** Who this prompt is done on behalf of (e.g. Favor's asker) — public,
+   *  unlike `context`, since it is already visible via the triggering
+   *  `card-played` event's `targetId`. */
+  forPlayerId?: string
   /** Cards to show in the prompt. Only sent to players in `requiredFrom`. */
   cards?: Card[]
   /** Upper bound for `choose-deck-position` (draw pile size). */
@@ -225,6 +221,7 @@ export interface GameEvent {
     | 'card-stolen'
     | 'card-given'
     | 'card-demanded'
+    | 'card-demand-failed'
     | 'card-taken-from-discard'
     | 'deck-shuffled'
     | 'future-seen'
@@ -233,6 +230,7 @@ export interface GameEvent {
     | 'kitten-drawn'
     | 'kitten-defused'
     | 'player-exploded'
+    | 'player-quit'
     | 'turn-changed'
     | 'player-attacked'
     | 'direction-reversed'
@@ -243,7 +241,7 @@ export interface GameEvent {
   cardId?: CardId
   cardIds?: CardId[]
   count?: number
-  message: string
+  combo?: ComboKind
 }
 
 // ---------------------------------------------------------------------------
@@ -252,7 +250,7 @@ export interface GameEvent {
 
 export type GameStatus = 'lobby' | 'playing' | 'over'
 
-export const STATE_VERSION = 4
+export const STATE_VERSION = 5
 
 export interface GameState {
   version: number

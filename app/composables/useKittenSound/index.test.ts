@@ -9,7 +9,6 @@ const event = (seq: number, type: GameEvent["type"], playerId: string): GameEven
   at: seq * 1000,
   type,
   playerId,
-  message: "",
 });
 
 function snapshot(overrides: Partial<PublicGameState> = {}): PublicGameState {

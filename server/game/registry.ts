@@ -7,6 +7,7 @@ import {
   type PendingInteraction,
   type Player,
 } from '#shared/types/game'
+import type { Rejection } from '#shared/types/errors'
 import type { Effect } from './effects'
 
 /**
@@ -35,8 +36,8 @@ export interface CardDefinition {
   /** Player must name a target when playing. Validated in `validatePlay`. */
   requiresTarget?: boolean
 
-  /** Extra, card-specific legality checks. Return a reason string to reject. */
-  canPlay?(ctx: PlayContext): true | string
+  /** Extra, card-specific legality checks. Return a Rejection to reject. */
+  canPlay?(ctx: PlayContext): true | Rejection
 
   /** Pure. Runs only after the Nope window closes in the card's favour. */
   resolve(ctx: ResolveContext): Effect[]
