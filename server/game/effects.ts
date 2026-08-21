@@ -1,7 +1,7 @@
 import {
-    CARD_BY_ID,
     type Card,
     type CardId,
+    type ComboKind,
     type GameState,
     type InteractionKind,
     type PendingInteraction,
@@ -61,11 +61,11 @@ export type Effect =
     | {
           t: "LOG";
           type: Parameters<typeof logEvent>[1]["type"];
-          message: string;
           playerId?: string;
           targetId?: string;
           cardId?: CardId;
           count?: number;
+          combo?: ComboKind;
       };
 
 export interface EffectEnv {
@@ -74,9 +74,6 @@ export interface EffectEnv {
     /** Monotonic id source for interactions; injected so the engine stays pure. */
     nextId: () => string;
 }
-
-const name = (state: GameState, playerId: string | null | undefined): string =>
-    (playerId && playerById(state, playerId)?.nickname) || "Someone";
 
 function removeFromHand(
     state: GameState,
@@ -129,7 +126,6 @@ export function applyEffect(
                         type: "kitten-drawn",
                         playerId: player.id,
                         cardId: card.id,
-                        message: `${player.nickname} đã rút phải Exploding Kitten!`,
                     },
                     now,
                 );
@@ -144,7 +140,6 @@ export function applyEffect(
                             type: "kitten-defused",
                             playerId: player.id,
                             cardId: "defuse",
-                            message: `${player.nickname} đã sử dụng Defuse để gỡ bom!`,
                         },
                         now,
                     );
@@ -160,7 +155,6 @@ export function applyEffect(
                                     kittenUid: card.uid,
                                     endTurnAfter: true,
                                 },
-                                prompt: "Bí mật đặt lại Exploding Kitten vào chồng bài rút",
                                 maxPosition: state.drawPile.length,
                             },
                         },
@@ -183,7 +177,6 @@ export function applyEffect(
                 {
                     type: "card-drawn",
                     playerId: player.id,
-                    message: `${player.nickname} đã rút 1 lá bài.`,
                 },
                 now,
             );
@@ -206,7 +199,6 @@ export function applyEffect(
                     type: "card-stolen",
                     playerId: to.id,
                     targetId: from.id,
-                    message: `${to.nickname} đã cướp 1 lá bài ngẫu nhiên từ ${from.nickname}.`,
                 },
                 now,
             );
@@ -228,7 +220,6 @@ export function applyEffect(
                     playerId: effect.fromPlayerId,
                     targetId: effect.toPlayerId,
                     cardId: card.id,
-                    message: `${name(state, effect.fromPlayerId)} đã đưa ${CARD_BY_ID[card.id].name} cho ${name(state, effect.toPlayerId)}.`,
                 },
                 now,
             );
@@ -244,11 +235,10 @@ export function applyEffect(
                 logEvent(
                     state,
                     {
-                        type: "card-demanded",
-                        playerId: to.id,
-                        targetId: from.id,
+                        type: "card-demand-failed",
+                        playerId: from.id,
+                        targetId: to.id,
                         cardId: effect.cardId,
-                        message: `${from.nickname} không có lá ${CARD_BY_ID[effect.cardId].name} nào.`,
                     },
                     now,
                 );
@@ -283,7 +273,6 @@ export function applyEffect(
                     type: "card-taken-from-discard",
                     playerId: player.id,
                     cardId: card.id,
-                    message: `${player.nickname} đã lấy lá ${CARD_BY_ID[card.id].name} từ chồng bài đã đánh.`,
                 },
                 now,
             );
@@ -297,7 +286,6 @@ export function applyEffect(
                 state,
                 {
                     type: "deck-shuffled",
-                    message: "Chồng bài rút đã được xào lại.",
                 },
                 now,
             );
@@ -319,8 +307,6 @@ export function applyEffect(
                 {
                     type: "future-altered",
                     count: picked.length,
-                    message:
-                        "Thứ tự các lá bài trên đầu chồng bài rút đã bị thay đổi.",
                 },
                 now,
             );
@@ -350,7 +336,6 @@ export function applyEffect(
                     type: "future-seen",
                     playerId: effect.playerId,
                     count: Math.min(effect.count, state.drawPile.length),
-                    message: `${name(state, effect.playerId)} đã nhìn trước tương lai.`,
                 },
                 now,
             );
@@ -387,7 +372,6 @@ export function applyEffect(
                     type: "player-attacked",
                     targetId: target.id,
                     count: state.turn.turnsRemaining,
-                    message: `${target.nickname} bị tấn công và phải thực hiện ${state.turn.turnsRemaining} lượt.`,
                 },
                 now,
             );
@@ -407,7 +391,6 @@ export function applyEffect(
                 state,
                 {
                     type: "direction-reversed",
-                    message: "Chiều chơi đã bị đảo ngược.",
                 },
                 now,
             );
@@ -431,7 +414,6 @@ export function applyEffect(
                 {
                     type: "player-exploded",
                     playerId: player.id,
-                    message: `${player.nickname} đã bị nổ tung!`,
                 },
                 now,
             );
@@ -468,7 +450,6 @@ export function applyEffect(
                         cardId: "garbage-collection",
                         requiredFrom: contributors.map((p) => p.id),
                         context: { starterId: effect.starterId },
-                        prompt: "Chọn 1 lá bài để bỏ vào tụ rác",
                     },
                 },
                 env,
@@ -523,7 +504,6 @@ export function applyEffect(
                     type: "garbage-collected",
                     playerId: effect.starterId,
                     count: dealCount,
-                    message: `${name(state, effect.starterId)} đã kích hoạt Garbage Collection — ${dealCount} lá được gom vào bộ, xào cả bộ và chia lại mỗi người 1 lá.`,
                 },
                 now,
             );
@@ -535,11 +515,11 @@ export function applyEffect(
                 state,
                 {
                     type: effect.type,
-                    message: effect.message,
                     playerId: effect.playerId,
                     targetId: effect.targetId,
                     cardId: effect.cardId,
                     count: effect.count,
+                    combo: effect.combo,
                 },
                 now,
             );
@@ -571,7 +551,6 @@ function afterTurnChange(state: GameState, now: number): void {
                 type: "turn-changed",
                 playerId: player.id,
                 count: state.turn.turnsRemaining,
-                message: `Đến lượt của ${player.nickname}.`,
             },
             now,
         );
@@ -592,9 +571,6 @@ export function checkGameOver(state: GameState, now: number): void {
         {
             type: "game-over",
             playerId: state.winnerId ?? undefined,
-            message: state.winnerId
-                ? `${playerById(state, state.winnerId)?.nickname} là chú mèo sống sót cuối cùng!`
-                : "Trò chơi kết thúc.",
         },
         now,
     );

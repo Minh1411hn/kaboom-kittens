@@ -1,22 +1,22 @@
 <template lang="pug">
 .profile-dialog(@click.self="emit('cancel')")
   section.profile-dialog__panel.panel(aria-modal="true" role="dialog")
-    h2.profile-dialog__title Chỉnh sửa hồ sơ
+    h2.profile-dialog__title {{ $t('app.profile_dialog.title') }}
 
     label.profile-dialog__field.stack
-      span.profile-dialog__label.muted Biệt danh
+      span.profile-dialog__label.muted {{ $t('app.nickname_label') }}
       input.profile-dialog__input(
         v-model="nicknameValue"
         autocomplete="nickname"
         autofocus
         maxlength="16"
-        placeholder="Hoàng Thượng"
+        :placeholder="$t('app.nickname_placeholder')"
       )
 
     p.profile-dialog__error.error(v-if="error") {{ error }}
 
     .profile-dialog__field.stack
-      span.profile-dialog__label.muted Ảnh đại diện
+      span.profile-dialog__label.muted {{ $t('app.profile_dialog.avatar_label') }}
       .profile-dialog__avatar-grid
         button.profile-dialog__avatar-choice(
           v-for="id in avatarIds"
@@ -28,10 +28,10 @@
           img.profile-dialog__avatar-img(:src="avatarUrl(id)" alt="")
 
     .profile-dialog__actions
-      button.profile-dialog__btn(@click="emit('cancel')") Hủy
+      button.profile-dialog__btn(@click="emit('cancel')") {{ $t('app.cancel') }}
       PlaqueButton(
         :disabled="saving"
-        :title="saving ? 'Đang lưu…' : 'Lưu'"
+        :title="saving ? $t('app.profile_dialog.saving') : $t('app.profile_dialog.save')"
         compact
         icon="lucide:save"
         type="button"
@@ -59,16 +59,17 @@
   const error = ref("")
 
   const avatarIds = allAvatarIds()
+  const { t } = useI18n()
 
   function save() {
     if (props.saving) return
     const trimmed = nicknameValue.value.trim()
     if (trimmed.length < 2) {
-      error.value = "Biệt danh phải có ít nhất 2 ký tự."
+      error.value = t("app.profile_dialog.nickname_too_short")
       return
     }
     if (trimmed.length > 16) {
-      error.value = "Biệt danh tối đa 16 ký tự."
+      error.value = t("app.profile_dialog.nickname_too_long")
       return
     }
     error.value = ""

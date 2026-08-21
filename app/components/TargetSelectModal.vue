@@ -6,7 +6,7 @@
       p.target-select__subtitle {{ subtitle }}
 
     .target-select__section
-      label.target-select__section-label Danh sách đối thủ:
+      label.target-select__section-label {{ $t('table.target_select.opponent_list') }}
       .target-select__grid(v-if="targetablePlayers.length")
         button.target-select__player-card(
           v-for="p in targetablePlayers"
@@ -17,16 +17,16 @@
         )
           PlayerAvatar(:alive="p.alive" :avatar-id="p.avatarId" :name="p.nickname" :size="40")
           .target-select__player-info
-            span.target-select__card-count {{ p.handCount }} lá bài
+            span.target-select__card-count {{ $t('table.target_select.hand_count', { count: p.handCount }) }}
           span.target-select__check-icon(v-if="selectedTargetId === p.id" aria-hidden="true")
             Icon(name="lucide:check")
-      p.target-select__empty(v-else) Không có đối thủ nào khả dụng để chọn.
+      p.target-select__empty(v-else) {{ $t('table.target_select.no_opponents') }}
 
     // Demand specific card section for Triple Cat combo
     .target-select__demand(v-if="needsNamedCard")
       .target-select__demand-header
-        label.target-select__section-label Chọn loại lá bài muốn đòi:
-        input.target-select__search-input(v-model="searchCardQuery" placeholder="Tìm kiếm loại bài..." type="search")
+        label.target-select__section-label {{ $t('table.target_select.choose_card_label') }}
+        input.target-select__search-input(v-model="searchCardQuery" :placeholder="$t('table.target_select.search_placeholder')" type="search")
 
       .target-select__card-grid
         button.target-select__card-choice(
@@ -41,9 +41,9 @@
           span.target-select__card-name {{ card.name }}
 
     footer.target-select__actions
-      button.target-select__cancel-btn(type="button" @click="emit('cancel')") Hủy bỏ
+      button.target-select__cancel-btn(type="button" @click="emit('cancel')") {{ $t('table.target_select.cancel') }}
       button.target-select__confirm-btn.primary(:disabled="!canConfirm" type="button" @click="confirm")
-        | {{ isCatTriple ? "Đòi bài" : isCatPair ? "Cướp bài" : isTargetedAttack ? "Tấn công" : isFavor ? "Yêu cầu" : "Xác nhận" }}
+        | {{ isCatTriple ? $t('table.target_select.confirm_demand') : isCatPair ? $t('table.target_select.confirm_steal') : isTargetedAttack ? $t('table.target_select.confirm_attack') : isFavor ? $t('table.target_select.confirm_favor') : $t('table.target_select.confirm_default') }}
 </template>
 
 <script setup lang="ts">
@@ -69,25 +69,28 @@
   const selectedNamedCardId = ref<CardId | null>(props.initialNamedCardId ?? null)
   const searchCardQuery = ref("")
 
+  const { t } = useI18n()
+  const { cardName, cardLabel, cardText } = useCardText()
+
   const isCatPair = computed(() => props.combo === "pair")
   const isCatTriple = computed(() => props.combo === "triple")
   const isFavor = computed(() => props.cardId === "favor")
   const isTargetedAttack = computed(() => props.cardId === "targeted-attack-2x")
 
   const title = computed(() => {
-    if (isCatPair.value) return "Cướp 1 lá bài ngẫu nhiên"
-    if (isCatTriple.value) return "Đòi 1 lá bài cụ thể"
-    if (isFavor.value) return "Yêu cầu đối thủ tặng bài"
-    if (isTargetedAttack.value) return "Tấn công có chủ đích"
-    return "Chọn đối thủ mục tiêu"
+    if (isCatPair.value) return t("table.target_select.title_pair")
+    if (isCatTriple.value) return t("table.target_select.title_triple")
+    if (isFavor.value) return t("table.target_select.title_favor")
+    if (isTargetedAttack.value) return t("table.target_select.title_targeted_attack")
+    return t("table.target_select.title_default")
   })
 
   const subtitle = computed(() => {
-    if (isCatPair.value) return "Chọn đối thủ bạn muốn cướp bài ngẫu nhiên:"
-    if (isCatTriple.value) return "Chọn đối thủ và loại lá bài bạn muốn đòi:"
-    if (isFavor.value) return "Chọn người chơi phải đưa cho bạn 1 lá bài tự chọn:"
-    if (isTargetedAttack.value) return "Chọn người chơi phải nhận 2 lượt đi tiếp theo:"
-    return "Chọn một người chơi để thi triển lá bài:"
+    if (isCatPair.value) return t("table.target_select.subtitle_pair")
+    if (isCatTriple.value) return t("table.target_select.subtitle_triple")
+    if (isFavor.value) return t("table.target_select.subtitle_favor")
+    if (isTargetedAttack.value) return t("table.target_select.subtitle_targeted_attack")
+    return t("table.target_select.subtitle_default")
   })
 
   /**
@@ -103,11 +106,9 @@
 
   const cardOptions = computed(() => {
     const query = searchCardQuery.value.trim().toLowerCase()
-    return CARD_CATALOG.filter((c) => {
-      if (c.id === "exploding-kitten") return false
-      if (!query) return true
-      return c.name.toLowerCase().includes(query) || c.label.toLowerCase().includes(query)
-    })
+    return CARD_CATALOG.filter((c) => c.id !== "exploding-kitten")
+      .map((c) => ({ id: c.id, name: cardName(c.id), label: cardLabel(c.id), text: cardText(c.id) }))
+      .filter((c) => !query || c.name.toLowerCase().includes(query) || c.label.toLowerCase().includes(query))
   })
 
   const canConfirm = computed(() => {

@@ -12,7 +12,7 @@
       @click="!item.isLeaving && !item.isHeld && $emit('toggle', item.uid)"
     )
       CardImage(:card-id="item.card.id" :selected="selected.includes(item.uid)" :uid="item.uid" :width="`${CARD_W}px`")
-  p.hand-fan__empty(v-if="!slots.length") Không còn lá bài nào trên tay.
+  p.hand-fan__empty(v-if="!slots.length") {{ $t('table.hand_fan.empty') }}
 </template>
 
 <script setup lang="ts">

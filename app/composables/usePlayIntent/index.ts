@@ -20,6 +20,9 @@ export function usePlayIntent(
   state: Ref<PublicGameState | null>,
   isYourTurn: Ref<boolean>,
 ) {
+  const { t } = useI18n()
+  const { cardName } = useCardText()
+
   return computed<PlayIntent>(() => {
     const cards = selected.value
     const none: PlayIntent = {
@@ -37,18 +40,18 @@ export function usePlayIntent(
     if (cards.length === 1) {
       const entry = CARD_BY_ID[ids[0]!]
       if (!entry.play.solo) {
-        return { ...none, reason: `${entry.name} chỉ có thể đánh theo combo 2, 3 hoặc 5 lá bài.` }
+        return { ...none, reason: t('errors.card-combo-only', { card: cardName(entry.id) }) }
       }
       // Nope is the one card playable off-turn, and only into an open window.
       if (entry.play.anytime) {
         const top = state.value?.actionStack.at(-1)
-        if (!top) return { ...none, reason: 'Hiện tại không có hành động nào để Nope.' }
+        if (!top) return { ...none, reason: t('errors.nope-nothing-to-nope') }
         if (top.playerId === state.value?.you?.id) {
-          return { ...none, reason: 'Bạn không thể tự Nope lá bài của chính mình.' }
+          return { ...none, reason: t('errors.nope-self') }
         }
         return { ok: true, reason: '', combo: null, needsTarget: false, needsNamedCard: false }
       }
-      if (!isYourTurn.value) return { ...none, reason: 'Hãy đợi đến lượt của bạn.' }
+      if (!isYourTurn.value) return { ...none, reason: t('errors.not-your-turn') }
       return {
         ok: true,
         reason: '',
@@ -60,16 +63,16 @@ export function usePlayIntent(
 
     if (!combo) {
       if (cards.length === 2 || cards.length === 3) {
-        return { ...none, reason: 'Chỉ áp dụng cho các lá bài Mèo cùng loại — Feral Cat có thể thay thế cho bất kỳ lá bài Mèo nào.' }
+        return { ...none, reason: t('errors.cat-combo-mismatch') }
       }
-      if (cards.length === 5) return { ...none, reason: 'Cả 5 lá bài phải thuộc 5 loại khác nhau.' }
-      return { ...none, reason: 'Hãy chọn 2, 3 hoặc 5 lá bài để tạo combo.' }
+      if (cards.length === 5) return { ...none, reason: t('errors.five-combo-mismatch') }
+      return { ...none, reason: t('errors.combo-select-count') }
     }
 
-    if (!isYourTurn.value) return { ...none, reason: 'Hãy đợi đến lượt của bạn.' }
+    if (!isYourTurn.value) return { ...none, reason: t('errors.not-your-turn') }
 
     if (combo === 'five-different' && !state.value?.discardCount) {
-      return { ...none, reason: 'Chồng bài đã đánh đang trống.' }
+      return { ...none, reason: t('errors.discard-empty') }
     }
 
     return {

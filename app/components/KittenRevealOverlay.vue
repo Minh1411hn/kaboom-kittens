@@ -30,8 +30,11 @@
     defused: boolean
   }>()
 
+  const { t } = useI18n()
   const caption = computed(() =>
-    props.defused ? `${props.playerName} đã rút phải Exploding Kitten!` : `${props.playerName} nổ tung!`
+    props.defused
+      ? t("table.kitten_reveal.drew", { name: props.playerName })
+      : t("table.kitten_reveal.exploded", { name: props.playerName })
   )
 </script>
 

@@ -7,6 +7,7 @@ import {
   type CardId,
   type DeckOverrides,
 } from '#shared/types/game'
+import type { Rejection } from '#shared/types/errors'
 import { shuffle, type RngHolder } from './rng'
 
 /**
@@ -64,14 +65,14 @@ export function deckComposition(players: number, overrides: DeckOverrides = NO_O
  * pile if the draw pile ever empties, and every player is dealt a Defuse
  * regardless of the pool size).
  */
-export function validateDeckOverrides(overrides: DeckOverrides): string | undefined {
+export function validateDeckOverrides(overrides: DeckOverrides): Rejection | undefined {
   for (const [id, count] of Object.entries(overrides)) {
-    if (!ALL_CARD_IDS.includes(id as CardId)) return `Không có lá bài nào tên "${id}".`
+    if (!ALL_CARD_IDS.includes(id as CardId)) return { code: 'unknown-card', params: { id } }
     if (typeof count !== 'number' || !Number.isInteger(count)) {
-      return 'Số lượng bài phải là số nguyên.'
+      return { code: 'count-not-integer' }
     }
     if (count < 0 || count > DECK_COUNT_MAX) {
-      return `Số lượng mỗi loại bài phải nằm trong khoảng 0–${DECK_COUNT_MAX}.`
+      return { code: 'count-out-of-range', params: { max: DECK_COUNT_MAX } }
     }
   }
   return undefined
@@ -88,10 +89,10 @@ export function dealableCount(players: number, overrides: DeckOverrides = NO_OVE
 }
 
 /** Blocks a start that could not physically deal everyone an opening hand. */
-export function validateDealable(players: number, overrides: DeckOverrides = NO_OVERRIDES): string | undefined {
+export function validateDealable(players: number, overrides: DeckOverrides = NO_OVERRIDES): Rejection | undefined {
   const needed = players * HAND_SIZE
   if (dealableCount(players, overrides) < needed) {
-    return `Bộ bài không đủ để chia — cần ít nhất ${needed} lá (chưa tính Mèo nổ và Gỡ bom).`
+    return { code: 'deck-not-enough', params: { needed } }
   }
   return undefined
 }

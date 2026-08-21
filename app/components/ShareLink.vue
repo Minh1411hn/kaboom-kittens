@@ -1,13 +1,13 @@
 <template lang="pug">
 .share-link
-  input.share-link__input(:value="link" aria-label="Liên kết phòng" readonly @focus="$event.target.select()")
+  input.share-link__input(:value="link" :aria-label="$t('table.share_link.aria_label')" readonly @focus="$event.target.select()")
   button.share-link__button(@click="copy")
     template(v-if="copied")
       Icon(aria-hidden="true" name="lucide:check")
       |
-      | Đã sao chép
+      | {{ $t('table.share_link.copied') }}
     template(v-else)
-      | Sao chép link
+      | {{ $t('table.share_link.copy') }}
 </template>
 
 <script setup lang="ts">

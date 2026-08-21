@@ -1,4 +1,4 @@
-import { CARD_BY_ID, type GameState } from '#shared/types/game'
+import type { GameState } from '#shared/types/game'
 import { resolveCombo } from './cards/cats'
 import { applyEffects, type EffectEnv } from './effects'
 import { getCardDefinition } from './registry'
@@ -49,10 +49,6 @@ export function resolveActionStack(state: GameState, env: EffectEnv): void {
         playerId: base.playerId,
         cardId: base.cardId,
         count: nopeCount,
-        message:
-          nopeCount === 1
-            ? `${player.nickname} bị Nope chặn lá ${CARD_BY_ID[base.cardId].name}!`
-            : `${player.nickname} bị Nope chặn lá ${CARD_BY_ID[base.cardId].name} (qua ${nopeCount} lần Nope chồng lên nhau)!`,
       },
       env.now,
     )
@@ -67,7 +63,6 @@ export function resolveActionStack(state: GameState, env: EffectEnv): void {
         playerId: base.playerId,
         cardId: base.cardId,
         count: nopeCount,
-        message: `Các lá Nope đã tự triệt tiêu nhau — ${CARD_BY_ID[base.cardId].name} được kích hoạt thành công!`,
       },
       env.now,
     )

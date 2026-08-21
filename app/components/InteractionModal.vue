@@ -1,7 +1,7 @@
 <template lang="pug">
 .interaction-modal
   section.interaction-modal__panel.panel(aria-modal="true" role="dialog")
-    h2.interaction-modal__title {{ interaction.prompt }}
+    h2.interaction-modal__title {{ title }}
 
     // Shared countdown so everyone sees the same clock
     .interaction-modal__clock(
@@ -43,12 +43,12 @@
                 :uid="card.uid"
                 width="112px"
               )
-            p.muted(v-if="!choices.length") Không có lá bài nào để chọn.
+            p.muted(v-if="!choices.length") {{ $t('table.interaction.no_cards') }}
 
           // Instant-select (Garbage Collection): tap = confirm, no button
           template(v-if="instantSelect")
-            p.interaction-modal__note.muted(v-if="chosenUid") Chạm lá khác để đổi lựa chọn.
-            p.interaction-modal__note.muted(v-else) Chạm 1 lá bài để chọn.
+            p.interaction-modal__note.muted(v-if="chosenUid") {{ $t('table.interaction.tap_to_change') }}
+            p.interaction-modal__note.muted(v-else) {{ $t('table.interaction.tap_one') }}
           // Everyone else: pick then confirm
           template(v-else)
             button.interaction-modal__submit.primary(
@@ -56,11 +56,11 @@
               :disabled="!canSubmit"
               type="button"
               @click="submit"
-            ) Xác nhận
-            p.interaction-modal__note.muted(v-else) Đã chọn — đang chờ người khác…
+            ) {{ $t('table.interaction.confirm') }}
+            p.interaction-modal__note.muted(v-else) {{ $t('table.interaction.chosen_waiting') }}
 
         template(v-else)
-          p.interaction-modal__waiting.muted Đang chờ {{ waitingOn.join(", ") || "…" }} chọn bài…
+          p.interaction-modal__waiting.muted {{ $t('table.interaction.waiting_on', { names: waitingOn.join(', ') || '…' }) }}
           .interaction-modal__spinner
 </template>
 
@@ -80,6 +80,16 @@
   }>()
 
   const emit = defineEmits<{ submit: [response: InteractionResponse] }>()
+
+  const { t } = useI18n()
+
+  const title = computed(() => {
+    if (props.interaction.kind === "choose-card-from-hand") {
+      const forPlayer = props.players.find((p) => p.id === props.interaction.forPlayerId)
+      return t("interactions.choose-card-from-hand", { name: forPlayer?.nickname ?? "…" })
+    }
+    return t(`interactions.${props.interaction.kind}`)
+  })
 
   const chosenUid = ref<string | null>(null)
   /** True once *this* client has locked in a choice (optimistic, before the

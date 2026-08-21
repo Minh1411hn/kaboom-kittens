@@ -10,6 +10,7 @@ import type { GameEvent, PublicGameState } from '#shared/types/game'
  * there is no replay buffer or patch stream to get out of sync.
  */
 export function useGameSocket() {
+  const { t } = useI18n()
   const state = useState<PublicGameState | null>('kk:state', () => null)
   const hostId = useState<string>('kk:hostId', () => '')
   const roomName = useState<string>('kk:roomName', () => '')
@@ -110,15 +111,17 @@ export function useGameSocket() {
         }
         break
 
-      case 'error':
-        error.value = message.message
+      case 'error': {
+        const text = t(`errors.${message.code}`, message.params ?? {})
+        error.value = text
         setTimeout(() => {
-          if (error.value === message.message) error.value = ''
+          if (error.value === text) error.value = ''
         }, 4000)
         break
+      }
 
       case 'kicked':
-        kicked.value = message.reason
+        kicked.value = t(`errors.${message.code}`)
         wantOpen.value = false
         socket.value?.close()
         break

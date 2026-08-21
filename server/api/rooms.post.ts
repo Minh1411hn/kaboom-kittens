@@ -5,13 +5,13 @@ import { sessionFromEvent } from '../services/sessions'
 
 export default defineEventHandler(async (event) => {
   const session = await sessionFromEvent(event)
-  if (!session) throw createError({ statusCode: 401, statusMessage: 'Pick a nickname first.' })
+  if (!session) throw createError({ statusCode: 401, statusMessage: 'Unauthorized', data: { code: 'no-session' } })
 
   const body = await readBody<{ name?: string }>(event)
   const fallback = `${session.nickname}'s room`
   const parsed = roomNameSchema.safeParse(body?.name?.trim() || fallback)
   if (!parsed.success) {
-    throw createError({ statusCode: 400, statusMessage: 'That room name will not work.' })
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request', data: { code: 'room-name-invalid' } })
   }
 
   // The creator is the host; players actually join over the socket.

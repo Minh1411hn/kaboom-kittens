@@ -11,7 +11,7 @@ function alterTheFuture(id: 'alter-the-future-3x' | 'alter-the-future-5x', count
     playWindow: 'own-turn',
     nopeable: true,
 
-    canPlay: ({ state }) => (state.drawPile.length ? true : 'Chồng bài rút đang trống.'),
+    canPlay: ({ state }) => (state.drawPile.length ? true : { code: 'draw-pile-empty' }),
 
     resolve: ({ state, player }) => {
       const top = state.drawPile.slice(0, count)
@@ -24,7 +24,6 @@ function alterTheFuture(id: 'alter-the-future-3x' | 'alter-the-future-5x', count
             cardId: id,
             requiredFrom: [player.id],
             context: {},
-            prompt: `Sắp xếp lại ${top.length} lá bài trên đầu chồng bài rút`,
             cards: top.map((c) => ({ ...c })),
           },
         },

@@ -10,9 +10,9 @@ export const favor: CardDefinition = {
 
   canPlay: ({ state, player, action }) => {
     const target = action.targetPlayerId ? playerById(state, action.targetPlayerId) : undefined
-    if (!target || !target.alive) return 'Hãy chọn một người chơi vẫn còn trong ván.'
-    if (target.id === player.id) return 'Bạn không thể tự xin viện trợ từ chính mình.'
-    if (!target.hand.length) return `${target.nickname} không có lá bài nào trên tay để đưa.`
+    if (!target || !target.alive) return { code: 'invalid-target' }
+    if (target.id === player.id) return { code: 'cant-favor-self' }
+    if (!target.hand.length) return { code: 'target-empty-handed', params: { name: target.nickname } }
     return true
   },
 
@@ -27,7 +27,7 @@ export const favor: CardDefinition = {
           cardId: 'favor',
           requiredFrom: [target.id],
           context: { toPlayerId: player.id },
-          prompt: `Chọn 1 lá bài để đưa cho ${player.nickname}`,
+          forPlayerId: player.id,
           cards: target.hand.map((c) => ({ ...c })),
         },
       },

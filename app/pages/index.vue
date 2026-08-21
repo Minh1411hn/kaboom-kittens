@@ -3,6 +3,7 @@ import type { RoomSummary } from "#shared/protocol/messages";
 
 const { nickname, avatarId, ready, load, setProfile } = useSession();
 const { rooms, connect, send, status, error, resetRoom } = useGameSocket();
+const { t } = useI18n();
 
 const creating = ref(false);
 const profileDialogOpen = ref(false);
@@ -55,9 +56,11 @@ async function createRoom() {
         });
         await navigateTo(`/room/${roomId}`);
     } catch (caught) {
-        error.value =
-            (caught as { statusMessage?: string }).statusMessage ??
-            "Không thể tạo phòng chơi.";
+        const code = (caught as { data?: { data?: { code?: string } } }).data
+            ?.data?.code;
+        error.value = code
+            ? t(`errors.${code}`)
+            : t("errors.room-create-failed");
     } finally {
         creating.value = false;
     }
@@ -69,9 +72,9 @@ const openRooms = computed(() =>
 
 function since(at: number): string {
     const minutes = Math.round((Date.now() - at) / 60000);
-    if (minutes < 1) return "vừa xong";
-    if (minutes < 60) return `${minutes} phút trước`;
-    return `${Math.round(minutes / 60)} giờ trước`;
+    if (minutes < 1) return t("app.time_just_now");
+    if (minutes < 60) return t("app.time_minutes_ago", { minutes });
+    return t("app.time_hours_ago", { hours: Math.round(minutes / 60) });
 }
 </script>
 
@@ -93,10 +96,11 @@ function since(at: number): string {
                     </h1>
                 </div>
                 <div class="row profile-row">
+                    <LocaleSwitcher />
                     <span
                         class="dot"
                         :class="status"
-                        :title="`Trạng thái kết nối: ${status}`"
+                        :title="t('app.connection_status', { status })"
                     />
                     <CurrentUserButton
                         :nickname="nickname"
@@ -123,29 +127,29 @@ function since(at: number): string {
                     :disabled="creating"
                     @click="createRoom"
                 >
-                    Bắt đầu ván mới
+                    {{ t('app.start_new_game') }}
                 </button>
             </div>
 
             <section class="panel">
-                <h2>Phòng đang mở</h2>
+                <h2>{{ t('app.open_rooms') }}</h2>
                 <p v-if="!openRooms.length" class="muted">
-                    Chưa có phòng nào. Hãy tạo phòng mới và chia sẻ liên kết cho bạn bè!
+                    {{ t('app.no_rooms') }}
                 </p>
                 <ul v-else class="rooms">
                     <li v-for="room in openRooms" :key="room.id" class="room">
                         <div class="room-main">
                             <strong>{{ room.name }}</strong>
                             <span class="muted small">
-                                Chủ phòng: {{ room.hostNickname }} ·
+                                {{ t('app.host_label', { name: room.hostNickname }) }}
                                 {{ since(room.createdAt) }}
                             </span>
                         </div>
                         <span class="badge" :class="room.status">
                             {{
                                 room.status === "playing"
-                                    ? "Đang chơi"
-                                    : "Đang chờ"
+                                    ? t('app.status_playing')
+                                    : t('app.status_waiting')
                             }}
                         </span>
                         <span
@@ -164,7 +168,7 @@ function since(at: number): string {
                                 "
                             >
                                 {{
-                                    room.status === "playing" ? "Xem" : "Tham gia"
+                                    room.status === "playing" ? t('app.room_view') : t('app.room_join')
                                 }}
                             </button>
                         </NuxtLink>

@@ -16,19 +16,21 @@ aside.event-log.panel
           aria-hidden="true"
         )
         span.event-log__event-text {{ entry.text }}
-    p.event-log__empty(v-if="!entries.length") Bàn chơi đang yên ắng.
+    p.event-log__empty(v-if="!entries.length") {{ $t('table.event_log.empty') }}
 
   form.event-log__say(@submit.prevent="say")
-    input.event-log__input(v-model="draft" autocomplete="off" maxlength="200" placeholder="Nhập tin nhắn…")
-    button.event-log__btn(:disabled="!draft.trim()" type="submit") Gửi
+    input.event-log__input(v-model="draft" autocomplete="off" maxlength="200" :placeholder="$t('table.event_log.placeholder')")
+    button.event-log__btn(:disabled="!draft.trim()" type="submit") {{ $t('table.event_log.send') }}
 </template>
 
 <script setup lang="ts">
   import type { ChatMessage } from "#shared/protocol/messages"
-  import type { GameEvent } from "#shared/types/game"
+  import type { GameEvent, PublicPlayer } from "#shared/types/game"
 
-  const props = defineProps<{ events: GameEvent[]; chat: ChatMessage[] }>()
+  const props = defineProps<{ events: GameEvent[]; chat: ChatMessage[]; players: PublicPlayer[] }>()
   const emit = defineEmits<{ say: [text: string] }>()
+
+  const { eventText } = useEventText()
 
   const draft = ref("")
   const scroller = ref<HTMLElement | null>(null)
@@ -37,6 +39,7 @@ aside.event-log.panel
   const EVENT_ICON: Partial<Record<GameEvent["type"], string>> = {
     "kitten-drawn": "lucide:bomb",
     "player-exploded": "lucide:bomb",
+    "player-quit": "lucide:log-out",
     "kitten-defused": "lucide:shield-check",
     "game-over": "lucide:trophy",
     "action-noped": "lucide:ban",
@@ -52,7 +55,7 @@ aside.event-log.panel
         key: `e${event.seq}`,
         at: event.at,
         kind: "event" as const,
-        text: event.message,
+        text: eventText(event, props.players),
         type: event.type as GameEvent["type"] | undefined,
         nickname: ""
       })),

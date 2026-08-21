@@ -3,28 +3,27 @@
   section.see-future__panel.panel(aria-modal="true" role="dialog")
     header.see-future__header
       h2.see-future__title
-        | {{ editable ? "Sắp xếp lại tương lai (Alter the Future)" : "Nhìn thấu tương lai (See the Future)" }}
+        | {{ editable ? $t('table.see_future.alter_title') : $t('table.see_future.see_title') }}
       p.see-future__subtitle
-        | {{ editable ? "Kéo để sắp xếp lại thứ tự các lá bài trên đầu chồng bài rút:" : "Thứ tự các lá bài trên đầu chồng bài rút:" }}
+        | {{ editable ? $t('table.see_future.alter_subtitle') : $t('table.see_future.see_subtitle') }}
 
     .see-future__choices(ref="choicesEl" :class="{ 'see-future__choices--editable': editable }")
       .see-future__choice-item(v-for="(card, index) in order" :key="card.uid || index")
         span.see-future__rank
-          | {{ index === 0 ? "Top #1 (Trên cùng)" : `#${index + 1}` }}
+          | {{ index === 0 ? $t('table.see_future.top_rank') : `#${index + 1}` }}
         .see-future__card-wrapper
           CardImage(:card-id="card.id" :uid="card.uid" width="100%")
         span.see-future__label {{ cardName(card.id) }}
 
-    p.see-future__empty.muted(v-if="!cards.length") Không có lá bài nào.
+    p.see-future__empty.muted(v-if="!cards.length") {{ $t('table.see_future.empty') }}
 
     footer.see-future__footer
-      button.see-future__btn.primary(v-if="!editable" type="button" @click="emit('close')") Đã rõ
-      button.see-future__btn.primary(v-else type="button" @click="emit( 'submit', order.map((c) => c.uid), )") Xác nhận thứ tự
+      button.see-future__btn.primary(v-if="!editable" type="button" @click="emit('close')") {{ $t('table.see_future.got_it') }}
+      button.see-future__btn.primary(v-else type="button" @click="emit( 'submit', order.map((c) => c.uid), )") {{ $t('table.see_future.confirm_order') }}
 </template>
 
 <script setup lang="ts">
   import type { Card } from "#shared/types/game"
-  import { CARD_CATALOG } from "#shared/types/game"
   import { useSortable } from "@vueuse/integrations/useSortable"
 
   const props = withDefaults(
@@ -47,9 +46,7 @@
     submit: [uids: string[]]
   }>()
 
-  function cardName(id: string): string {
-    return CARD_CATALOG.find((c) => c.id === id)?.name ?? id
-  }
+  const { cardName } = useCardText()
 
   // --- editable / drag-to-reorder ---------------------------------------------
   //
