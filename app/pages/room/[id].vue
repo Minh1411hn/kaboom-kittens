@@ -174,7 +174,7 @@
             CommonButton(
               :disabled="!intent.ok"
               :label="selectedUids.length ? $t('table.play_button_count', { count: selectedUids.length }) : $t('table.play_button')"
-              size="sm"
+              size="md"
               variant="gold"
               @click="play"
             )
@@ -182,7 +182,7 @@
             CommonButton(
               :disabled="!selectedUids.length"
               :label="$t('table.deselect')"
-              size="sm"
+              size="md"
               variant="ghost"
               @click="selectedUids = []"
             )

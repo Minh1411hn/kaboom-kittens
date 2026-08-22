@@ -189,7 +189,7 @@ button:focus-visible {
   background: var(--cream-card);
   border: var(--outline-width) solid var(--ink);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   color: var(--ink);
   padding: 1rem 1.1rem;
 }

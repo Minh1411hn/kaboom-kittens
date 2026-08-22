@@ -79,7 +79,7 @@ button.btn(
     white-space: nowrap;
     border: $outline-width solid $ink;
     border-radius: 999px;
-    box-shadow: 0 4px 0 $ink;
+    box-shadow: $shadow-sm;
     cursor: pointer;
     transition:
       transform 0.08s ease,
@@ -131,7 +131,7 @@ button.btn(
     &--md {
       padding: 0.6rem 1.3rem;
       font-size: 1rem;
-      box-shadow: $shadow-sm;
+      box-shadow: $shadow-xs;
     }
 
     &--lg {
