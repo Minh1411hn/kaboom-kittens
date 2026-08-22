@@ -274,7 +274,7 @@
       button.log-dock__toggle(@click="logOpen = !logOpen")
         | {{ logOpen ? $t("table.log.hide") : $t("table.log.show") }}
         Icon(:name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true")
-      EventLog(v-show="logOpen" :chat="chat" :events="pending" @say="say")
+      EventLog(v-show="logOpen" :chat="chat" :events="pending" :players="state.players" @say="say")
 
     InteractionModal(
       v-if="state?.interaction && !['reorder-cards', 'choose-deck-position'].includes(state.interaction.kind)"
