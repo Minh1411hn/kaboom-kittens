@@ -23,6 +23,7 @@
     "time_hours_ago": "{hours}h ago",
     "nickname_label": "Nickname",
     "nickname_placeholder": "Your Majesty",
+    "language_label": "Language",
     "nickname_gate": {
       "subtitle": "Online Exploding Kittens for 2–10 players. Pick a nickname to start.",
       "processing": "Working…",

@@ -10,6 +10,7 @@
       @profile-click="profileDialogOpen = true"
     )
       template(#actions)
+        LocaleSwitcher
         CommonButton(
           :aria-label="$t('table.topbar.audio_settings')"
           icon="lucide:volume-2"
