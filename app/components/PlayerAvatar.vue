@@ -127,6 +127,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
 
       &--dim {
         color: var(--text-dim);
