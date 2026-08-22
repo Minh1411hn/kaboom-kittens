@@ -1,7 +1,7 @@
 <template lang="pug">
 form.nickname-gate.panel(@submit.prevent="submit")
   .nickname-gate__top
-    LocaleSwitcher
+    CommonLangSelect
   h1.nickname-gate__title
     Icon(aria-hidden="true" name="lucide:cat")
     |

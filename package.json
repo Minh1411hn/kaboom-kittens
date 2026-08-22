@@ -17,6 +17,7 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@headlessui/vue": "^1.7.23",
     "@iconify-json/lucide": "^1.2.124",
     "@nuxt/icon": "^2.5.0",
     "@nuxtjs/i18n": "^10.6.0",

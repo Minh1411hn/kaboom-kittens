@@ -32,7 +32,7 @@
           span.room__id {{ $t('table.topbar.room_label', { id: roomId }) }}
 
       template(#actions)
-        LocaleSwitcher
+        CommonLangSelect
         CommonButton(
           v-if="voiceAvailable"
           :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
