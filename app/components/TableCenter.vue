@@ -90,7 +90,6 @@
       border-radius: 50%;
       background: $cream-card;
       border: 2px solid $ink;
-      box-shadow: $shadow-sm;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -99,14 +98,6 @@
         transform 0.2s ease,
         border-color 0.2s ease,
         box-shadow 0.2s ease;
-
-      &:hover {
-        transform: scale(1.08);
-        border-color: rgb(255 194 26 / 50%);
-        box-shadow:
-          inset 0 1px 0 rgb(255 255 255 / 35%),
-          0 0 16px rgb(255 194 26 / 35%);
-      }
 
       &--ccw {
         border-color: rgb(255 122 26 / 40%);

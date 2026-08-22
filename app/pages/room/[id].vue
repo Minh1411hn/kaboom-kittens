@@ -43,9 +43,9 @@
 
     ProfileDialog(
       v-if="profileDialogOpen"
-      :open="profileDialogOpen"
       :avatar-id="avatarId"
       :nickname="nickname"
+      :open="profileDialogOpen"
       :saving="savingProfile"
       @cancel="profileDialogOpen = false"
       @save="onProfileSave"
@@ -1131,7 +1131,7 @@
       color: $ink;
       border: $outline-width solid $ink;
       border-radius: 999px;
-      box-shadow: $shadow-sm;
+      box-shadow: $shadow-xs;
       cursor: pointer;
       transition:
         filter 0.15s ease,

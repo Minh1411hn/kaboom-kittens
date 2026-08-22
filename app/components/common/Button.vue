@@ -125,11 +125,13 @@ button.btn(
     &--sm {
       padding: 0.4rem 0.95rem;
       font-size: 0.85rem;
+      box-shadow: $shadow-xs;
     }
 
     &--md {
       padding: 0.6rem 1.3rem;
       font-size: 1rem;
+      box-shadow: $shadow-sm;
     }
 
     &--lg {

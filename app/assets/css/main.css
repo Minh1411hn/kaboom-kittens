@@ -58,6 +58,7 @@
   /* Hard, blur-free shadows — the outline style from the mockup. */
   --shadow: 0 6px 0 var(--ink);
   --shadow-sm: 0 3px 0 var(--ink);
+  --shadow-xs: 0 2px 0 var(--ink);
   --outline-width: 3px;
 
   --font-display: "Oswald", system-ui, sans-serif;

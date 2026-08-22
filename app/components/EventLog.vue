@@ -1,5 +1,5 @@
 <template lang="pug">
-aside.event-log.panel
+aside.event-log
   .event-log__entries(ref="scroller")
     .event-log__entry(
       v-for="entry in entries"
@@ -16,11 +16,16 @@ aside.event-log.panel
           aria-hidden="true"
         )
         span.event-log__event-text {{ entry.text }}
-    p.event-log__empty(v-if="!entries.length") {{ $t('table.event_log.empty') }}
+    p.event-log__empty(v-if="!entries.length") {{ $t("table.event_log.empty") }}
 
   form.event-log__say(@submit.prevent="say")
-    input.event-log__input(v-model="draft" autocomplete="off" maxlength="200" :placeholder="$t('table.event_log.placeholder')")
-    button.event-log__btn(:disabled="!draft.trim()" type="submit") {{ $t('table.event_log.send') }}
+    input.event-log__input(
+      v-model="draft"
+      :placeholder="$t('table.event_log.placeholder')"
+      autocomplete="off"
+      maxlength="200"
+    )
+    button.event-log__btn(:disabled="!draft.trim()" type="submit") {{ $t("table.event_log.send") }}
 </template>
 
 <script setup lang="ts">
@@ -102,7 +107,7 @@ aside.event-log.panel
     color: $ink;
     border: $outline-width solid $ink;
     border-radius: 14px;
-    box-shadow: $shadow;
+    box-shadow: $shadow-sm;
     font-family:
       system-ui,
       -apple-system,

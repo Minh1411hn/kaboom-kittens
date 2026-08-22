@@ -38,6 +38,8 @@ button.current-user(:class="{ 'current-user--static': !clickable }" :disabled="!
       background 0.15s,
       border-color 0.15s;
 
+    box-shadow: $shadow-xs;
+
     &:hover:not(:disabled) {
       filter: brightness(0.97);
     }

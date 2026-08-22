@@ -33,6 +33,7 @@ $radius: var(--radius);
 $card-radius: var(--card-radius);
 $shadow: var(--shadow);
 $shadow-sm: var(--shadow-sm);
+$shadow-xs: var(--shadow-xs);
 $outline-width: var(--outline-width);
 
 $font-display: var(--font-display);
@@ -43,8 +44,8 @@ $parchment: var(--parchment);
 
 // Breakpoints — compile-time only, used by the `respond-to` mixin.
 $breakpoints: (
-  'sm': 640px,
-  'md': 768px,
-  'lg': 1024px,
-  'xl': 1280px,
+  "sm": 640px,
+  "md": 768px,
+  "lg": 1024px,
+  "xl": 1280px
 );
