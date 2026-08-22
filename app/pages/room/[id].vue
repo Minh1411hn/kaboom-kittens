@@ -28,15 +28,14 @@
           @click="askToQuit"
         )
         .room__title
-          strong.room__name {{ roomName || $t('table.topbar.loading_room') }}
-          span.room__id {{ $t('table.topbar.room_label', { id: roomId }) }}
+          strong.room__name {{ roomName || $t("table.topbar.loading_room") }}
+          span.room__id {{ $t("table.topbar.room_label", { id: roomId }) }}
 
       template(#actions)
-        CommonLangSelect
         CommonButton(
           v-if="voiceAvailable"
-          :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
           :aria-label="$t('table.topbar.audio_settings')"
+          :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
           size="sm"
           variant="ghost"
           @click="audioDialogOpen = true"
@@ -58,20 +57,20 @@
     button.room__gesture-prompt.panel(v-if="voiceNeedsGesture" @click="voiceSinks?.resume()")
       Icon(aria-hidden="true" name="lucide:volume-2")
       |
-      | {{ $t('table.voice.tap_to_unmute') }}
+      | {{ $t("table.voice.tap_to_unmute") }}
 
     p.room__notice.panel(v-if="kicked") {{ kicked }}
     p.room__banner.error(v-if="error") {{ error }}
     p.room__notice.panel(v-if="spectating")
-      | {{ state?.status === "lobby" ? $t('table.spectating.lobby_full') : $t('table.spectating.game_in_progress') }}
+      | {{  state?.status === "lobby" ? $t('table.spectating.lobby_full') : $t('table.spectating.game_in_progress')  }}
 
-    p.room__notice.panel.muted(v-if="!state") {{ $t('table.joining_room') }}
+    p.room__notice.panel.muted(v-if="!state") {{ $t("table.joining_room") }}
 
     //- ------------------------------------------------ pre-game lobby
     section.lobby(v-else-if="inLobby")
       .lobby__content
         .lobby__col.panel
-          h2.lobby__heading {{ $t('table.lobby.player_list') }}
+          h2.lobby__heading {{ $t("table.lobby.player_list") }}
           .lobby__seats
             .lobby__seat(v-for="player in state.players" :key="player.id")
               PlayerSeat(
@@ -88,7 +87,7 @@
                 @toggle-voice-mute="voiceToggleMute"
               )
               span.lobby__conn(:class="player.connected ? 'lobby__conn--online' : 'lobby__conn--offline'")
-                | {{ player.connected ? $t('table.lobby.connected') : $t('table.lobby.disconnected') }}
+                | {{ player.connected ? $t("table.lobby.connected") : $t("table.lobby.disconnected") }}
               CommonButton.lobby__kick(
                 v-if="isHost && player.id !== you?.id"
                 :aria-label="$t('table.lobby.kick_title')"
@@ -99,10 +98,10 @@
               )
 
         .lobby__col.lobby__col--settings.panel
-          h2.lobby__heading {{ $t('table.lobby.room_settings') }}
+          h2.lobby__heading {{ $t("table.lobby.room_settings") }}
           .lobby__actions
             p.muted
-              | {{ $t('table.lobby.share_intro', { count: state.players.length }) }}
+              | {{ $t("table.lobby.share_intro", { count: state.players.length }) }}
             ShareLink(:room-id="roomId")
 
             .lobby__start
@@ -115,7 +114,7 @@
                 @click="startGame"
               )
               p.muted(v-else)
-                | {{ state.status === "over" ? $t('table.lobby.waiting_for_players') : $t('table.lobby.waiting_for_host') }}
+                | {{  state.status === "over" ? $t('table.lobby.waiting_for_players') : $t('table.lobby.waiting_for_host')  }}
 
           DeckSettingsPanel(:deck="state.deck" :is-host="isHost" @update="setDeckOverrides")
 
@@ -168,7 +167,7 @@
         )
           template(v-if="youAreSeated && alive && !isOver")
             select(v-if="intent.needsNamedCard" v-model="namedCardId" :aria-label="$t('table.demand_select_aria')")
-              option(:value="null" disabled) {{ $t('table.demand_card_placeholder') }}
+              option(:value="null" disabled) {{ $t("table.demand_card_placeholder") }}
               option(v-for="option in namedCardOptions" :key="option.id" :value="option.id") {{ option.name }}
 
             CommonButton(
@@ -212,11 +211,11 @@
           @toggle="toggle"
         )
         p.stage__watching(v-else-if="!youAreSeated")
-          | {{ $t('table.watching_spectator') }}
+          | {{ $t("table.watching_spectator") }}
         p.stage__watching(v-else-if="!alive")
           Icon(aria-hidden="true" name="lucide:bomb")
           |
-          | {{ $t('table.you_exploded') }}
+          | {{ $t("table.you_exploded") }}
 
       DrawGhost(
         v-if="drawDrag.ghostVisible.value"
@@ -247,7 +246,7 @@
           .stage__result.panel
             h2
               Icon(v-if="winner" aria-hidden="true" name="lucide:trophy")
-              | {{ winner ? $t('table.game_over.winner', { name: winner }) : $t('table.game_over.ended') }}
+              | {{ winner ? $t("table.game_over.winner", { name: winner }) : $t("table.game_over.ended") }}
             .stage__result-seats
               PlayerSeat(
                 v-for="player in state.players"
@@ -273,7 +272,7 @@
     //- Chat and the story of the game, tucked into a corner.
     .log-dock(v-if="state" :class="{ 'log-dock--open': logOpen }")
       button.log-dock__toggle(@click="logOpen = !logOpen")
-        | {{ logOpen ? $t('table.log.hide') : $t('table.log.show') }}
+        | {{ logOpen ? $t("table.log.hide") : $t("table.log.show") }}
         Icon(:name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true")
       EventLog(v-show="logOpen" :chat="chat" :events="pending" @say="say")
 

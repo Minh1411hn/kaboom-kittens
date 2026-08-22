@@ -171,6 +171,7 @@
       @include respond-to("lg") {
         position: absolute;
         inset: 1.5rem 1rem auto;
+        width: auto;
         z-index: 1;
       }
     }

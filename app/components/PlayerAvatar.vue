@@ -12,7 +12,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
     | {{ name }}
     slot(name="nameSuffix")
 
-  span.player-avatar__host-tag(v-if="host") {{ $t('app.host_tag') }}
+  span.player-avatar__host-tag(v-if="host") {{ $t("app.host_tag") }}
 
   span.player-avatar__corner(v-if="$slots.corner")
     slot(name="corner")
@@ -113,7 +113,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       position: absolute;
       top: -8%;
       left: 50%;
-      z-index: 1;
+      // z-index: 1;
       width: 86%;
       transform: translateX(-50%);
       pointer-events: none;
@@ -123,7 +123,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       letter-spacing: 0.3px;
       text-transform: uppercase;
       text-align: center;
-      color: $ink;
+      color: white;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -133,7 +133,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       }
 
       &--current {
-        color: $accent-dim;
+        color: white;
       }
     }
 

@@ -45,7 +45,6 @@ header.app-header
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    width: 100%;
 
     &__side {
       display: flex;
