@@ -9,7 +9,7 @@
     )
       span.table-center__direction-icon
         Icon(:name="direction === 1 ? 'lucide:rotate-cw' : 'lucide:rotate-ccw'" aria-hidden="true")
-    span.table-center__ribbon.table-center__ribbon--quiet {{ $t("table.table_center.direction_label") }}
+    span.table-center.table-center--quiet {{ $t("table.table_center.direction_label") }}
 
   .table-center__pile
     button.table-center__deck.deck(
@@ -23,13 +23,13 @@
     )
       span.table-center__pile-face
         img.table-center__card-back(:src="back" alt="" draggable="false")
-    span.table-center__ribbon {{ $t("table.table_center.remaining_ribbon", { count: drawCount }) }}
+    span.table-center {{ $t("table.table_center.remaining_ribbon", { count: drawCount }) }}
 
   .table-center__pile
     .table-center__discard.discard(ref="discardEl")
       CardImage(v-if="discardTop" :card-id="discardTop.id" :uid="discardTop.uid" width="140px")
       .table-center__empty(v-else) {{ $t("table.table_center.discard_empty") }}
-    span.table-center__ribbon.table-center__ribbon--quiet {{ $t("table.table_center.discard_ribbon", { count: discardCount }) }}
+    span.table-center.table-center--quiet {{ $t("table.table_center.discard_ribbon", { count: discardCount }) }}
 </template>
 
 <script setup lang="ts">
