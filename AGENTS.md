@@ -20,7 +20,7 @@ that running container.
 ```bash
 docker compose up -d                              # start redis + web (dev server, HMR, needs Redis reachable at NUXT_REDIS_URL)
 
-docker compose exec web npm run test:unit         # engine + catalog tests (node project) — fast, no Redis
+docker compose exec web npm run test:unit         # engine, catalog + protocol tests (node project) — fast, no Redis
 docker compose exec web npm run test:integration  # WebSocket tests; needs the web service already running
 docker compose exec web npm test                  # both projects
 docker compose exec web npm run typecheck         # vue-tsc; nuxt.config has typeCheck:false so builds skip it

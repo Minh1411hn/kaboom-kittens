@@ -625,6 +625,64 @@ describe('exploding kittens', () => {
     expect(currentPlayer(state)!.id).not.toBe(victim.id)
   })
 
+  it('accepts the very bottom of the draw pile as a hiding place', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const victim = currentPlayer(state)!
+    setHand(state, victim.id, ['defuse'])
+    stackDraw(state, ['exploding-kitten'])
+    state = run(state, { type: 'draw-card', playerId: victim.id })
+
+    // One past the last index is the bottom, and it is legal.
+    const bottom = state.drawPile.length
+    state = run(state, {
+      type: 'submit-interaction',
+      playerId: victim.id,
+      interactionId: state.interaction!.id,
+      response: { type: 'position', index: bottom },
+    })
+    expect(state.drawPile[state.drawPile.length - 1]!.id).toBe('exploding-kitten')
+    expect(state.limbo).toHaveLength(0)
+  })
+
+  it('refuses a hiding place that is off the deck entirely', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const victim = currentPlayer(state)!
+    setHand(state, victim.id, ['defuse'])
+    stackDraw(state, ['exploding-kitten'])
+    state = run(state, { type: 'draw-card', playerId: victim.id })
+
+    for (const index of [-1, state.drawPile.length + 1]) {
+      expect(
+        expectRejected(state, {
+          type: 'submit-interaction',
+          playerId: victim.id,
+          interactionId: state.interaction!.id,
+          response: { type: 'position', index },
+        }).code,
+      ).toBe('invalid-position')
+    }
+    // Rejected, so the kitten is still waiting in limbo for a real answer.
+    expect(state.limbo).toHaveLength(1)
+  })
+
+  it('puts the kitten back on top when nobody answers in time', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const victim = currentPlayer(state)!
+    setHand(state, victim.id, ['defuse'])
+    stackDraw(state, ['exploding-kitten'])
+    state = run(state, { type: 'draw-card', playerId: victim.id })
+
+    state = run(state, { type: 'timeout-interaction' })
+    expect(state.interaction).toBeNull()
+    expect(state.limbo).toHaveLength(0)
+    // The honest default: on top, where the next player will meet it.
+    expect(state.drawPile[0]!.id).toBe('exploding-kitten')
+    expect(currentPlayer(state)!.id).not.toBe(victim.id)
+  })
+
   it('ends the game when only one player is left', () => {
     let state = started(2)
     removeAllNopes(state)
@@ -919,6 +977,60 @@ describe('cat combos', () => {
   })
 })
 
+describe('steal a card', () => {
+  it('takes one card from the chosen player and keeps the turn', () => {
+    const state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const victim = state.players.find((p) => p.id !== player.id)!
+    setHand(state, player.id, ['steal-a-card'])
+    setHand(state, victim.id, ['shuffle'])
+
+    const after = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['steal-a-card']),
+      combo: null,
+      targetPlayerId: victim.id,
+    })
+    expect(playerById(after, victim.id)!.hand).toHaveLength(0)
+    expect(playerById(after, player.id)!.hand.map((c) => c.id)).toEqual(['shuffle'])
+    // Stealing costs a card, not the turn.
+    expect(currentPlayer(after)!.id).toBe(player.id)
+  })
+
+  /**
+   * Every rejection has to come back as a `Rejection` code, never as prose:
+   * the socket layer reports `error.code` and the client looks the text up in
+   * its own locale. A bare string here reaches the player as an empty error.
+   */
+  it('refuses an eliminated target, yourself, and an empty-handed target, by code', () => {
+    const state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const victim = state.players.find((p) => p.id !== player.id)!
+    const dead = state.players.find((p) => p.id !== player.id && p.id !== victim.id)!
+    dead.alive = false
+    setHand(state, player.id, ['steal-a-card', 'steal-a-card', 'steal-a-card'])
+    setHand(state, victim.id, [])
+
+    const play = (targetPlayerId: string) => ({
+      type: 'play-card' as const,
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['steal-a-card']),
+      combo: null,
+      targetPlayerId,
+    })
+
+    expect(expectRejected(state, play(dead.id)).code).toBe('invalid-target')
+    expect(expectRejected(state, play(player.id)).code).toBe('cant-target-self')
+
+    const empty = expectRejected(state, play(victim.id))
+    expect(empty.code).toBe('target-empty-handed')
+    expect(empty.params).toEqual({ name: victim.nickname })
+  })
+})
+
 describe('favor', () => {
   it('lets the target choose which card to hand over', () => {
     let state = started(3)
@@ -1017,6 +1129,70 @@ describe('the future', () => {
     expect(state.drawPile.slice(0, 3).map((c) => c.id)).toEqual(['shuffle', 'skip', 'favor'])
   })
 
+  it('See the Future 5x looks five deep, and stops at the bottom of a short pile', () => {
+    const state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    setHand(state, player.id, ['see-the-future-5x', 'see-the-future-5x'])
+    stackDraw(state, ['skip', 'favor', 'shuffle', 'nope', 'reverse'])
+
+    const deep = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['see-the-future-5x']),
+      combo: null,
+    })
+    expect(deep.peeks[player.id]!.map((c) => c.id)).toEqual([
+      'skip',
+      'favor',
+      'shuffle',
+      'nope',
+      'reverse',
+    ])
+
+    // Two cards left is all there is to see — no padding, no crash.
+    state.drawPile = state.drawPile.slice(0, 2)
+    const short = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['see-the-future-5x']),
+      combo: null,
+    })
+    expect(short.peeks[player.id]).toHaveLength(2)
+  })
+
+  it('Alter the Future 5x reorders five cards', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    setHand(state, player.id, ['alter-the-future-5x'])
+    stackDraw(state, ['skip', 'favor', 'shuffle', 'nope', 'reverse'])
+
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['alter-the-future-5x']),
+      combo: null,
+    })
+    expect(state.interaction?.kind).toBe('reorder-cards')
+    const shown = state.interaction!.cards!
+    expect(shown).toHaveLength(5)
+
+    state = run(state, {
+      type: 'submit-interaction',
+      playerId: player.id,
+      interactionId: state.interaction!.id,
+      response: { type: 'order', uids: [...shown].reverse().map((c) => c.uid) },
+    })
+    expect(state.drawPile.slice(0, 5).map((c) => c.id)).toEqual([
+      'reverse',
+      'nope',
+      'shuffle',
+      'favor',
+      'skip',
+    ])
+  })
+
   it('rejects a reordering that invents or drops cards', () => {
     let state = started(3)
     removeAllNopes(state)
@@ -1038,6 +1214,32 @@ describe('the future', () => {
         response: { type: 'order', uids: [shown[0]!, shown[0]!, shown[1]!] },
       }).code,
     ).toBe('invalid-order')
+  })
+})
+
+describe('shuffle', () => {
+  it('reorders the draw pile, blinds everyone who had peeked, and keeps the turn', () => {
+    const state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const other = state.players.find((p) => p.id !== player.id)!
+    setHand(state, player.id, ['shuffle'])
+    // Someone looked at the top of the deck a moment ago.
+    state.peeks[other.id] = state.drawPile.slice(0, 3).map((c) => ({ ...c }))
+    const before = state.drawPile.map((c) => c.uid)
+
+    const after = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['shuffle']),
+      combo: null,
+    })
+    const now = after.drawPile.map((c) => c.uid)
+    expect(now).not.toEqual(before)
+    expect([...now].sort()).toEqual([...before].sort())
+    expect(after.peeks).toEqual({})
+    // Shuffling is not an end to the turn — you still have to draw.
+    expect(currentPlayer(after)!.id).toBe(player.id)
   })
 })
 
@@ -1186,6 +1388,75 @@ describe('garbage collection', () => {
   })
 })
 
+describe('turn timeout', () => {
+  it('draws for whoever ran out of time and hands play on', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const before = playerById(state, player.id)!.hand.length
+    stackDraw(state, ['skip'])
+
+    state = run(state, { type: 'timeout-turn' })
+    expect(playerById(state, player.id)!.hand).toHaveLength(before + 1)
+    expect(currentPlayer(state)!.id).not.toBe(player.id)
+  })
+
+  it('explodes the player if the forced draw is a kitten', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const victim = currentPlayer(state)!
+    setHand(state, victim.id, ['skip'])
+    stackDraw(state, ['exploding-kitten'])
+
+    state = run(state, { type: 'timeout-turn' })
+    expect(playerById(state, victim.id)!.alive).toBe(false)
+    expect(currentPlayer(state)!.id).not.toBe(victim.id)
+  })
+
+  it('stays out of the way while a prompt is open', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    const target = state.players.find((p) => p.id !== player.id)!
+    setHand(state, player.id, ['favor'])
+    setHand(state, target.id, ['skip', 'shuffle'])
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['favor']),
+      combo: null,
+      targetPlayerId: target.id,
+    })
+
+    const drawCount = state.drawPile.length
+    state = run(state, { type: 'timeout-turn' })
+    // The interaction owns the clock now — the turn timer must not also fire.
+    expect(state.interaction?.kind).toBe('choose-card-from-hand')
+    expect(state.drawPile).toHaveLength(drawCount)
+    expect(currentPlayer(state)!.id).toBe(player.id)
+  })
+
+  it('stays out of the way while a Nope window is open', () => {
+    let state = started(3)
+    const player = currentPlayer(state)!
+    const other = state.players.find((p) => p.id !== player.id)!
+    setHand(state, player.id, ['skip'])
+    setHand(state, other.id, ['nope'])
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['skip']),
+      combo: null,
+    })
+    expect(state.nopeWindow).not.toBeNull()
+
+    const drawCount = state.drawPile.length
+    state = run(state, { type: 'timeout-turn' })
+    expect(state.nopeWindow).not.toBeNull()
+    expect(state.drawPile).toHaveLength(drawCount)
+  })
+})
+
 describe('projection', () => {
   it('never leaks another player’s hand or the draw pile', () => {
     const state = started(6)
@@ -1231,6 +1502,25 @@ describe('projection', () => {
     expect(bystanderView.interaction!.isForYou).toBe(false)
     expect(bystanderView.interaction!.cards).toBeUndefined()
     expect(uidsIn(bystanderView).has(playerById(state, target.id)!.hand[0]!.uid)).toBe(false)
+  })
+
+  it('gives a spectator the table without a seat or anyone’s cards', () => {
+    // Someone who arrives mid-game has no player id; `_ws.ts` projects for
+    // `null` and they watch until a seat opens up.
+    const state = started(4)
+    const view = projectStateFor(state, null)
+
+    expect(view.you).toBeNull()
+    const visible = uidsIn(view)
+    for (const player of state.players) {
+      for (const card of player.hand) expect(visible.has(card.uid)).toBe(false)
+    }
+    for (const card of state.drawPile) expect(visible.has(card.uid)).toBe(false)
+
+    // They still see everything that is public, so the table renders.
+    expect(view.drawCount).toBe(state.drawPile.length)
+    expect(view.players).toHaveLength(4)
+    expect(view.currentPlayerId).toBe(currentPlayer(state)!.id)
   })
 
   it('hides where a defused kitten was hidden', () => {

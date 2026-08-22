@@ -145,14 +145,14 @@ describe('the table stage', () => {
     // The discard top prints no text — its name only reaches the DOM as the
     // artwork's alt, which is what a screen reader reads out.
     expect(wrapper.get('.discard img').attributes('alt')).toBe('Defuse')
-    expect(wrapper.findAll('.stage__hand .slot')).toHaveLength(3)
+    expect(wrapper.findAll('.stage__hand .hand-fan__slot')).toHaveLength(3)
   })
 
   it('offers no button that draws — the deck has to be dragged onto the hand', async () => {
     fixture = playing()
     const wrapper = await mount()
 
-    const controls = wrapper.get('.controls').text()
+    const controls = wrapper.get('.turn-banner__controls').text()
     expect(controls).toContain('Deselect')
     expect(controls).not.toContain('Draw')
 
@@ -166,12 +166,12 @@ describe('the table stage', () => {
   it('lets the banner speak for whoever is on the clock', async () => {
     fixture = playing()
     const yours = await mount()
-    expect(yours.get('.headline').text()).toBe('Đến lượt của bạn!')
-    expect(yours.get('.stage__banner .banner').classes()).toContain('live')
+    expect(yours.get('.turn-banner__headline').text()).toBe('Your turn!')
+    expect(yours.get('.stage__banner .turn-banner').classes()).toContain('turn-banner--live')
 
     fixture = playing({ currentPlayerId: 'p2' })
     const theirs = await mount()
-    expect(theirs.get('.headline').text()).toBe('Waiting for Mittens…')
+    expect(theirs.get('.turn-banner__headline').text()).toBe('Waiting for Mittens…')
   })
 
   it('keeps the table visible after you explode, and curtains it when the game ends', async () => {
@@ -185,7 +185,7 @@ describe('the table stage', () => {
     })
     const dead = await mount()
     expect(dead.find('.stage__curtain').exists()).toBe(false)
-    expect(dead.find('.stage__hand .slot').exists()).toBe(false)
+    expect(dead.find('.stage__hand .hand-fan__slot').exists()).toBe(false)
     expect(dead.get('.stage__watching').text()).toContain('You exploded')
 
     fixture = playing({ status: 'over', winnerId: 'p2', currentPlayerId: null })
@@ -298,8 +298,8 @@ describe('the table stage', () => {
       await nextTick()
 
       // The kitten is centre stage; the dialog has not shown its face yet.
-      expect(wrapper.find('.reveal').exists()).toBe(true)
-      expect(wrapper.find('.slot.held').exists()).toBe(true)
+      expect(wrapper.find('.kitten-reveal').exists()).toBe(true)
+      expect(wrapper.find('.hand-fan__slot--held').exists()).toBe(true)
       expect(wrapper.text()).not.toContain('Secretly put the Exploding Kitten back')
 
       // Long enough for the whole ceremony, including its safety ceiling
@@ -307,7 +307,7 @@ describe('the table stage', () => {
       vi.advanceTimersByTime(4600)
       await nextTick()
 
-      expect(wrapper.find('.reveal').exists()).toBe(false)
+      expect(wrapper.find('.kitten-reveal').exists()).toBe(false)
       expect(wrapper.text()).toContain('Secretly put the Exploding Kitten back')
     } finally {
       vi.useRealTimers()

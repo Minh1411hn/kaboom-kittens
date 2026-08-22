@@ -251,10 +251,10 @@ describe("HandFan", () => {
     const wrapper = await mountSuspended(HandFan, {
       props: { hand, selected: ["b"] },
     });
-    expect(wrapper.findAll(".slot")).toHaveLength(3);
-    expect(wrapper.findAll(".card.selected")).toHaveLength(1);
+    expect(wrapper.findAll(".hand-fan__slot")).toHaveLength(3);
+    expect(wrapper.findAll(".card--selected")).toHaveLength(1);
 
-    await wrapper.findAll(".pick")[2]!.trigger("click");
+    await wrapper.findAll(".hand-fan__pick")[2]!.trigger("click");
     expect(wrapper.emitted("toggle")?.[0]).toEqual(["c"]);
   });
 
@@ -270,9 +270,9 @@ describe("HandFan", () => {
     const wrapper = await mountSuspended(HandFan, {
       props: { hand, selected: [], flipUid: "b" },
     });
-    const slots = wrapper.findAll(".slot");
-    expect(slots[0]!.classes()).not.toContain("flip-in");
-    expect(slots[1]!.classes()).toContain("flip-in");
+    const slots = wrapper.findAll(".hand-fan__slot");
+    expect(slots[0]!.classes()).not.toContain("hand-fan__slot--flip-in");
+    expect(slots[1]!.classes()).toContain("hand-fan__slot--flip-in");
   });
 
   it("marks departing cards with leaving class when hand changes", async () => {
@@ -280,12 +280,12 @@ describe("HandFan", () => {
     const wrapper = await mountSuspended(HandFan, {
       props: { hand, selected: [] },
     });
-    expect(wrapper.findAll(".slot")).toHaveLength(2);
+    expect(wrapper.findAll(".hand-fan__slot")).toHaveLength(2);
 
     await wrapper.setProps({ hand: [card("skip", "a")] });
-    const slots = wrapper.findAll(".slot");
+    const slots = wrapper.findAll(".hand-fan__slot");
     expect(slots).toHaveLength(2);
-    expect(slots[1]!.classes()).toContain("leaving");
+    expect(slots[1]!.classes()).toContain("hand-fan__slot--leaving");
   });
 
   it("freezes a departing card while the kitten ceremony holds it", async () => {
@@ -295,15 +295,15 @@ describe("HandFan", () => {
     });
 
     await wrapper.setProps({ hand: [card("skip", "a")] });
-    const slots = wrapper.findAll(".slot");
+    const slots = wrapper.findAll(".hand-fan__slot");
     expect(slots).toHaveLength(2);
-    expect(slots[1]!.classes()).toContain("held");
-    expect(slots[1]!.classes()).not.toContain("leaving");
+    expect(slots[1]!.classes()).toContain("hand-fan__slot--held");
+    expect(slots[1]!.classes()).not.toContain("hand-fan__slot--leaving");
 
     // Released: the departure flyer has the card, so the slot goes at once
     // rather than replaying the lift-out on a card that already flew away.
     await wrapper.setProps({ holdLeave: false });
-    expect(wrapper.findAll(".slot")).toHaveLength(1);
+    expect(wrapper.findAll(".hand-fan__slot")).toHaveLength(1);
   });
 
   it("holds a card that had already started leaving, whichever prop lands first", async () => {
@@ -313,12 +313,14 @@ describe("HandFan", () => {
     });
 
     await wrapper.setProps({ hand: [card("skip", "a")] });
-    expect(wrapper.findAll(".slot")[1]!.classes()).toContain("leaving");
+    expect(wrapper.findAll(".hand-fan__slot")[1]!.classes()).toContain(
+      "hand-fan__slot--leaving",
+    );
 
     await wrapper.setProps({ holdLeave: true });
-    const slots = wrapper.findAll(".slot");
-    expect(slots[1]!.classes()).toContain("held");
-    expect(slots[1]!.classes()).not.toContain("leaving");
+    const slots = wrapper.findAll(".hand-fan__slot");
+    expect(slots[1]!.classes()).toContain("hand-fan__slot--held");
+    expect(slots[1]!.classes()).not.toContain("hand-fan__slot--leaving");
   });
 });
 
@@ -332,7 +334,7 @@ describe("KittenRevealOverlay", () => {
     );
     expect(wrapper.text()).toContain("Mittens");
     // Decoration only — it must never swallow a click meant for the table.
-    expect(wrapper.get(".reveal").attributes("aria-hidden")).toBe("true");
+    expect(wrapper.get(".kitten-reveal").attributes("aria-hidden")).toBe("true");
   });
 });
 
@@ -347,7 +349,7 @@ describe("CardDepartureFlyer", () => {
 
     await wrapper.setProps({ card: card("defuse", "d1"), fromRect: null });
     expect(wrapper.emitted("done")).toHaveLength(1);
-    expect(wrapper.find(".flyer").exists()).toBe(false);
+    expect(wrapper.find(".card-departure__flyer").exists()).toBe(false);
   });
 
   it("puts the clone where the card was before moving it", async () => {
@@ -363,7 +365,8 @@ describe("CardDepartureFlyer", () => {
       card: card("defuse", "d1"),
       fromRect: rect(100, 500),
     });
-    const style = wrapper.get(".flyer").attributes("style") ?? "";
+    const style =
+      wrapper.get(".card-departure__flyer").attributes("style") ?? "";
     expect(style).toContain("left: 170px");
     expect(style).toContain("top: 597.5px");
   });
@@ -435,7 +438,8 @@ describe("SeeFutureModal", () => {
         cards: [card("skip", "p1")],
       },
     });
-    await wrapper.get(".backdrop").trigger("click");
+    // The root doubles as the backdrop — it closes on `@click.self`.
+    await wrapper.get(".see-future").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(1);
   });
 
@@ -445,7 +449,7 @@ describe("SeeFutureModal", () => {
         cards: [card("skip", "p1")],
       },
     });
-    await wrapper.get(".dialog-footer button").trigger("click");
+    await wrapper.get(".see-future__footer button").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(1);
   });
 
@@ -455,9 +459,13 @@ describe("SeeFutureModal", () => {
       props: { cards, editable: true },
     });
     expect(wrapper.text()).toContain("Alter the Future");
-    expect(wrapper.find(".close-btn").exists()).toBe(false);
+    // Only one footer button, and it commits the order — there is no way to
+    // back out of an Alter the Future without answering it.
+    const footer = wrapper.findAll(".see-future__footer button");
+    expect(footer).toHaveLength(1);
+    expect(footer[0]!.text()).toBe("Confirm order");
 
-    await wrapper.get(".dialog-footer button").trigger("click");
+    await wrapper.get(".see-future__footer button").trigger("click");
     expect(wrapper.emitted("submit")?.[0]).toEqual([["p1", "p2"]]);
   });
 });
@@ -473,13 +481,13 @@ describe("TurnBanner", () => {
   it("names whoever is on the clock, and shouts when it is you", async () => {
     const waiting = await mountSuspended(TurnBanner, { props: base });
     expect(waiting.text()).toContain("Waiting for Mittens");
-    expect(waiting.classes()).not.toContain("live");
+    expect(waiting.classes()).not.toContain("turn-banner--live");
 
     const yours = await mountSuspended(TurnBanner, {
       props: { ...base, isYourTurn: true },
     });
     expect(yours.text()).toContain("Your turn!");
-    expect(yours.classes()).toContain("live");
+    expect(yours.classes()).toContain("turn-banner--live");
   });
 
   it("shows the hint and the slotted controls", async () => {
@@ -487,18 +495,20 @@ describe("TurnBanner", () => {
       props: { ...base, isYourTurn: true, hint: "Now pick a player above." },
       slots: { default: "<button>Play</button>" },
     });
-    expect(wrapper.get(".hint").text()).toBe("Now pick a player above.");
-    expect(wrapper.get(".controls button").text()).toBe("Play");
+    expect(wrapper.get(".turn-banner__hint").text()).toBe(
+      "Now pick a player above.",
+    );
+    expect(wrapper.get(".turn-banner__controls button").text()).toBe("Play");
   });
 
   it("counts down only once there is a deadline", async () => {
     const none = await mountSuspended(TurnBanner, { props: base });
-    expect(none.find(".clock").exists()).toBe(false);
+    expect(none.find(".turn-banner__clock").exists()).toBe(false);
 
     const ticking = await mountSuspended(TurnBanner, {
       props: { ...base, deadline: Date.now() + 30_000 },
     });
-    expect(ticking.get(".clock-text").text()).toMatch(/^\d+s$/);
+    expect(ticking.get(".turn-banner__clock-text").text()).toMatch(/^\d+s$/);
   });
 });
 
@@ -566,7 +576,7 @@ describe("NopeBar", () => {
     });
     expect(wrapper.text()).toContain("Whiskers");
     expect(wrapper.text()).toContain("Mittens");
-    expect(wrapper.find(".player-pill.target").exists()).toBe(true);
+    expect(wrapper.find(".nope-bar__pill--target").exists()).toBe(true);
   });
 
   it("spells out the verdict and renders avatar badge as Nopes stack up", async () => {
@@ -587,7 +597,7 @@ describe("NopeBar", () => {
     });
     expect(wrapper.text()).toContain("2 Nope");
     expect(wrapper.text()).toContain("In effect");
-    expect(wrapper.findAll(".card-avatar-badge")).toHaveLength(2);
+    expect(wrapper.findAll(".nope-bar__badge")).toHaveLength(2);
   });
 });
 
@@ -619,7 +629,7 @@ describe("InteractionModal", () => {
     const confirm = wrapper.findAll("button").at(-1)!;
     expect(confirm.attributes("disabled")).toBeDefined();
 
-    await wrapper.findAll(".choice")[1]!.trigger("click");
+    await wrapper.findAll(".interaction-modal__choice")[1]!.trigger("click");
     await confirm.trigger("click");
     expect(wrapper.emitted("submit")?.[0]).toEqual([
       { type: "card", uid: "s2" },
@@ -641,7 +651,7 @@ describe("InteractionModal", () => {
       },
     });
     expect(wrapper.text()).toContain("Waiting on Whiskers");
-    expect(wrapper.findAll(".choice")).toHaveLength(0);
+    expect(wrapper.findAll(".interaction-modal__choice")).toHaveLength(0);
   });
 });
 
@@ -694,7 +704,7 @@ describe("DeckPositionModal", () => {
     });
     const random = wrapper
       .findAll("button")
-      .find((b) => b.classes().includes("random"))!;
+      .find((b) => b.classes().includes("deck-position__slot--random"))!;
     await random.trigger("click");
     // Still needs an explicit Confirm — clicking RANDOM only previews.
     expect(wrapper.emitted("submit")).toBeUndefined();
@@ -858,13 +868,13 @@ describe("TargetSelectModal", () => {
     });
 
     expect(wrapper.text()).toContain("Steal a random card");
-    expect(wrapper.findAll(".target-card")).toHaveLength(1);
+    expect(wrapper.findAll(".target-select__player-card")).toHaveLength(1);
     expect(wrapper.text()).toContain("Mittens");
 
-    const confirmBtn = wrapper.find("button.confirm-btn");
+    const confirmBtn = wrapper.find("button.target-select__confirm-btn");
     expect(confirmBtn.attributes("disabled")).toBeDefined();
 
-    await wrapper.find(".target-card").trigger("click");
+    await wrapper.find(".target-select__player-card").trigger("click");
     expect(confirmBtn.attributes("disabled")).toBeUndefined();
 
     await confirmBtn.trigger("click");
@@ -886,15 +896,15 @@ describe("TargetSelectModal", () => {
     });
 
     expect(wrapper.text()).toContain("Demand a specific card");
-    expect(wrapper.findAll(".card-choice-btn").length).toBeGreaterThan(5);
+    expect(wrapper.findAll(".target-select__card-choice").length).toBeGreaterThan(5);
 
-    const confirmBtn = wrapper.find("button.confirm-btn");
+    const confirmBtn = wrapper.find("button.target-select__confirm-btn");
     expect(confirmBtn.attributes("disabled")).toBeDefined();
 
-    await wrapper.find(".target-card").trigger("click");
+    await wrapper.find(".target-select__player-card").trigger("click");
     expect(confirmBtn.attributes("disabled")).toBeDefined();
 
-    await wrapper.findAll(".card-choice-btn")[0]!.trigger("click");
+    await wrapper.findAll(".target-select__card-choice")[0]!.trigger("click");
     expect(confirmBtn.attributes("disabled")).toBeUndefined();
 
     await confirmBtn.trigger("click");
@@ -910,7 +920,7 @@ describe("CardArrivalFlyer", () => {
         arrivingCards: arriving,
       },
     });
-    expect(wrapper.find(".flyer-container").exists()).toBe(true);
+    expect(wrapper.find(".card-arrival").exists()).toBe(true);
   });
 });
 
