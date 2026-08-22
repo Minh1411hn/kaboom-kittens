@@ -1,37 +1,45 @@
 <template lang="pug">
-form.nickname-gate.panel(@submit.prevent="submit")
-  .nickname-gate__top
-    LocaleSwitcher
-  h1.nickname-gate__title
-    Icon(aria-hidden="true" name="lucide:cat")
-    |
-    | Kaboom Kitten
-  p.nickname-gate__subtitle.muted
-    | {{ $t('app.nickname_gate.subtitle') }}
+CommonDialog(:open="open" persistent)
+  template(#title)
+    h1.nickname-gate__title
+      Icon(aria-hidden="true" name="lucide:cat")
+      |
+      | Kaboom Kitten
 
-  label.nickname-gate__field.stack
-    span.nickname-gate__label.muted {{ $t('app.nickname_label') }}
-    input.nickname-gate__input(
-      v-model="value"
-      autocomplete="nickname"
-      autofocus
-      maxlength="16"
-      :placeholder="$t('app.nickname_placeholder')"
-    )
+  .nickname-gate
+    .nickname-gate__top
+      CommonLangSelect
+    p.nickname-gate__subtitle.muted
+      | {{ $t("app.nickname_gate.subtitle") }}
 
-  p.nickname-gate__error.error {{ error }}
+    form.nickname-gate__form(@submit.prevent="submit")
+      label.nickname-gate__field.stack
+        span.nickname-gate__label.muted {{ $t("app.nickname_label") }}
+        input.nickname-gate__input(
+          v-model="value"
+          :placeholder="$t('app.nickname_placeholder')"
+          autocomplete="nickname"
+          autofocus
+          maxlength="16"
+        )
 
-  PlaqueButton(
-    :disabled="busy || value.trim().length < 2"
-    :title="busy ? $t('app.nickname_gate.processing') : $t('app.nickname_gate.enter')"
-    chevron
-    icon="lucide:paw-print"
-    type="submit"
-    variant="primary"
-  )
+      p.nickname-gate__error.error {{ error }}
+
+      CommonButton(
+        :disabled="busy || value.trim().length < 2"
+        :label="busy ? $t('app.nickname_gate.processing') : $t('app.nickname_gate.enter')"
+        :loading="busy"
+        type="submit"
+        variant="gold"
+      )
 </template>
 
 <script setup lang="ts">
+  defineProps<{
+    /** Visibility — the parent shows this once a session is ready but has no nickname yet. */
+    open: boolean
+  }>()
+
   const emit = defineEmits<{ done: [] }>()
   const { setNickname, remembered } = useSession()
   const { t } = useI18n()
@@ -62,47 +70,29 @@ form.nickname-gate.panel(@submit.prevent="submit")
 
 <style scoped lang="scss">
   /*
- * This gate is the entry point to both the landing page and a room link,
- * always before a game exists — so it always gets the red/maroon menu
- * look, self-contained here rather than relying on the global `.panel`
- * (which stays wood/parchment for the live game table).
+ * The gate's own card chrome (outline, shadow, width, padding) now lives in
+ * `common/Dialog.vue` — this scoped block only owns the layout inside it.
  */
   .nickname-gate {
-    position: relative;
-    max-width: 440px;
-    margin: 12vh auto;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.6rem 1.8rem;
-    background: linear-gradient(160deg, rgb(122 20 20 / 55%), rgb(61 10 12 / 78%));
-    border: 2px solid var(--maroon-edge);
-    color: var(--text);
-    box-shadow:
-      var(--shadow),
-      inset 0 0 0 1px rgb(255 255 255 / 8%);
 
     &__top {
       display: flex;
       justify-content: flex-end;
     }
 
-    &__title {
-      font-size: 2.4rem;
-      line-height: 1.05;
-      text-align: center;
-      color: var(--accent);
-      text-shadow:
-        -2px -2px 0 var(--outline),
-        2px -2px 0 var(--outline),
-        -2px 2px 0 var(--outline),
-        2px 2px 0 var(--outline);
-    }
-
     &__subtitle {
       text-align: center;
       margin: 0;
       color: var(--text-dim);
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     &__field {
@@ -114,19 +104,24 @@ form.nickname-gate.panel(@submit.prevent="submit")
     }
 
     &__input {
-      color: var(--text);
-      background: linear-gradient(180deg, var(--red-3), #2c0708);
-      border: 2px solid var(--maroon-edge);
-      box-shadow: inset 0 2px 5px rgb(0 0 0 / 45%);
+      color: $ink;
+      background: $cream;
+      border: $outline-width solid $ink;
 
       &::placeholder {
-        color: var(--text-dim);
-        opacity: 0.7;
+        color: $ink-dim;
       }
     }
 
     &__error {
       color: var(--bad);
     }
+  }
+
+  .nickname-gate__title {
+    font-size: 2.4rem;
+    line-height: 1.05;
+    text-align: center;
+    color: $ink;
   }
 </style>

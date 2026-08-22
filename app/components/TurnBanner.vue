@@ -1,7 +1,5 @@
 <template lang="pug">
 .turn-banner(:class="{ 'turn-banner--live': isYourTurn }")
-  .turn-banner__rod(aria-hidden="true")
-
   .turn-banner__sheet
     .turn-banner__pictogram(aria-hidden="true")
       span.turn-banner__who(:style="{ background: actorColor }")
@@ -44,7 +42,9 @@
 
   const { t } = useI18n()
   const headline = computed(() =>
-    props.isYourTurn ? t("table.turn_banner.your_turn") : t("table.turn_banner.waiting_for", { name: props.currentPlayerName })
+    props.isYourTurn
+      ? t("table.turn_banner.your_turn")
+      : t("table.turn_banner.waiting_for", { name: props.currentPlayerName })
   )
 </script>
 
@@ -62,67 +62,18 @@
       }
     }
 
-    /* The rail the sign hangs from, with a ball finial at each end. */
-    &__rod {
-      position: relative;
-      height: 7px;
-      margin: 0 -10px 0;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #f0f2f6, #9aa3b2 45%, #5d6472);
-      box-shadow: 0 2px 5px rgb(20 8 0 / 55%);
-
-      &::before,
-      &::after {
-        content: "";
-        position: absolute;
-        top: -5px;
-        width: 17px;
-        height: 17px;
-        border-radius: 50%;
-        background: radial-gradient(circle at 32% 28%, #fff, #a8b0bd 55%, #5d6472);
-        box-shadow: 0 2px 5px rgb(20 8 0 / 55%);
-      }
-
-      &::before {
-        left: -8px;
-      }
-
-      &::after {
-        right: -8px;
-      }
-    }
-
-    /*
-     * Torn parchment: the clip-path jitters the bottom edge, and the inset shadow
-     * gives the sheet a bit of thickness where it curls.
-     */
     &__sheet {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.55rem;
-      padding: 1.1rem 1.15rem 1.9rem;
+      padding: 1.1rem 1.15rem;
       color: var(--ink);
       text-align: center;
       background: linear-gradient(180deg, #f8ecd2, var(--parchment) 40%, var(--parchment-2));
-      box-shadow: var(--shadow);
-      clip-path: polygon(
-        0% 0%,
-        100% 0%,
-        100% 93%,
-        92% 97%,
-        84% 93%,
-        75% 98%,
-        66% 94%,
-        57% 99%,
-        48% 94%,
-        39% 98%,
-        30% 93%,
-        21% 98%,
-        12% 94%,
-        4% 97%,
-        0% 93%
-      );
+      border: var(--outline-width) solid var(--ink);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
     }
 
     &__pictogram {

@@ -11,6 +11,11 @@
     "host_label": "Chủ phòng: {name} ·",
     "room_view": "Xem",
     "room_join": "Tham gia",
+    "your_profile": "Hồ sơ của bạn",
+    "create_room": "Tạo phòng",
+    "room_list_heading": "Danh sách phòng",
+    "room_player_count": "{count}/{max} người",
+    "room_enter": "Vào phòng",
     "connection_status": "Trạng thái kết nối: {status}",
     "create_room_error": "Không thể tạo phòng chơi.",
     "time_just_now": "vừa xong",
@@ -18,6 +23,7 @@
     "time_hours_ago": "{hours} giờ trước",
     "nickname_label": "Biệt danh",
     "nickname_placeholder": "Hoàng Thượng",
+    "language_label": "Ngôn ngữ",
     "nickname_gate": {
       "subtitle": "Mèo Cảm Tử online dành cho 2–10 người chơi. Hãy chọn biệt danh để bắt đầu.",
       "processing": "Đang xử lý…",
@@ -295,6 +301,11 @@
       "name": "Favor",
       "label": "Xin đểu",
       "text": "Chọn 1 người chơi; người đó phải tự chọn 1 lá bài trên tay để đưa cho bạn."
+    },
+    "steal-a-card": {
+      "name": "Steal a Card",
+      "label": "Trộm bài",
+      "text": "Chọn 1 người chơi; trộm ngẫu nhiên 1 lá bài trên tay người đó."
     },
     "draw-from-the-bottom": {
       "name": "Draw From the Bottom",

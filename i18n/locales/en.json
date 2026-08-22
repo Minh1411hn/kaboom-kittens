@@ -11,6 +11,11 @@
     "host_label": "Host: {name} ·",
     "room_view": "View",
     "room_join": "Join",
+    "your_profile": "Your profile",
+    "create_room": "Create room",
+    "room_list_heading": "Room list",
+    "room_player_count": "{count}/{max} players",
+    "room_enter": "Enter room",
     "connection_status": "Connection: {status}",
     "create_room_error": "Couldn't create a room.",
     "time_just_now": "just now",
@@ -18,6 +23,7 @@
     "time_hours_ago": "{hours}h ago",
     "nickname_label": "Nickname",
     "nickname_placeholder": "Your Majesty",
+    "language_label": "Language",
     "nickname_gate": {
       "subtitle": "Online Exploding Kittens for 2–10 players. Pick a nickname to start.",
       "processing": "Working…",
@@ -295,6 +301,11 @@
       "name": "Favor",
       "label": "Ask a favor",
       "text": "Choose a player; they must pick one card from their hand to give you."
+    },
+    "steal-a-card": {
+      "name": "Steal a Card",
+      "label": "Steal a card",
+      "text": "Choose a player; randomly steal one card from their hand."
     },
     "draw-from-the-bottom": {
       "name": "Draw From the Bottom",

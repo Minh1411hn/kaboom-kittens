@@ -18,6 +18,7 @@ export type CardId =
   | 'reverse'
   | 'shuffle'
   | 'favor'
+  | 'steal-a-card'
   | 'draw-from-the-bottom'
   | 'see-the-future-3x'
   | 'see-the-future-5x'
@@ -42,6 +43,7 @@ export const ALL_CARD_IDS: CardId[] = [
   'reverse',
   'shuffle',
   'favor',
+  'steal-a-card',
   'draw-from-the-bottom',
   'see-the-future-3x',
   'see-the-future-5x',

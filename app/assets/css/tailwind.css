@@ -23,21 +23,20 @@
 
 /*
  * The design tokens from main.css, re-exposed as Tailwind theme keys so
- * `bg-parchment`, `text-ink`, `font-display`, `rounded-card` … resolve to the
+ * `bg-cream`, `text-ink`, `font-display`, `rounded-card` … resolve to the
  * same custom properties. Tokens stay defined in one place — main.css — these
  * are aliases, not copies.
  */
 @theme {
-  --color-wood-1: var(--wood-1);
-  --color-wood-2: var(--wood-2);
-  --color-wood-3: var(--wood-3);
-  --color-wood-edge: var(--wood-edge);
-
-  --color-parchment: var(--parchment);
-  --color-parchment-2: var(--parchment-2);
-  --color-parchment-edge: var(--parchment-edge);
+  --color-cream: var(--cream);
+  --color-cream-card: var(--cream-card);
   --color-ink: var(--ink);
   --color-ink-dim: var(--ink-dim);
+
+  --color-gold-1: var(--gold-1);
+  --color-gold-2: var(--gold-2);
+  --color-brick-1: var(--brick-1);
+  --color-brick-2: var(--brick-2);
 
   --color-deck-hot: var(--deck-hot);
   --color-deck-warm: var(--deck-warm);
@@ -51,19 +50,11 @@
   --color-text: var(--text);
   --color-text-dim: var(--text-dim);
 
-  --color-red-1: var(--red-1);
-  --color-red-2: var(--red-2);
-  --color-red-3: var(--red-3);
-  --color-maroon-1: var(--maroon-1);
-  --color-maroon-2: var(--maroon-2);
-  --color-maroon-edge: var(--maroon-edge);
-
   --font-display: 'Oswald', system-ui, sans-serif;
   --font-body: 'Oswald', system-ui, sans-serif;
 
   --radius-card: var(--card-radius);
-  --radius-plaque: 10px;
 
-  --shadow-plaque: var(--shadow);
-  --shadow-plaque-sm: var(--shadow-sm);
+  --shadow-hard: var(--shadow);
+  --shadow-hard-sm: var(--shadow-sm);
 }

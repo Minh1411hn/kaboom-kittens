@@ -9,7 +9,7 @@
     )
       span.table-center__direction-icon
         Icon(:name="direction === 1 ? 'lucide:rotate-cw' : 'lucide:rotate-ccw'" aria-hidden="true")
-    span.table-center__ribbon.table-center__ribbon--quiet {{ $t('table.table_center.direction_label') }}
+    span.table-center.table-center--quiet {{ $t("table.table_center.direction_label") }}
 
   .table-center__pile
     button.table-center__deck.deck(
@@ -23,13 +23,13 @@
     )
       span.table-center__pile-face
         img.table-center__card-back(:src="back" alt="" draggable="false")
-    span.table-center__ribbon {{ $t('table.table_center.remaining_ribbon', { count: drawCount }) }}
+    span.table-center {{ $t("table.table_center.remaining_ribbon", { count: drawCount }) }}
 
   .table-center__pile
     .table-center__discard.discard(ref="discardEl")
       CardImage(v-if="discardTop" :card-id="discardTop.id" :uid="discardTop.uid" width="140px")
-      .table-center__empty(v-else) {{ $t('table.table_center.discard_empty') }}
-    span.table-center__ribbon.table-center__ribbon--quiet {{ $t('table.table_center.discard_ribbon', { count: discardCount }) }}
+      .table-center__empty(v-else) {{ $t("table.table_center.discard_empty") }}
+    span.table-center.table-center--quiet {{ $t("table.table_center.discard_ribbon", { count: discardCount }) }}
 </template>
 
 <script setup lang="ts">
@@ -88,11 +88,8 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: linear-gradient(180deg, rgb(255 255 255 / 12%), rgb(0 0 0 / 25%));
-      border: 2px solid rgb(255 255 255 / 18%);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 25%),
-        0 4px 14px rgb(20 8 0 / 50%);
+      background: $cream-card;
+      border: 2px solid $ink;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -101,14 +98,6 @@
         transform 0.2s ease,
         border-color 0.2s ease,
         box-shadow 0.2s ease;
-
-      &:hover {
-        transform: scale(1.08);
-        border-color: rgb(255 194 26 / 50%);
-        box-shadow:
-          inset 0 1px 0 rgb(255 255 255 / 35%),
-          0 0 16px rgb(255 194 26 / 35%);
-      }
 
       &--ccw {
         border-color: rgb(255 122 26 / 40%);
@@ -218,25 +207,24 @@
       display: block;
     }
 
-    /* A wooden nameplate under each pile. */
+    /* A nameplate under each pile. */
     &__ribbon {
       font-family: var(--font-display);
       text-transform: uppercase;
       letter-spacing: 1.2px;
       font-size: 0.95rem;
-      color: var(--text);
-      background: linear-gradient(180deg, #6b4118, #45260a);
-      box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 20%),
-        var(--shadow-sm);
+      color: $ink;
+      background: $cream-card;
+      border: 2px solid $ink;
+      box-shadow: $shadow-sm;
       border-radius: 999px;
       padding: 0.28rem 0.9rem;
       white-space: nowrap;
 
       &--quiet {
         font-size: 0.8rem;
-        color: var(--text-dim);
-        background: linear-gradient(180deg, rgb(255 255 255 / 10%), rgb(0 0 0 / 18%));
+        color: $ink-dim;
+        background: $cream;
       }
     }
 
@@ -255,7 +243,7 @@
     &__empty {
       width: 140px;
       aspect-ratio: var(--card-ratio);
-      border: 3px dashed rgb(255 255 255 / 25%);
+      border: 3px dashed $ink;
       border-radius: var(--card-radius);
       display: grid;
       place-items: center;
@@ -263,6 +251,7 @@
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 1px;
+      background: $cream;
     }
   }
 </style>

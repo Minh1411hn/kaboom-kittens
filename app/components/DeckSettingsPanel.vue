@@ -233,8 +233,8 @@ section.deck-settings
 
 <style scoped lang="scss">
   .deck-settings {
-    background: var(--bg-inset);
-    border: 2px solid var(--maroon-edge);
+    background: $cream;
+    border: $outline-width solid $ink;
     border-radius: var(--radius);
     padding: 0.6rem 0.75rem;
 
@@ -251,7 +251,7 @@ section.deck-settings
       gap: 0.4rem;
       padding: 0;
       font: inherit;
-      color: var(--text);
+      color: $ink;
       background: none;
       border: none;
       box-shadow: none;
@@ -299,9 +299,9 @@ section.deck-settings
 
     &__group-title {
       font-size: 1rem;
-      color: var(--accent);
+      color: $ink;
       margin: 0 0 0.5rem;
-      border-bottom: 1px solid var(--maroon-edge);
+      border-bottom: 1px solid $ink;
       padding-bottom: 0.3rem;
     }
 
@@ -365,7 +365,8 @@ section.deck-settings
       padding: 0;
       font-size: 0.9rem;
       line-height: 1;
-      background: linear-gradient(180deg, var(--maroon-1), var(--maroon-2));
+      background: linear-gradient(180deg, $brick-1, $brick-2);
+      color: $cream;
 
       &:disabled {
         opacity: 0.35;
@@ -377,10 +378,10 @@ section.deck-settings
       width: 2.8rem;
       padding: 0.1rem 0.2rem;
       font-size: 0.85rem;
-      color: var(--text);
+      color: $ink;
       text-align: center;
-      background: var(--bg-inset);
-      border: 1px solid var(--maroon-edge);
+      background: $cream-card;
+      border: 2px solid $ink;
     }
 
     &__reset-one {
@@ -389,7 +390,8 @@ section.deck-settings
       padding: 0;
       font-size: 0.9rem;
       line-height: 1;
-      background: linear-gradient(180deg, var(--maroon-1), var(--maroon-2));
+      background: linear-gradient(180deg, $brick-1, $brick-2);
+      color: $cream;
 
       &:disabled {
         opacity: 0.35;
@@ -409,7 +411,8 @@ section.deck-settings
 
     &__reset-all {
       font-size: 0.8rem;
-      background: linear-gradient(180deg, var(--maroon-1), var(--maroon-2));
+      background: linear-gradient(180deg, $brick-1, $brick-2);
+      color: $cream;
     }
   }
 </style>

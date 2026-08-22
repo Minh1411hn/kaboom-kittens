@@ -6,16 +6,17 @@
 // custom properties because media queries don't read them) are real numbers.
 
 // Surfaces
-$wood-1: var(--wood-1);
-$wood-2: var(--wood-2);
-$wood-3: var(--wood-3);
-$wood-edge: var(--wood-edge);
+$cream: var(--cream);
+$cream-card: var(--cream-card);
 
-$parchment: var(--parchment);
-$parchment-2: var(--parchment-2);
-$parchment-edge: var(--parchment-edge);
 $ink: var(--ink);
 $ink-dim: var(--ink-dim);
+
+// Button fills
+$gold-1: var(--gold-1);
+$gold-2: var(--gold-2);
+$brick-1: var(--brick-1);
+$brick-2: var(--brick-2);
 
 // Semantic
 $bg: var(--bg);
@@ -32,14 +33,19 @@ $radius: var(--radius);
 $card-radius: var(--card-radius);
 $shadow: var(--shadow);
 $shadow-sm: var(--shadow-sm);
+$shadow-xs: var(--shadow-xs);
+$outline-width: var(--outline-width);
 
 $font-display: var(--font-display);
 $font-body: var(--font-body);
 
+// DEPRECATED alias of the card cream, see the header of main.css.
+$parchment: var(--parchment);
+
 // Breakpoints — compile-time only, used by the `respond-to` mixin.
 $breakpoints: (
-  'sm': 640px,
-  'md': 768px,
-  'lg': 1024px,
-  'xl': 1280px,
+  "sm": 640px,
+  "md": 768px,
+  "lg": 1024px,
+  "xl": 1280px
 );

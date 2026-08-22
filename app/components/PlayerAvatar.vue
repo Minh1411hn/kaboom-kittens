@@ -12,7 +12,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
     | {{ name }}
     slot(name="nameSuffix")
 
-  span.player-avatar__host-tag(v-if="host") {{ $t('app.host_tag') }}
+  span.player-avatar__host-tag(v-if="host") {{ $t("app.host_tag") }}
 
   span.player-avatar__corner(v-if="$slots.corner")
     slot(name="corner")
@@ -75,7 +75,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       place-items: center;
       border-radius: 50%;
       overflow: hidden;
-      background: rgb(0 0 0 / 25%);
+      background: $cream;
       box-shadow:
         inset 0 0 10px rgb(0 0 0 / 35%),
         inset 0 2px 5px rgb(0 0 0 / 20%);
@@ -113,7 +113,7 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       position: absolute;
       top: -8%;
       left: 50%;
-      z-index: 1;
+      // z-index: 1;
       width: 86%;
       transform: translateX(-50%);
       pointer-events: none;
@@ -123,23 +123,18 @@ span.player-avatar(:style="{ width: `${size}px`, height: `${size}px`, '--avatar-
       letter-spacing: 0.3px;
       text-transform: uppercase;
       text-align: center;
-      color: var(--text);
-      text-shadow:
-        -1px -1px 0 var(--outline),
-        1px -1px 0 var(--outline),
-        -1px 1px 0 var(--outline),
-        1px 1px 0 var(--outline),
-        0 2px 3px rgb(0 0 0 / 45%);
+      color: white;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 1);
 
       &--dim {
         color: var(--text-dim);
       }
 
       &--current {
-        color: #fff;
+        color: white;
       }
     }
 

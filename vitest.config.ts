@@ -14,7 +14,7 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['server/**/*.test.ts', 'tests/**/*.test.ts'],
+          include: ['server/**/*.test.ts', 'shared/**/*.test.ts', 'tests/**/*.test.ts'],
         },
         resolve: {
           alias: {
@@ -28,6 +28,20 @@ export default defineConfig({
           name: 'nuxt',
           environment: 'nuxt',
           include: ['app/**/*.test.ts'],
+          // Mounting the whole room page takes a few seconds under happy-dom;
+          // the 5s default made those cases flaky.
+          testTimeout: 15_000,
+          environmentOptions: {
+            nuxt: {
+              // The app ships with `vi` as the default locale and browser
+              // detection on top, which would make the rendered language depend
+              // on happy-dom's navigator. Pin it so assertions on user-facing
+              // copy are deterministic.
+              overrides: {
+                i18n: { defaultLocale: 'en', detectBrowserLanguage: false },
+              },
+            },
+          },
         },
       }),
     ],

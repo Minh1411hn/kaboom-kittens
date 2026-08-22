@@ -28,20 +28,20 @@ button.current-user(:class="{ 'current-user--static': !clickable }" :disabled="!
     align-items: center;
     gap: 0.5rem;
     padding: 0.3rem 0.7rem 0.3rem 0.3rem;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: $cream-card;
+    border: $outline-width solid $ink;
     border-radius: 999px;
-    color: var(--text);
+    color: $ink;
     font-size: 0.9rem;
     cursor: pointer;
     transition:
       background 0.15s,
       border-color 0.15s;
 
+    box-shadow: $shadow-xs;
+
     &:hover:not(:disabled) {
-      background: rgba(0, 0, 0, 0.5);
-      border-color: rgba(255, 255, 255, 0.3);
-      filter: none;
+      filter: brightness(0.97);
     }
 
     &--static {

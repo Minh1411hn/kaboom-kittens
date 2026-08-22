@@ -116,6 +116,18 @@
       }
     },
     {
+      "id": "steal-a-card",
+      "category": "action",
+      "deck": {
+        "base": 3
+      },
+      "color": "#009688",
+      "play": {
+        "solo": true,
+        "target": true
+      }
+    },
+    {
       "id": "draw-from-the-bottom",
       "category": "action",
       "deck": {

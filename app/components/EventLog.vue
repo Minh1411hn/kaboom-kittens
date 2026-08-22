@@ -1,5 +1,5 @@
 <template lang="pug">
-aside.event-log.panel
+aside.event-log
   .event-log__entries(ref="scroller")
     .event-log__entry(
       v-for="entry in entries"
@@ -16,11 +16,16 @@ aside.event-log.panel
           aria-hidden="true"
         )
         span.event-log__event-text {{ entry.text }}
-    p.event-log__empty(v-if="!entries.length") {{ $t('table.event_log.empty') }}
+    p.event-log__empty(v-if="!entries.length") {{ $t("table.event_log.empty") }}
 
   form.event-log__say(@submit.prevent="say")
-    input.event-log__input(v-model="draft" autocomplete="off" maxlength="200" :placeholder="$t('table.event_log.placeholder')")
-    button.event-log__btn(:disabled="!draft.trim()" type="submit") {{ $t('table.event_log.send') }}
+    input.event-log__input(
+      v-model="draft"
+      :placeholder="$t('table.event_log.placeholder')"
+      autocomplete="off"
+      maxlength="200"
+    )
+    button.event-log__btn(:disabled="!draft.trim()" type="submit") {{ $t("table.event_log.send") }}
 </template>
 
 <script setup lang="ts">
@@ -98,13 +103,11 @@ aside.event-log.panel
     min-height: 0;
     width: 100%;
     padding: 0.75rem 0.85rem;
-    background: rgba(26, 6, 6, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: $cream-card;
+    color: $ink;
+    border: $outline-width solid $ink;
     border-radius: 14px;
-    box-shadow:
-      0 16px 36px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: $shadow-sm;
     font-family:
       system-ui,
       -apple-system,
@@ -127,14 +130,14 @@ aside.event-log.panel
       max-height: 40vh;
       padding: 0.25rem 0.15rem;
       scrollbar-width: thin;
-      scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+      scrollbar-color: $ink transparent;
 
       &::-webkit-scrollbar {
         width: 5px;
       }
 
       &::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.25);
+        background-color: $ink;
         border-radius: 999px;
       }
     }
@@ -149,9 +152,8 @@ aside.event-log.panel
       letter-spacing: -0.01em;
 
       &--chat {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        background: $cream;
+        border: 1px solid $ink;
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
@@ -159,9 +161,9 @@ aside.event-log.panel
       }
 
       &--event {
-        background: rgba(255, 255, 255, 0.04);
-        border-left: 3px solid rgba(255, 255, 255, 0.35);
-        color: #cbd5e1;
+        background: $cream;
+        border-left: 3px solid $ink;
+        color: $ink-dim;
         font-size: 0.825rem;
         line-height: 1.4;
         font-weight: 400;
@@ -174,42 +176,42 @@ aside.event-log.panel
 
       &--player-exploded,
       &--kitten-drawn {
-        background: rgba(239, 68, 68, 0.18);
-        border-left: 3px solid #ef4444;
-        color: #fee2e2;
+        background: rgb(192 57 43 / 14%);
+        border-left: 3px solid $bad;
+        color: $ink;
         font-weight: 600;
       }
 
       &--kitten-defused,
       &--game-over {
-        background: rgba(34, 197, 94, 0.18);
-        border-left: 3px solid #22c55e;
-        color: #dcfce7;
+        background: rgb(63 143 74 / 16%);
+        border-left: 3px solid $good;
+        color: $ink;
         font-weight: 600;
       }
 
       &--action-noped,
       &--player-attacked {
-        background: rgba(245, 158, 11, 0.18);
-        border-left: 3px solid #f59e0b;
-        color: #fef9c3;
+        background: rgb(224 149 28 / 20%);
+        border-left: 3px solid $warn;
+        color: $ink;
         font-weight: 600;
       }
 
       &--turn-changed {
-        background: rgba(59, 130, 246, 0.16);
-        border-left: 3px solid #60a5fa;
-        color: #f0f9ff;
+        background: rgb(74 31 24 / 8%);
+        border-left: 3px solid $ink-dim;
+        color: $ink;
         font-weight: 500;
       }
 
       &--game-started {
         background: transparent;
         border-left: none;
-        border-top: 1px dashed rgba(255, 255, 255, 0.25);
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+        border-top: 1px dashed $ink;
+        border-bottom: 1px dashed $ink;
         border-radius: 0;
-        color: #ffb049;
+        color: $ink;
         text-align: center;
         font-weight: 700;
         margin: 1.25rem 0 0.5rem;
@@ -218,13 +220,13 @@ aside.event-log.panel
     }
 
     &__chat-sender {
-      color: #ffb049;
+      color: $accent-dim;
       font-weight: 700;
       letter-spacing: 0.01em;
     }
 
     &__chat-text {
-      color: #f8fafc;
+      color: $ink;
       font-weight: 400;
     }
 
@@ -236,7 +238,7 @@ aside.event-log.panel
     &__empty {
       margin: auto 0;
       text-align: center;
-      color: rgba(255, 255, 255, 0.45);
+      color: $ink-dim;
       font-size: 0.85rem;
       font-style: italic;
       padding: 1.5rem 0.5rem;
@@ -250,30 +252,26 @@ aside.event-log.panel
 
     &__input {
       flex: 1;
-      background: rgba(0, 0, 0, 0.45);
-      color: #ffffff;
+      background: $cream;
+      color: $ink;
       font-family: inherit;
       font-size: 0.875rem;
       font-weight: 400;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 2px solid $ink;
       border-radius: 8px;
       padding: 0.5rem 0.75rem;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
       transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease;
 
       &::placeholder {
-        color: rgba(255, 255, 255, 0.4);
+        color: $ink-dim;
         font-weight: 400;
       }
 
       &:focus {
         outline: none;
-        border-color: #ff7a1a;
-        box-shadow:
-          0 0 0 2px rgba(255, 122, 26, 0.3),
-          inset 0 1px 2px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0 0 2px $accent;
       }
     }
 
@@ -284,13 +282,11 @@ aside.event-log.panel
       letter-spacing: 0.5px;
       text-transform: uppercase;
       padding: 0.5rem 0.95rem;
-      background: linear-gradient(180deg, #ff7a1a 0%, #d9530f 100%);
-      color: #ffffff;
-      border: none;
+      background: linear-gradient(180deg, $gold-1, $gold-2);
+      color: $ink;
+      border: 2px solid $ink;
       border-radius: 8px;
-      box-shadow:
-        0 2px 5px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      box-shadow: $shadow-sm;
       cursor: pointer;
       transition:
         transform 0.08s ease,

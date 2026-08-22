@@ -1,17 +1,359 @@
+<template lang="pug">
+.room
+  NicknameGate(v-if="ready && !nickname" @done="onNicknameSet")
+
+  template(v-else-if="ready")
+    CommonHeader.room__header(
+      :avatar-id="avatarId"
+      :clickable="inLobby"
+      :nickname="nickname"
+      :status="status"
+      @profile-click="profileDialogOpen = true"
+    )
+      template(#left)
+        CommonButton(
+          :aria-label="$t('table.topbar.back_to_lobby')"
+          icon="lucide:arrow-left"
+          size="sm"
+          variant="ghost"
+          @click="leaveToLobby"
+        )
+        CommonButton(
+          v-if="canQuit"
+          :aria-label="$t('table.topbar.leave_match_title')"
+          :label="$t('table.topbar.leave_match')"
+          icon="lucide:log-out"
+          size="sm"
+          variant="red"
+          @click="askToQuit"
+        )
+        .room__title
+          strong.room__name {{ roomName || $t("table.topbar.loading_room") }}
+          span.room__id {{ $t("table.topbar.room_label", { id: roomId }) }}
+
+      template(#actions)
+        CommonButton(
+          v-if="voiceAvailable"
+          :aria-label="$t('table.topbar.audio_settings')"
+          :icon="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'"
+          size="sm"
+          variant="ghost"
+          @click="audioDialogOpen = true"
+        )
+
+    ProfileDialog(
+      v-if="profileDialogOpen"
+      :avatar-id="avatarId"
+      :nickname="nickname"
+      :open="profileDialogOpen"
+      :saving="savingProfile"
+      @cancel="profileDialogOpen = false"
+      @save="onProfileSave"
+    )
+
+    AudioSettingsDialog(v-if="audioDialogOpen" @cancel="audioDialogOpen = false")
+
+    VoiceAudioSinks(ref="voiceSinks")
+
+    button.room__gesture-prompt.panel(v-if="voiceNeedsGesture" @click="voiceSinks?.resume()")
+      Icon(aria-hidden="true" name="lucide:volume-2")
+      |
+      | {{ $t("table.voice.tap_to_unmute") }}
+
+    p.room__notice.panel(v-if="kicked") {{ kicked }}
+    p.room__banner.error(v-if="error") {{ error }}
+    p.room__notice.panel(v-if="spectating")
+      | {{  state?.status === "lobby" ? $t('table.spectating.lobby_full') : $t('table.spectating.game_in_progress')  }}
+
+    p.room__notice.panel.muted(v-if="!state") {{ $t("table.joining_room") }}
+
+    //- ------------------------------------------------ pre-game lobby
+    section.lobby(v-else-if="inLobby")
+      .lobby__content
+        .lobby__col.panel
+          h2.lobby__heading {{ $t("table.lobby.player_list") }}
+          .lobby__seats
+            .lobby__seat(v-for="player in state.players" :key="player.id")
+              PlayerSeat(
+                :is-current="false"
+                :is-host="player.id === hostId"
+                :is-you="player.id === you?.id"
+                :player="player"
+                :turns-remaining="0"
+                :voice-interactive="player.id !== you?.id"
+                :voice-mic-on="voiceMicOnFor(player.id)"
+                :voice-muted="voiceIsMuted(player.id)"
+                :voice-speaking="voiceIsSpeaking(player.id === you?.id ? 'self' : player.id)"
+                layout="horizontal"
+                @toggle-voice-mute="voiceToggleMute"
+              )
+              span.lobby__conn(:class="player.connected ? 'lobby__conn--online' : 'lobby__conn--offline'")
+                | {{ player.connected ? $t("table.lobby.connected") : $t("table.lobby.disconnected") }}
+              CommonButton.lobby__kick(
+                v-if="isHost && player.id !== you?.id"
+                :aria-label="$t('table.lobby.kick_title')"
+                :label="$t('table.lobby.kick')"
+                size="sm"
+                variant="red"
+                @click="kickPlayer(player.id)"
+              )
+
+        .lobby__col.lobby__col--settings.panel
+          h2.lobby__heading {{ $t("table.lobby.room_settings") }}
+          .lobby__actions
+            p.muted
+              | {{ $t("table.lobby.share_intro", { count: state.players.length }) }}
+            ShareLink(:room-id="roomId")
+
+            .lobby__start
+              CommonButton(
+                v-if="isHost"
+                :disabled="state.players.length < 2 || state.status === 'over'"
+                :label="state.status === 'over' ? $t('table.lobby.waiting_for_players') : $t('table.lobby.start_game')"
+                size="lg"
+                variant="gold"
+                @click="startGame"
+              )
+              p.muted(v-else)
+                | {{  state.status === "over" ? $t('table.lobby.waiting_for_players') : $t('table.lobby.waiting_for_host')  }}
+
+          DeckSettingsPanel(:deck="state.deck" :is-host="isHost" @update="setDeckOverrides")
+
+    //- ------------------------------------------------------ the table
+    section.stage(v-else)
+      //- Everyone else, arced across the far side of the table.
+      .stage__arc
+        .stage__arc-slot(
+          v-for="(player, index) in others"
+          :key="player.id"
+          :style="{ transform: arcOffset(index, others.length) }"
+        )
+          PlayerSeat(
+            :is-current="player.id === state.currentPlayerId"
+            :is-host="player.id === hostId"
+            :is-you="false"
+            :player="player"
+            :selected="targetId === player.id"
+            :targetable="targetablePlayers.has(player.id)"
+            :turns-remaining="state.turn.turnsRemaining"
+            :voice-mic-on="voiceMicOnFor(player.id)"
+            :voice-muted="voiceIsMuted(player.id)"
+            :voice-speaking="voiceIsSpeaking(player.id)"
+            voice-interactive
+            @pick="pickTarget"
+            @toggle-voice-mute="voiceToggleMute"
+          )
+
+      .stage__center
+        TableCenter(
+          ref="tableCenter"
+          :can-draw="canDraw"
+          :deadline="state.turnDeadline"
+          :direction="state.turn.direction"
+          :discard-count="state.discardCount"
+          :discard-top="state.discardTop"
+          :dragging="drawDrag.dragging.value"
+          :draw-count="state.drawCount"
+          @draw="draw"
+          @draw-pointer-down="drawDrag.start"
+        )
+
+      .stage__banner
+        TurnBanner(
+          :actor-color="currentPlayerColor"
+          :current-player-name="currentPlayerName"
+          :deadline="state.turnDeadline"
+          :hint="bannerHint"
+          :is-your-turn="isYourTurn"
+        )
+          template(v-if="youAreSeated && alive && !isOver")
+            select(v-if="intent.needsNamedCard" v-model="namedCardId" :aria-label="$t('table.demand_select_aria')")
+              option(:value="null" disabled) {{ $t("table.demand_card_placeholder") }}
+              option(v-for="option in namedCardOptions" :key="option.id" :value="option.id") {{ option.name }}
+
+            CommonButton(
+              :disabled="!intent.ok"
+              :label="selectedUids.length ? $t('table.play_button_count', { count: selectedUids.length }) : $t('table.play_button')"
+              size="md"
+              variant="gold"
+              @click="play"
+            )
+
+            CommonButton(
+              :disabled="!selectedUids.length"
+              :label="$t('table.deselect')"
+              size="md"
+              variant="ghost"
+              @click="selectedUids = []"
+            )
+
+      //- Your own seat, bottom-left.
+      .stage__self
+        PlayerSeat(
+          v-if="selfPlayer"
+          :is-current="isYourTurn"
+          :is-host="isHost"
+          :is-you="true"
+          :player="selfPlayer"
+          :turns-remaining="state.turn.turnsRemaining"
+          :voice-mic-on="voiceMicOnFor(selfPlayer.id)"
+          :voice-speaking="voiceIsSpeaking('self')"
+        )
+
+      .stage__hand(ref="handArea" :class="{ 'stage__hand--drop-active': drawDrag.dragging.value }")
+        HandFan(
+          ref="handFan"
+          v-if="youAreSeated && alive && !isOver"
+          :disabled="!isYourTurn && !hasNope"
+          :flip-uid="flipUid"
+          :hand="hand"
+          :hold-leave="kitten.holdLeave.value"
+          :selected="selectedUids"
+          @toggle="toggle"
+        )
+        p.stage__watching(v-else-if="!youAreSeated")
+          | {{ $t("table.watching_spectator") }}
+        p.stage__watching(v-else-if="!alive")
+          Icon(aria-hidden="true" name="lucide:bomb")
+          |
+          | {{ $t("table.you_exploded") }}
+
+      DrawGhost(
+        v-if="drawDrag.ghostVisible.value"
+        :phase="drawDrag.phase.value"
+        :reduced-motion="drawDrag.reducedMotion"
+        :x="drawDrag.x.value"
+        :y="drawDrag.y.value"
+      )
+
+      Transition(name="slide")
+        NopeBar.stage__nope(
+          v-if="nopeWindow"
+          :deadline="nopeWindow.deadline"
+          :has-nope="hasNope"
+          :passed="passedAlready"
+          :players="state.players"
+          :stack="state.actionStack"
+          :you-played-top="youPlayedTop"
+          @nope="playNope"
+          @pass="send({ type: 'pass-nope' })"
+        )
+
+      //-
+        Only the end of the game draws the curtain. Being eliminated leaves the
+        table visible, because watching the rest burn is the consolation prize.
+      Transition(name="fade")
+        .stage__curtain(v-if="isOver")
+          .stage__result.panel
+            h2
+              Icon(v-if="winner" aria-hidden="true" name="lucide:trophy")
+              | {{ winner ? $t("table.game_over.winner", { name: winner }) : $t("table.game_over.ended") }}
+            .stage__result-seats
+              PlayerSeat(
+                v-for="player in state.players"
+                :is-current="false"
+                :is-host="player.id === hostId"
+                :is-you="player.id === you?.id"
+                :key="player.id"
+                :player="player"
+                :turns-remaining="0"
+              )
+            .row(v-if="youAreSeated")
+              CommonButton(:label="$t('table.game_over.leave_room')" size="sm" variant="ghost" @click="leaveToLobby")
+              CommonButton.stage__ready(
+                :disabled="youAreReady"
+                :label="youAreReady ? $t('table.game_over.waiting_for_players', { ready: readyCount, connected: connectedCount }) : $t('table.game_over.ready_new_game')"
+                size="sm"
+                variant="gold"
+                @click="returnToLobby"
+              )
+            .row(v-else)
+              CommonButton(:label="$t('table.game_over.leave_room')" size="sm" variant="gold" @click="leaveToLobby")
+
+    //- Chat and the story of the game, tucked into a corner.
+    .log-dock(v-if="state" :class="{ 'log-dock--open': logOpen }")
+      button.log-dock__toggle(@click="logOpen = !logOpen")
+        | {{ logOpen ? $t("table.log.hide") : $t("table.log.show") }}
+        Icon(:name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true")
+      EventLog(v-show="logOpen" :chat="chat" :events="pending" :players="state.players" @say="say")
+
+    InteractionModal(
+      v-if="state?.interaction && !['reorder-cards', 'choose-deck-position'].includes(state.interaction.kind)"
+      :hand="hand"
+      :interaction="state.interaction"
+      :players="state.players"
+      :you-id="state.you?.id ?? null"
+      @submit="submitInteraction"
+    )
+
+    SeeFutureModal(
+      v-if="showAlterFutureModal"
+      :cards="state?.interaction?.cards ?? []"
+      editable
+      @submit="onAlterFutureSubmit"
+    )
+
+    SeeFutureModal(v-if="showPeekModal" :cards="you?.peek ?? []" @close="peekDismissed = true")
+
+    DeckPositionModal(
+      v-if="deckPositionInteraction"
+      :interaction="deckPositionInteraction"
+      @submit="onDeckPositionSubmit"
+    )
+
+    TargetSelectModal(
+      v-if="targetModalOpen"
+      :card-id="selectedCards[0]?.id"
+      :combo="intent.combo"
+      :initial-named-card-id="namedCardId"
+      :initial-target-id="targetId"
+      :needs-named-card="intent.needsNamedCard"
+      :players="state?.players ?? []"
+      :you-id="you?.id"
+      @cancel="targetModalOpen = false"
+      @confirm="onTargetConfirmed"
+    )
+
+    CardArrivalFlyer(:arriving-cards="arrivingCards" :hand-area-rect="handAreaRect" @landed="onCardLanded")
+
+    //-
+      Drawing an Exploding Kitten, staged: the whole table sees the
+      reveal, then the drawer's Defuse flies to the discard, and only
+      then does DeckPositionModal above get its turn.
+    KittenRevealOverlay(
+      v-if="kitten.revealSeq.value !== null"
+      :defused="kitten.revealDefused.value"
+      :player-name="kitten.revealPlayerName.value"
+      :uid="`kitten-${kitten.revealSeq.value}`"
+    )
+
+    CardDepartureFlyer(
+      :card="kitten.defuseCard.value"
+      :from-rect="kitten.defuseFromRect.value"
+      :measure-to="discardRect"
+      @done="kitten.onDefuseFlightDone"
+    )
+
+    ConfirmDialog(
+      v-if="confirmingQuit"
+      :cancel-label="$t('table.quit_dialog.cancel')"
+      :confirm-label="$t('table.quit_dialog.confirm')"
+      :message="$t('table.quit_dialog.message')"
+      :title="$t('table.quit_dialog.title')"
+      @cancel="cancelQuit"
+      @confirm="quitGame"
+    )
+</template>
+
 <script setup lang="ts">
-import type {
-    Card,
-    CardId,
-    DeckOverrides,
-    InteractionResponse,
-} from "#shared/types/game";
-import { CARD_CATALOG } from "#shared/types/game";
+  import type { Card, CardId, DeckOverrides, InteractionResponse } from "#shared/types/game"
+  import { CARD_CATALOG } from "#shared/types/game"
 
-const route = useRoute();
-const roomId = computed(() => String(route.params.id).toUpperCase());
+  const route = useRoute()
+  const roomId = computed(() => String(route.params.id).toUpperCase())
 
-const { nickname, avatarId, ready, load, setProfile } = useSession();
-const {
+  const { nickname, avatarId, ready, load, setProfile } = useSession()
+  const {
     state,
     hostId,
     roomName,
@@ -24,119 +366,89 @@ const {
     connect,
     send,
     resetRoom,
-    leaveOnPageHide,
-} = useGameSocket();
+    leaveOnPageHide
+  } = useGameSocket()
 
-await load();
+  await load()
 
-const selectedUids = ref<string[]>([]);
-const targetId = ref<string | null>(null);
-const namedCardId = ref<CardId | null>(null);
-const logOpen = ref(true);
-const confirmingQuit = ref(false);
-const targetModalOpen = ref(false);
-const peekDismissed = ref(false);
-const arrivingCards = ref<Card[]>([]);
-const profileDialogOpen = ref(false);
-const savingProfile = ref(false);
-/** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
-const drawPending = ref(false);
+  const selectedUids = ref<string[]>([])
+  const targetId = ref<string | null>(null)
+  const namedCardId = ref<CardId | null>(null)
+  const logOpen = ref(true)
+  const confirmingQuit = ref(false)
+  const targetModalOpen = ref(false)
+  const peekDismissed = ref(false)
+  const arrivingCards = ref<Card[]>([])
+  const profileDialogOpen = ref(false)
+  const savingProfile = ref(false)
+  /** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
+  const drawPending = ref(false)
 
-// --- derived state ---------------------------------------------------------
+  // --- derived state ---------------------------------------------------------
 
-const you = computed(() => state.value?.you ?? null);
-/**
- * You walked into a room whose game had already started (or that was full), so
- * you have no seat — the server sends the public table and nothing else. The
- * watcher below claims a seat as soon as the room goes back to waiting.
- */
-const spectating = computed(() => Boolean(state.value && !you.value));
-const hand = computed<Card[]>(() => you.value?.hand ?? []);
-const selectedCards = computed(() =>
-    hand.value.filter((c) => selectedUids.value.includes(c.uid)),
-);
-const isYourTurn = computed(() =>
-    Boolean(
-        state.value &&
-        you.value &&
-        state.value.currentPlayerId === you.value.id,
-    ),
-);
-const isHost = computed(() =>
-    Boolean(you.value && hostId.value === you.value.id),
-);
-const inLobby = computed(
-    () =>
-        state.value?.status === "lobby" ||
-        (state.value?.status === "over" && youAreReady.value),
-);
-const isPlaying = computed(() => state.value?.status === "playing");
-const isOver = computed(
-    () => state.value?.status === "over" && !youAreReady.value,
-);
-const youAreSeated = computed(() =>
-    Boolean(state.value?.players.some((p) => p.id === you.value?.id)),
-);
-const alive = computed(() =>
-    Boolean(state.value?.players.find((p) => p.id === you.value?.id)?.alive),
-);
-const canQuit = computed(
-    () => isPlaying.value && alive.value && youAreSeated.value,
-);
+  const you = computed(() => state.value?.you ?? null)
+  /**
+   * You walked into a room whose game had already started (or that was full), so
+   * you have no seat — the server sends the public table and nothing else. The
+   * watcher below claims a seat as soon as the room goes back to waiting.
+   */
+  const spectating = computed(() => Boolean(state.value && !you.value))
+  const hand = computed<Card[]>(() => you.value?.hand ?? [])
+  const selectedCards = computed(() => hand.value.filter((c) => selectedUids.value.includes(c.uid)))
+  const isYourTurn = computed(() => Boolean(state.value && you.value && state.value.currentPlayerId === you.value.id))
+  const isHost = computed(() => Boolean(you.value && hostId.value === you.value.id))
+  const inLobby = computed(
+    () => state.value?.status === "lobby" || (state.value?.status === "over" && youAreReady.value)
+  )
+  const isPlaying = computed(() => state.value?.status === "playing")
+  const isOver = computed(() => state.value?.status === "over" && !youAreReady.value)
+  const youAreSeated = computed(() => Boolean(state.value?.players.some((p) => p.id === you.value?.id)))
+  const alive = computed(() => Boolean(state.value?.players.find((p) => p.id === you.value?.id)?.alive))
+  const canQuit = computed(() => isPlaying.value && alive.value && youAreSeated.value)
 
-/** Your own seat sits at the bottom-left; everyone else arcs across the top. */
-const selfPlayer = computed(
-    () => state.value?.players.find((p) => p.id === you.value?.id) ?? null,
-);
-const others = computed(() => {
-    const players = state.value?.players ?? [];
+  /** Your own seat sits at the bottom-left; everyone else arcs across the top. */
+  const selfPlayer = computed(() => state.value?.players.find((p) => p.id === you.value?.id) ?? null)
+  const others = computed(() => {
+    const players = state.value?.players ?? []
     if (!you.value || selfPlayer.value?.seat === undefined) {
-        return players;
+      return players
     }
 
-    const yourSeat = selfPlayer.value.seat;
-    const n = players.length;
-    const result = [];
+    const yourSeat = selfPlayer.value.seat
+    const n = players.length
+    const result = []
 
     // Order cyclically starting from the player to your immediate "left" (seat + 1)
     for (let i = 1; i < n; i++) {
-        const seat = (yourSeat + i) % n;
-        const player = players.find((p) => p.seat === seat);
-        if (player) result.push(player);
+      const seat = (yourSeat + i) % n
+      const player = players.find((p) => p.seat === seat)
+      if (player) result.push(player)
     }
-    return result;
-});
-const youAreReady = computed(() => Boolean(selfPlayer.value?.ready));
-const readyCount = computed(
-    () => state.value?.players.filter((p) => p.ready).length ?? 0,
-);
-const connectedCount = computed(
-    () => state.value?.players.filter((p) => p.connected).length ?? 0,
-);
+    return result
+  })
+  const youAreReady = computed(() => Boolean(selfPlayer.value?.ready))
+  const readyCount = computed(() => state.value?.players.filter((p) => p.ready).length ?? 0)
+  const connectedCount = computed(() => state.value?.players.filter((p) => p.connected).length ?? 0)
 
-const intent = usePlayIntent(selectedCards, state, isYourTurn);
+  const intent = usePlayIntent(selectedCards, state, isYourTurn)
 
-// --- the Exploding Kitten ceremony -----------------------------------------
+  // --- the Exploding Kitten ceremony -----------------------------------------
 
-const handFan = useTemplateRef<{ slotRect: (uid: string) => DOMRect | null }>(
-    "handFan",
-);
-const tableCenter = useTemplateRef<{ discardRect: () => DOMRect | null }>(
-    "tableCenter",
-);
+  const handFan = useTemplateRef<{ slotRect: (uid: string) => DOMRect | null }>("handFan")
+  const tableCenter = useTemplateRef<{ discardRect: () => DOMRect | null }>("tableCenter")
 
-const kitten = useKittenCeremony({
+  const kitten = useKittenCeremony({
     state,
     youId: () => you.value?.id,
-    captureRect: (uid) => handFan.value?.slotRect(uid) ?? null,
-});
+    captureRect: (uid) => handFan.value?.slotRect(uid) ?? null
+  })
 
-useTurnSound({ state, youId: () => you.value?.id });
-useKittenSound({ state });
+  useTurnSound({ state, youId: () => you.value?.id })
+  useKittenSound({ state })
 
-// --- voice chat ------------------------------------------------------------
+  // --- voice chat ------------------------------------------------------------
 
-const {
+  const {
     available: voiceAvailable,
     micOn: voiceMicOn,
     needsGesture: voiceNeedsGesture,
@@ -145,895 +457,384 @@ const {
     micOnFor: voiceMicOnFor,
     toggleMute: voiceToggleMute,
     start: startVoice,
-    stop: stopVoice,
-} = useVoiceChat();
-const audioDialogOpen = ref(false);
-const voiceSinks = useTemplateRef<{ resume: () => void }>("voiceSinks");
-const { t } = useI18n();
-const { cardName } = useCardText();
+    stop: stopVoice
+  } = useVoiceChat()
+  const audioDialogOpen = ref(false)
+  const voiceSinks = useTemplateRef<{ resume: () => void }>("voiceSinks")
+  const { t } = useI18n()
+  const { cardName } = useCardText()
 
-const discardRect = () => tableCenter.value?.discardRect() ?? null;
+  const discardRect = () => tableCenter.value?.discardRect() ?? null
 
-const nopeWindow = computed(() => state.value?.nopeWindow ?? null);
-const hasNope = computed(() => hand.value.some((c) => c.id === "nope"));
-const youPlayedTop = computed(
-    () => state.value?.actionStack.at(-1)?.playerId === you.value?.id,
-);
-const passedAlready = computed(() =>
-    Boolean(you.value && nopeWindow.value?.passed.includes(you.value.id)),
-);
+  const nopeWindow = computed(() => state.value?.nopeWindow ?? null)
+  const hasNope = computed(() => hand.value.some((c) => c.id === "nope"))
+  const youPlayedTop = computed(() => state.value?.actionStack.at(-1)?.playerId === you.value?.id)
+  const passedAlready = computed(() => Boolean(you.value && nopeWindow.value?.passed.includes(you.value.id)))
 
-const canDraw = computed(
-    () =>
-        isYourTurn.value &&
-        !state.value?.interaction &&
-        !nopeWindow.value &&
-        alive.value &&
-        !drawPending.value,
-);
+  const canDraw = computed(
+    () => isYourTurn.value && !state.value?.interaction && !nopeWindow.value && alive.value && !drawPending.value
+  )
 
-// --- drag to draw ----------------------------------------------------------
+  // --- drag to draw ----------------------------------------------------------
 
-/** The uid the drag delivered, held just long enough for HandFan to flip it. */
-const flipUid = ref<string | null>(null);
-const handArea = useTemplateRef<HTMLElement>("handArea");
-const handAreaRect = computed(
-    () => handArea.value?.getBoundingClientRect() ?? null,
-);
-let flipTimer: ReturnType<typeof setTimeout> | undefined;
-/** The hand as it stood when you let go, to spot what the draw delivered. */
-let handAtDrop = new Set<string>();
+  /** The uid the drag delivered, held just long enough for HandFan to flip it. */
+  const flipUid = ref<string | null>(null)
+  const handArea = useTemplateRef<HTMLElement>("handArea")
+  const handAreaRect = computed(() => handArea.value?.getBoundingClientRect() ?? null)
+  let flipTimer: ReturnType<typeof setTimeout> | undefined
+  /** The hand as it stood when you let go, to spot what the draw delivered. */
+  let handAtDrop = new Set<string>()
 
-const drawDrag = useDrawDrag({
+  const drawDrag = useDrawDrag({
     canDraw: () => canDraw.value,
     dropRect: () => handArea.value?.getBoundingClientRect() ?? null,
     onDrop: () => {
-        handAtDrop = new Set(hand.value.map((c) => c.uid));
-        drawPending.value = true;
-        send({ type: "draw-card" });
-    },
-});
+      handAtDrop = new Set(hand.value.map((c) => c.uid))
+      drawPending.value = true
+      send({ type: "draw-card" })
+    }
+  })
 
-function settleDraw(): void {
-    if (!drawPending.value) return;
-    drawPending.value = false;
-    drawDrag.resolve();
-}
+  function settleDraw(): void {
+    if (!drawPending.value) return
+    drawPending.value = false
+    drawDrag.resolve()
+  }
 
-function onCardLanded(uid: string): void {
-    flipUid.value = uid;
-    clearTimeout(flipTimer);
-    flipTimer = setTimeout(() => (flipUid.value = null), 400);
-    arrivingCards.value = arrivingCards.value.filter((c) => c.uid !== uid);
-}
+  function onCardLanded(uid: string): void {
+    flipUid.value = uid
+    clearTimeout(flipTimer)
+    flipTimer = setTimeout(() => (flipUid.value = null), 400)
+    arrivingCards.value = arrivingCards.value.filter((c) => c.uid !== uid)
+  }
 
-// The next snapshot is the answer, whatever it contains. An `error` arrives on
-// its own with no snapshot behind it, so it needs its own release.
-watch(state, () => settleDraw());
-watch(error, (message) => {
-    if (message) settleDraw();
-});
-// The composable gives up on a silent server after a few seconds. Follow it back
-// to idle, or a lost reply would leave the deck disabled for the rest of the game.
-watch(drawDrag.phase, (phase) => {
-    if (phase === "idle") drawPending.value = false;
-});
-// The turn clock can expire mid-drag, at which point the server draws for you.
-// Let go of a card that is no longer yours to place.
-watch(isYourTurn, (mine) => {
-    if (!mine) drawDrag.cancel();
-});
+  // The next snapshot is the answer, whatever it contains. An `error` arrives on
+  // its own with no snapshot behind it, so it needs its own release.
+  watch(state, () => settleDraw())
+  watch(error, (message) => {
+    if (message) settleDraw()
+  })
+  // The composable gives up on a silent server after a few seconds. Follow it back
+  // to idle, or a lost reply would leave the deck disabled for the rest of the game.
+  watch(drawDrag.phase, (phase) => {
+    if (phase === "idle") drawPending.value = false
+  })
+  // The turn clock can expire mid-drag, at which point the server draws for you.
+  // Let go of a card that is no longer yours to place.
+  watch(isYourTurn, (mine) => {
+    if (!mine) drawDrag.cancel()
+  })
 
-onBeforeUnmount(() => clearTimeout(flipTimer));
+  onBeforeUnmount(() => clearTimeout(flipTimer))
 
-/** Choosing a target puts the table into a "pick a seat" mode. */
-const pickingTarget = computed(
-    () => intent.value.ok && intent.value.needsTarget && !targetId.value,
-);
+  /** Choosing a target puts the table into a "pick a seat" mode. */
+  const pickingTarget = computed(() => intent.value.ok && intent.value.needsTarget && !targetId.value)
 
-const targetablePlayers = computed(() => {
-    if (!pickingTarget.value) return new Set<string>();
+  const targetablePlayers = computed(() => {
+    if (!pickingTarget.value) return new Set<string>()
     return new Set(
-        (state.value?.players ?? [])
-            .filter((p) => p.alive && p.id !== you.value?.id && p.handCount > 0)
-            .map((p) => p.id),
-    );
-});
+      (state.value?.players ?? []).filter((p) => p.alive && p.id !== you.value?.id && p.handCount > 0).map((p) => p.id)
+    )
+  })
 
-const currentPlayer = computed(
-    () =>
-        state.value?.players.find(
-            (p) => p.id === state.value?.currentPlayerId,
-        ) ?? null,
-);
-const currentPlayerName = computed(() => currentPlayer.value?.nickname ?? "…");
-const currentPlayerColor = computed(() =>
-    currentPlayer.value
-        ? seatColors(currentPlayer.value.seat, currentPlayer.value.alive).base
-        : "var(--ink-dim)",
-);
+  const currentPlayer = computed(() => state.value?.players.find((p) => p.id === state.value?.currentPlayerId) ?? null)
+  const currentPlayerName = computed(() => currentPlayer.value?.nickname ?? "…")
+  const currentPlayerColor = computed(() =>
+    currentPlayer.value ? seatColors(currentPlayer.value.seat, currentPlayer.value.alive).base : "var(--ink-dim)"
+  )
 
-/** One line of guidance, in priority order, for the banner. */
-const bannerHint = computed(() => {
-    if (intent.value.reason) return intent.value.reason;
-    if (pickingTarget.value) return t("table.pick_a_player_above");
-    if (drawDrag.dragging.value) return t("table.drop_to_draw");
-    if (isYourTurn.value)
-        return t("table.play_or_draw_hint");
-    return "";
-});
+  /** One line of guidance, in priority order, for the banner. */
+  const bannerHint = computed(() => {
+    if (intent.value.reason) return intent.value.reason
+    if (pickingTarget.value) return t("table.pick_a_player_above")
+    if (drawDrag.dragging.value) return t("table.drop_to_draw")
+    if (isYourTurn.value) return t("table.play_or_draw_hint")
+    return ""
+  })
 
-const winner = computed(
-    () =>
-        state.value?.players.find((p) => p.id === state.value?.winnerId)
-            ?.nickname ?? null,
-);
+  const winner = computed(() => state.value?.players.find((p) => p.id === state.value?.winnerId)?.nickname ?? null)
 
-const namedCardOptions = computed(() => CARD_CATALOG.map((c) => ({ id: c.id, name: cardName(c.id) })));
+  const namedCardOptions = computed(() => CARD_CATALOG.map((c) => ({ id: c.id, name: cardName(c.id) })))
 
-/**
- * A shallow arch across the top of the table: the middle seats sit highest, as
- * if they were on the far side. Same parabola trick as the hand fan's tilt.
- */
-function arcOffset(index: number, count: number): string {
-    if (count < 3) return "none";
-    const middle = (count - 1) / 2;
-    const norm = (index - middle) / middle;
-    return `translateY(${-(1 - norm * norm) * 24}px)`;
-}
+  /**
+   * A shallow arch across the top of the table: the middle seats sit highest, as
+   * if they were on the far side. Same parabola trick as the hand fan's tilt.
+   */
+  function arcOffset(index: number, count: number): string {
+    if (count < 3) return "none"
+    const middle = (count - 1) / 2
+    const norm = (index - middle) / middle
+    return `translateY(${-(1 - norm * norm) * 24}px)`
+  }
 
-// --- lifecycle -------------------------------------------------------------
+  // --- lifecycle -------------------------------------------------------------
 
-let stopPageHide: (() => void) | undefined;
+  let stopPageHide: (() => void) | undefined
 
-onMounted(() => {
-    resetRoom();
-    stopPageHide = leaveOnPageHide();
-    if (nickname.value) join();
-});
+  onMounted(() => {
+    resetRoom()
+    stopPageHide = leaveOnPageHide()
+    if (nickname.value) join()
+  })
 
-let joined = false;
+  let joined = false
 
-function join() {
-    joined = true;
-    connect();
+  function join() {
+    joined = true
+    connect()
     // Voice is independent of the game socket: it has its own connection to
     // the SFU and survives a socket blip, so it is started once here and torn
     // down only when the page goes away.
-    void startVoice();
+    void startVoice()
     // A socket carried over from the lobby page is already open, so nothing
     // would wake the watcher below — send now instead.
-    if (status.value === "open") send({ type: "join", roomId: roomId.value });
-}
+    if (status.value === "open") send({ type: "join", roomId: roomId.value })
+  }
 
-/**
- * Re-join on every fresh socket. A dropped connection now frees the seat while
- * the room is waiting, and mid-game it flags a disconnect — either way the new
- * socket starts with no room attached, so without this the table would go quiet
- * after a blip.
- */
-watch(status, (now, before) => {
+  /**
+   * Re-join on every fresh socket. A dropped connection now frees the seat while
+   * the room is waiting, and mid-game it flags a disconnect — either way the new
+   * socket starts with no room attached, so without this the table would go quiet
+   * after a blip.
+   */
+  watch(status, (now, before) => {
     if (joined && now === "open" && before !== "open") {
-        send({ type: "join", roomId: roomId.value });
+      send({ type: "join", roomId: roomId.value })
     }
-});
+  })
 
-function onNicknameSet() {
-    join();
-}
+  function onNicknameSet() {
+    join()
+  }
 
-onBeforeUnmount(() => {
-    stopPageHide?.();
-    stopVoice();
-    if (state.value) send({ type: "leave" });
-});
+  onBeforeUnmount(() => {
+    stopPageHide?.()
+    stopVoice()
+    if (state.value) send({ type: "leave" })
+  })
 
-/**
- * A spectator becomes a player the moment the room goes back to waiting. The
- * request is the ordinary `join`, so a room that filled up in the meantime just
- * leaves you watching; we ask again whenever the roster changes, which is the
- * only way a seat can open up.
- */
-let seatAskedAt = -1;
-watch(
+  /**
+   * A spectator becomes a player the moment the room goes back to waiting. The
+   * request is the ordinary `join`, so a room that filled up in the meantime just
+   * leaves you watching; we ask again whenever the roster changes, which is the
+   * only way a seat can open up.
+   */
+  let seatAskedAt = -1
+  watch(
     () => [spectating.value, state.value?.status, state.value?.players.length],
     () => {
-        if (!spectating.value) {
-            seatAskedAt = -1;
-            return;
-        }
-        const seated = state.value?.players.length ?? 0;
-        if (state.value?.status !== "lobby" || seatAskedAt === seated) return;
-        seatAskedAt = seated;
-        send({ type: "join", roomId: roomId.value });
-    },
-);
+      if (!spectating.value) {
+        seatAskedAt = -1
+        return
+      }
+      const seated = state.value?.players.length ?? 0
+      if (state.value?.status !== "lobby" || seatAskedAt === seated) return
+      seatAskedAt = seated
+      send({ type: "join", roomId: roomId.value })
+    }
+  )
 
-// Track cards leaving hand and detect newly arrived cards
-let knownHandUids = new Set<string>();
-let initializedHand = false;
+  // Track cards leaving hand and detect newly arrived cards
+  let knownHandUids = new Set<string>()
+  let initializedHand = false
 
-watch(hand, (cards) => {
-    const uids = new Set(cards.map((c) => c.uid));
-    selectedUids.value = selectedUids.value.filter((uid) => uids.has(uid));
+  watch(hand, (cards) => {
+    const uids = new Set(cards.map((c) => c.uid))
+    selectedUids.value = selectedUids.value.filter((uid) => uids.has(uid))
 
     if (!isPlaying.value) {
-        knownHandUids = new Set(cards.map((c) => c.uid));
-        initializedHand = false;
-        return;
+      knownHandUids = new Set(cards.map((c) => c.uid))
+      initializedHand = false
+      return
     }
 
     if (!initializedHand) {
-        knownHandUids = new Set(cards.map((c) => c.uid));
-        initializedHand = true;
-        return;
+      knownHandUids = new Set(cards.map((c) => c.uid))
+      initializedHand = true
+      return
     }
 
-    const incoming = cards.filter((c) => !knownHandUids.has(c.uid));
+    const incoming = cards.filter((c) => !knownHandUids.has(c.uid))
     if (incoming.length > 0) {
-        arrivingCards.value = incoming;
+      arrivingCards.value = incoming
     }
-    knownHandUids = new Set(cards.map((c) => c.uid));
-});
+    knownHandUids = new Set(cards.map((c) => c.uid))
+  })
 
-watch(selectedUids, () => {
-    targetId.value = null;
-    namedCardId.value = null;
-});
+  watch(selectedUids, () => {
+    targetId.value = null
+    namedCardId.value = null
+  })
 
-watch(
+  watch(
     () => you.value?.peek,
     (newPeek, oldPeek) => {
-        if (newPeek && newPeek.length > 0) {
-            const newKey = newPeek.map((c) => c.uid).join(",");
-            const oldKey = oldPeek?.map((c) => c.uid).join(",");
-            // If the deck was drawn from, the new peek is just a suffix of the old peek.
-            // In this case, we shouldn't pop up the modal again.
-            if (newKey !== oldKey && (!oldKey || !oldKey.endsWith(newKey))) {
-                peekDismissed.value = false;
-            }
-        } else {
-            peekDismissed.value = false;
+      if (newPeek && newPeek.length > 0) {
+        const newKey = newPeek.map((c) => c.uid).join(",")
+        const oldKey = oldPeek?.map((c) => c.uid).join(",")
+        // If the deck was drawn from, the new peek is just a suffix of the old peek.
+        // In this case, we shouldn't pop up the modal again.
+        if (newKey !== oldKey && (!oldKey || !oldKey.endsWith(newKey))) {
+          peekDismissed.value = false
         }
+      } else {
+        peekDismissed.value = false
+      }
     },
-    { deep: true },
-);
+    { deep: true }
+  )
 
-const showPeekModal = computed(() =>
+  const showPeekModal = computed(() =>
+    Boolean(you.value?.peek?.length && !peekDismissed.value && alive.value && !isOver.value)
+  )
+
+  // Alter the Future rides the generic interaction system, but gets its own
+  // dialog (shared with See the Future) instead of InteractionModal's generic
+  // prompt renderer. `cards` is only populated for the player who must answer,
+  // so its presence already implies this interaction is for you.
+  const showAlterFutureModal = computed(() =>
+    Boolean(state.value?.interaction?.kind === "reorder-cards" && state.value.interaction.cards)
+  )
+
+  // Same idea for choosing where the defused kitten goes back into the deck —
+  // its own dialog (DeckPositionModal) instead of InteractionModal's generic
+  // prompt renderer. This kind carries no `cards`, so gate on `isForYou`
+  // instead. It also waits for the kitten ceremony (reveal, then the Defuse
+  // flying to the discard) to finish, so the dialog is the last beat rather
+  // than the only one you see.
+  const showDeckPositionModal = computed(() =>
     Boolean(
-        you.value?.peek?.length &&
-        !peekDismissed.value &&
-        alive.value &&
-        !isOver.value,
-    ),
-);
+      state.value?.interaction?.kind === "choose-deck-position" &&
+      state.value.interaction.isForYou &&
+      !kitten.blocking.value
+    )
+  )
 
-// Alter the Future rides the generic interaction system, but gets its own
-// dialog (shared with See the Future) instead of InteractionModal's generic
-// prompt renderer. `cards` is only populated for the player who must answer,
-// so its presence already implies this interaction is for you.
-const showAlterFutureModal = computed(() =>
-    Boolean(
-        state.value?.interaction?.kind === "reorder-cards" &&
-        state.value.interaction.cards,
-    ),
-);
+  /**
+   * The same guard as a value, so the template can pass the interaction without a
+   * non-null assertion — TS syntax inside a pug template is not compiled away.
+   */
+  const deckPositionInteraction = computed(() =>
+    showDeckPositionModal.value ? (state.value?.interaction ?? null) : null
+  )
 
-// Same idea for choosing where the defused kitten goes back into the deck —
-// its own dialog (DeckPositionModal) instead of InteractionModal's generic
-// prompt renderer. This kind carries no `cards`, so gate on `isForYou`
-// instead. It also waits for the kitten ceremony (reveal, then the Defuse
-// flying to the discard) to finish, so the dialog is the last beat rather
-// than the only one you see.
-const showDeckPositionModal = computed(() =>
-    Boolean(
-        state.value?.interaction?.kind === "choose-deck-position" &&
-        state.value.interaction.isForYou &&
-        !kitten.blocking.value,
-    ),
-);
+  // --- actions ---------------------------------------------------------------
 
-// --- actions ---------------------------------------------------------------
-
-function toggle(uid: string) {
-    if (!alive.value) return;
+  function toggle(uid: string) {
+    if (!alive.value) return
     selectedUids.value = selectedUids.value.includes(uid)
-        ? selectedUids.value.filter((u) => u !== uid)
-        : [...selectedUids.value, uid];
-}
+      ? selectedUids.value.filter((u) => u !== uid)
+      : [...selectedUids.value, uid]
+  }
 
-function pickTarget(id: string) {
-    targetId.value = id;
-}
+  function pickTarget(id: string) {
+    targetId.value = id
+  }
 
-function onTargetConfirmed(selectedTarget: string, demandedCard?: CardId) {
-    targetId.value = selectedTarget;
+  function onTargetConfirmed(selectedTarget: string, demandedCard?: CardId) {
+    targetId.value = selectedTarget
     if (demandedCard) {
-        namedCardId.value = demandedCard;
+      namedCardId.value = demandedCard
     }
-    targetModalOpen.value = false;
-    executePlay();
-}
+    targetModalOpen.value = false
+    executePlay()
+  }
 
-function play() {
-    if (!intent.value.ok) return;
+  function play() {
+    if (!intent.value.ok) return
     if (intent.value.needsTarget && !targetId.value) {
-        targetModalOpen.value = true;
-        return;
+      targetModalOpen.value = true
+      return
     }
     if (intent.value.needsNamedCard && !namedCardId.value) {
-        targetModalOpen.value = true;
-        return;
+      targetModalOpen.value = true
+      return
     }
-    executePlay();
-}
+    executePlay()
+  }
 
-function executePlay() {
+  function executePlay() {
     send({
-        type: "play-card",
-        uids: [...selectedUids.value],
-        combo: intent.value.combo,
-        targetPlayerId: targetId.value ?? undefined,
-        namedCardId: namedCardId.value ?? undefined,
-    });
-    selectedUids.value = [];
-    targetId.value = null;
-    namedCardId.value = null;
-}
+      type: "play-card",
+      uids: [...selectedUids.value],
+      combo: intent.value.combo,
+      targetPlayerId: targetId.value ?? undefined,
+      namedCardId: namedCardId.value ?? undefined
+    })
+    selectedUids.value = []
+    targetId.value = null
+    namedCardId.value = null
+  }
 
-const draw = () => send({ type: "draw-card" });
-const startGame = () => send({ type: "start-game" });
-const setDeckOverrides = (overrides: DeckOverrides) =>
-    send({ type: "set-deck-overrides", overrides });
-const say = (text: string) => send({ type: "chat", text });
-const submitInteraction = (response: InteractionResponse) => {
-    const id = state.value?.interaction?.id;
-    if (id) send({ type: "submit-interaction", interactionId: id, response });
-};
-const onAlterFutureSubmit = (uids: string[]) =>
-    submitInteraction({ type: "order", uids });
-const onDeckPositionSubmit = (index: number) =>
-    submitInteraction({ type: "position", index });
+  const draw = () => send({ type: "draw-card" })
+  const startGame = () => send({ type: "start-game" })
+  const setDeckOverrides = (overrides: DeckOverrides) => send({ type: "set-deck-overrides", overrides })
+  const say = (text: string) => send({ type: "chat", text })
+  const submitInteraction = (response: InteractionResponse) => {
+    const id = state.value?.interaction?.id
+    if (id) send({ type: "submit-interaction", interactionId: id, response })
+  }
+  const onAlterFutureSubmit = (uids: string[]) => submitInteraction({ type: "order", uids })
+  const onDeckPositionSubmit = (index: number) => submitInteraction({ type: "position", index })
 
-function playNope() {
-    const nope = hand.value.find((c) => c.id === "nope");
-    if (nope) send({ type: "play-card", uids: [nope.uid], combo: null });
-}
+  function playNope() {
+    const nope = hand.value.find((c) => c.id === "nope")
+    if (nope) send({ type: "play-card", uids: [nope.uid], combo: null })
+  }
 
-async function leaveToLobby() {
-    send({ type: "leave" });
-    await navigateTo("/");
-}
+  async function leaveToLobby() {
+    send({ type: "leave" })
+    await navigateTo("/")
+  }
 
-function returnToLobby() {
-    send({ type: "return-to-lobby" });
-}
+  function returnToLobby() {
+    send({ type: "return-to-lobby" })
+  }
 
-async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
-    if (savingProfile.value) return;
-    savingProfile.value = true;
+  async function onProfileSave(nicknameValue: string, avatarIdValue: string) {
+    if (savingProfile.value) return
+    savingProfile.value = true
     try {
-        // REST first: the durable write, works even if the socket is down.
-        await setProfile(nicknameValue, avatarIdValue);
-        // Then tell the room to broadcast the change to every other player.
-        send({
-            type: "update-profile",
-            nickname: nicknameValue,
-            avatarId: avatarIdValue,
-        });
-        profileDialogOpen.value = false;
+      // REST first: the durable write, works even if the socket is down.
+      await setProfile(nicknameValue, avatarIdValue)
+      // Then tell the room to broadcast the change to every other player.
+      send({
+        type: "update-profile",
+        nickname: nicknameValue,
+        avatarId: avatarIdValue
+      })
+      profileDialogOpen.value = false
     } finally {
-        savingProfile.value = false;
+      savingProfile.value = false
     }
-}
+  }
 
-function kickPlayer(targetPlayerId: string) {
-    send({ type: "kick-player", targetPlayerId });
-}
+  function kickPlayer(targetPlayerId: string) {
+    send({ type: "kick-player", targetPlayerId })
+  }
 
-function askToQuit() {
-    confirmingQuit.value = true;
-}
+  function askToQuit() {
+    confirmingQuit.value = true
+  }
 
-async function quitGame() {
-    confirmingQuit.value = false;
-    send({ type: "quit-game" });
-    await navigateTo("/");
-}
+  async function quitGame() {
+    confirmingQuit.value = false
+    send({ type: "quit-game" })
+    await navigateTo("/")
+  }
 
-function cancelQuit() {
-    confirmingQuit.value = false;
-}
+  function cancelQuit() {
+    confirmingQuit.value = false
+  }
 </script>
 
-<template>
-    <div class="room" :class="{ 'red-theme': !state || inLobby }">
-        <NicknameGate v-if="ready && !nickname" @done="onNicknameSet" />
-
-        <template v-else-if="ready">
-            <header class="topbar">
-                <div class="row">
-                    <button
-                        class="icon"
-                        :title="t('table.topbar.back_to_lobby')"
-                        @click="leaveToLobby"
-                    >
-                        <Icon name="lucide:arrow-left" aria-hidden="true" />
-                    </button>
-                    <button
-                        v-if="canQuit"
-                        class="icon danger"
-                        :title="t('table.topbar.leave_match_title')"
-                        @click="askToQuit"
-                    >
-                        <Icon name="lucide:log-out" aria-hidden="true" /> {{ t('table.topbar.leave_match') }}
-                    </button>
-                    <div class="stack tight">
-                        <strong class="room-title">{{
-                            roomName || t('table.topbar.loading_room')
-                        }}</strong>
-                        <span class="muted small">{{ t('table.topbar.room_label', { id: roomId }) }}</span>
-                    </div>
-                </div>
-                <div class="row">
-                    <LocaleSwitcher />
-                    <button
-                        v-if="voiceAvailable"
-                        class="icon"
-                        :title="t('table.topbar.audio_settings')"
-                        @click="audioDialogOpen = true"
-                    >
-                        <Icon :name="voiceMicOn ? 'lucide:mic' : 'lucide:mic-off'" aria-hidden="true" />
-                    </button>
-                    <span
-                        class="dot"
-                        :class="status"
-                        :title="t('table.topbar.connection_status', { status })"
-                    />
-                    <CurrentUserButton
-                        :nickname="nickname"
-                        :avatar-id="avatarId"
-                        :clickable="inLobby"
-                        @click="inLobby && (profileDialogOpen = true)"
-                    />
-                </div>
-            </header>
-
-            <ProfileDialog
-                v-if="profileDialogOpen"
-                :nickname="nickname"
-                :avatar-id="avatarId"
-                :saving="savingProfile"
-                @save="onProfileSave"
-                @cancel="profileDialogOpen = false"
-            />
-
-            <AudioSettingsDialog
-                v-if="audioDialogOpen"
-                @cancel="audioDialogOpen = false"
-            />
-
-            <VoiceAudioSinks ref="voiceSinks" />
-
-            <button
-                v-if="voiceNeedsGesture"
-                class="panel notice gesture-prompt"
-                @click="voiceSinks?.resume()"
-            >
-                <Icon name="lucide:volume-2" aria-hidden="true" /> {{ t('table.voice.tap_to_unmute') }}
-            </button>
-
-            <p v-if="kicked" class="panel notice">{{ kicked }}</p>
-            <p v-if="error" class="error banner">{{ error }}</p>
-            <p v-if="spectating" class="panel notice">
-                {{
-                    state?.status === "lobby"
-                        ? t('table.spectating.lobby_full')
-                        : t('table.spectating.game_in_progress')
-                }}
-            </p>
-
-            <p v-if="!state" class="panel muted">{{ t('table.joining_room') }}</p>
-
-            <!-- ------------------------------------------------ pre-game lobby -->
-            <section v-else-if="inLobby" class="lobby">
-                <div class="lobby-content">
-                    <div class="lobby-left panel">
-                        <h2 class="lobby-heading">{{ t('table.lobby.player_list') }}</h2>
-                        <div class="lobby-seats vertical">
-                            <div
-                                v-for="player in state.players"
-                                :key="player.id"
-                                class="lobby-seat-wrap"
-                            >
-                                <PlayerSeat
-                                    :player="player"
-                                    :is-current="false"
-                                    :is-host="player.id === hostId"
-                                    :is-you="player.id === you?.id"
-                                    :turns-remaining="0"
-                                    layout="horizontal"
-                                    :voice-mic-on="voiceMicOnFor(player.id)"
-                                    :voice-speaking="
-                                        voiceIsSpeaking(
-                                            player.id === you?.id
-                                                ? 'self'
-                                                : player.id,
-                                        )
-                                    "
-                                    :voice-muted="voiceIsMuted(player.id)"
-                                    :voice-interactive="player.id !== you?.id"
-                                    @toggle-voice-mute="voiceToggleMute"
-                                />
-                                <span
-                                    class="conn-tag"
-                                    :class="
-                                        player.connected ? 'online' : 'offline'
-                                    "
-                                >
-                                    {{
-                                        player.connected
-                                            ? t('table.lobby.connected')
-                                            : t('table.lobby.disconnected')
-                                    }}
-                                </span>
-                                <button
-                                    v-if="isHost && player.id !== you?.id"
-                                    class="kick-btn"
-                                    :title="t('table.lobby.kick_title')"
-                                    @click="kickPlayer(player.id)"
-                                >
-                                    {{ t('table.lobby.kick') }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="lobby-right panel">
-                        <h2 class="lobby-heading">{{ t('table.lobby.room_settings') }}</h2>
-                        <div class="lobby-actions">
-                            <p class="muted">
-                                {{ t('table.lobby.share_intro', { count: state.players.length }) }}
-                            </p>
-                            <ShareLink :room-id="roomId" />
-
-                            <div class="start-game-container">
-                                <button
-                                    v-if="isHost"
-                                    class="primary start-btn"
-                                    :disabled="
-                                        state.players.length < 2 ||
-                                        state.status === 'over'
-                                    "
-                                    @click="startGame"
-                                >
-                                    {{
-                                        state.status === "over"
-                                            ? t('table.lobby.waiting_for_players')
-                                            : t('table.lobby.start_game')
-                                    }}
-                                </button>
-                                <p v-else class="muted">
-                                    {{
-                                        state.status === "over"
-                                            ? t('table.lobby.waiting_for_players')
-                                            : t('table.lobby.waiting_for_host')
-                                    }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <DeckSettingsPanel
-                            :deck="state.deck"
-                            :is-host="isHost"
-                            @update="setDeckOverrides"
-                        />
-                    </div>
-                </div>
-            </section>
-
-            <!-- ------------------------------------------------------ the table -->
-            <section v-else class="stage">
-                <!-- Everyone else, arced across the far side of the table. -->
-                <div class="seat-arc">
-                    <div
-                        v-for="(player, index) in others"
-                        :key="player.id"
-                        class="arc-slot"
-                        :style="{ transform: arcOffset(index, others.length) }"
-                    >
-                        <PlayerSeat
-                            :player="player"
-                            :is-current="player.id === state.currentPlayerId"
-                            :is-host="player.id === hostId"
-                            :is-you="false"
-                            :turns-remaining="state.turn.turnsRemaining"
-                            :targetable="targetablePlayers.has(player.id)"
-                            :selected="targetId === player.id"
-                            :voice-mic-on="voiceMicOnFor(player.id)"
-                            :voice-speaking="voiceIsSpeaking(player.id)"
-                            :voice-muted="voiceIsMuted(player.id)"
-                            voice-interactive
-                            @pick="pickTarget"
-                            @toggle-voice-mute="voiceToggleMute"
-                        />
-                    </div>
-                </div>
-
-                <div class="center-area">
-                    <TableCenter
-                        ref="tableCenter"
-                        :draw-count="state.drawCount"
-                        :discard-top="state.discardTop"
-                        :discard-count="state.discardCount"
-                        :direction="state.turn.direction"
-                        :can-draw="canDraw"
-                        :deadline="state.turnDeadline"
-                        :dragging="drawDrag.dragging.value"
-                        @draw="draw"
-                        @draw-pointer-down="drawDrag.start"
-                    />
-                </div>
-
-                <div class="banner-area">
-                    <TurnBanner
-                        :is-your-turn="isYourTurn"
-                        :current-player-name="currentPlayerName"
-                        :hint="bannerHint"
-                        :deadline="state.turnDeadline"
-                        :actor-color="currentPlayerColor"
-                    >
-                        <template v-if="youAreSeated && alive && !isOver">
-                            <select
-                                v-if="intent.needsNamedCard"
-                                v-model="namedCardId"
-                                :aria-label="t('table.demand_select_aria')"
-                            >
-                                <option :value="null" disabled>
-                                    {{ t('table.demand_card_placeholder') }}
-                                </option>
-                                <option
-                                    v-for="option in namedCardOptions"
-                                    :key="option.id"
-                                    :value="option.id"
-                                >
-                                    {{ option.name }}
-                                </option>
-                            </select>
-
-                            <button
-                                class="primary"
-                                :disabled="!intent.ok"
-                                @click="play"
-                            >
-                                {{ selectedUids.length ? t('table.play_button_count', { count: selectedUids.length }) : t('table.play_button') }}
-                            </button>
-
-                            <button
-                                :disabled="!selectedUids.length"
-                                @click="selectedUids = []"
-                            >
-                                {{ t('table.deselect') }}
-                            </button>
-                        </template>
-                    </TurnBanner>
-                </div>
-
-                <!-- Your own seat, bottom-left. -->
-                <div class="self-area">
-                    <PlayerSeat
-                        v-if="selfPlayer"
-                        :player="selfPlayer"
-                        :is-current="isYourTurn"
-                        :is-host="isHost"
-                        :is-you="true"
-                        :turns-remaining="state.turn.turnsRemaining"
-                        :voice-mic-on="voiceMicOnFor(selfPlayer.id)"
-                        :voice-speaking="voiceIsSpeaking('self')"
-                    />
-                </div>
-
-                <div
-                    ref="handArea"
-                    class="hand-area"
-                    :class="{ 'drop-active': drawDrag.dragging.value }"
-                >
-                    <HandFan
-                        v-if="youAreSeated && alive && !isOver"
-                        ref="handFan"
-                        :hand="hand"
-                        :selected="selectedUids"
-                        :disabled="!isYourTurn && !hasNope"
-                        :flip-uid="flipUid"
-                        :hold-leave="kitten.holdLeave.value"
-                        @toggle="toggle"
-                    />
-                    <p v-else-if="!youAreSeated" class="watching">
-                        {{ t('table.watching_spectator') }}
-                    </p>
-                    <p v-else-if="!alive" class="watching">
-                        <Icon name="lucide:bomb" aria-hidden="true" /> {{ t('table.you_exploded') }}
-                    </p>
-                </div>
-
-                <DrawGhost
-                    v-if="drawDrag.ghostVisible.value"
-                    :phase="drawDrag.phase.value"
-                    :x="drawDrag.x.value"
-                    :y="drawDrag.y.value"
-                    :reduced-motion="drawDrag.reducedMotion"
-                />
-
-                <Transition name="slide">
-                    <NopeBar
-                        v-if="nopeWindow"
-                        class="nope-overlay"
-                        :stack="state.actionStack"
-                        :deadline="nopeWindow.deadline"
-                        :players="state.players"
-                        :has-nope="hasNope"
-                        :you-played-top="youPlayedTop"
-                        :passed="passedAlready"
-                        @nope="playNope"
-                        @pass="send({ type: 'pass-nope' })"
-                    />
-                </Transition>
-
-                <!--
-          Only the end of the game draws the curtain. Being eliminated leaves the
-          table visible, because watching the rest burn is the consolation prize.
-        -->
-                <Transition name="fade">
-                    <div v-if="isOver" class="curtain">
-                        <div class="panel result">
-                            <h2>
-                                <Icon v-if="winner" name="lucide:trophy" aria-hidden="true" />
-                                {{ winner ? t('table.game_over.winner', { name: winner }) : t('table.game_over.ended') }}
-                            </h2>
-                            <div class="lobby-seats">
-                                <PlayerSeat
-                                    v-for="player in state.players"
-                                    :key="player.id"
-                                    :player="player"
-                                    :is-current="false"
-                                    :is-host="player.id === hostId"
-                                    :is-you="player.id === you?.id"
-                                    :turns-remaining="0"
-                                />
-                            </div>
-                            <div v-if="youAreSeated" class="row">
-                                <button class="secondary" @click="leaveToLobby">
-                                    {{ t('table.game_over.leave_room') }}
-                                </button>
-                                <button
-                                    class="primary"
-                                    :disabled="youAreReady"
-                                    @click="returnToLobby"
-                                >
-                                    {{
-                                        youAreReady
-                                            ? t('table.game_over.waiting_for_players', { ready: readyCount, connected: connectedCount })
-                                            : t('table.game_over.ready_new_game')
-                                    }}
-                                </button>
-                            </div>
-                            <div v-else class="row">
-                                <button class="primary" @click="leaveToLobby">
-                                    {{ t('table.game_over.leave_room') }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-            </section>
-
-            <!-- Chat and the story of the game, tucked into a corner. -->
-            <div v-if="state" class="log-dock" :class="{ open: logOpen }">
-                <button class="log-toggle" @click="logOpen = !logOpen">
-                    {{ logOpen ? t('table.log.hide') : t('table.log.show') }}
-                    <Icon :name="logOpen ? 'lucide:chevron-down' : 'lucide:chevron-up'" aria-hidden="true" />
-                </button>
-                <EventLog
-                    v-show="logOpen"
-                    :events="pending"
-                    :chat="chat"
-                    :players="state.players"
-                    @say="say"
-                />
-            </div>
-
-            <InteractionModal
-                v-if="
-                    state?.interaction &&
-                    !['reorder-cards', 'choose-deck-position'].includes(
-                        state.interaction.kind,
-                    )
-                "
-                :interaction="state.interaction"
-                :hand="hand"
-                :players="state.players"
-                :you-id="state.you?.id ?? null"
-                @submit="submitInteraction"
-            />
-
-            <SeeFutureModal
-                v-if="showAlterFutureModal"
-                :cards="state?.interaction?.cards ?? []"
-                editable
-                @submit="onAlterFutureSubmit"
-            />
-
-            <SeeFutureModal
-                v-if="showPeekModal"
-                :cards="you?.peek ?? []"
-                @close="peekDismissed = true"
-            />
-
-            <DeckPositionModal
-                v-if="showDeckPositionModal"
-                :interaction="state!.interaction!"
-                @submit="onDeckPositionSubmit"
-            />
-
-            <TargetSelectModal
-                v-if="targetModalOpen"
-                :players="state?.players ?? []"
-                :you-id="you?.id"
-                :combo="intent.combo"
-                :card-id="selectedCards[0]?.id"
-                :needs-named-card="intent.needsNamedCard"
-                :initial-target-id="targetId"
-                :initial-named-card-id="namedCardId"
-                @confirm="onTargetConfirmed"
-                @cancel="targetModalOpen = false"
-            />
-
-            <CardArrivalFlyer
-                :arriving-cards="arrivingCards"
-                :hand-area-rect="handAreaRect"
-                @landed="onCardLanded"
-            />
-
-            <!--
-              Drawing an Exploding Kitten, staged: the whole table sees the
-              reveal, then the drawer's Defuse flies to the discard, and only
-              then does DeckPositionModal above get its turn.
-            -->
-            <KittenRevealOverlay
-                v-if="kitten.revealSeq.value !== null"
-                :uid="`kitten-${kitten.revealSeq.value}`"
-                :player-name="kitten.revealPlayerName.value"
-                :defused="kitten.revealDefused.value"
-            />
-
-            <CardDepartureFlyer
-                :card="kitten.defuseCard.value"
-                :from-rect="kitten.defuseFromRect.value"
-                :measure-to="discardRect"
-                @done="kitten.onDefuseFlightDone"
-            />
-
-            <ConfirmDialog
-                v-if="confirmingQuit"
-                :title="t('table.quit_dialog.title')"
-                :message="t('table.quit_dialog.message')"
-                :confirm-label="t('table.quit_dialog.confirm')"
-                :cancel-label="t('table.quit_dialog.cancel')"
-                @confirm="quitGame"
-                @cancel="cancelQuit"
-            />
-        </template>
-    </div>
-</template>
-
-<style scoped>
-/*
- * `.red-theme` is toggled on `.room` for the pre-game states only (no
- * session state yet, or the waiting-room lobby) — never while `.stage`
- * (the live table, including the post-game curtain) is showing. Scoped
- * entirely to this file so it can't affect the live game table.
- */
-.room {
+<style scoped lang="scss">
+  /*
+   * The room page paints no background of its own — the cream field comes from
+   * `layouts/default.vue`. Everything here is layout plus the few surfaces the
+   * table needs on top of that field.
+   */
+  .room {
     position: relative;
     max-width: 1400px;
     margin: 0 auto;
@@ -1041,218 +842,147 @@ function cancelQuit() {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
-}
 
-.room.red-theme::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image: url("/common/background-red-texture.png");
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-}
+    // The shared header, given the room's own pill ground.
+    &__header {
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      background: $cream-card;
+      border: calc($outline-width - 1px) solid $ink;
+      box-shadow: $shadow-sm;
+    }
 
-.red-theme .panel {
-    background: rgba(30, 5, 5, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    color: var(--text);
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
+    &__title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      min-width: 0;
+    }
 
-.start-game-container {
-    display: flex;
-    justify-content: center;
-    margin: 1.5rem 0 0.5rem;
-}
+    &__name {
+      font-family: $font-display;
+      font-size: 1.1rem;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: $ink;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.start-btn {
-    font-size: 1.5rem;
-    padding: 1rem 2.5rem;
-    box-shadow: 0 8px 24px rgba(255, 122, 26, 0.4);
-}
+    &__id {
+      font-size: 0.78rem;
+      color: $ink-dim;
+    }
 
-.red-theme .panel h2 {
-    color: var(--text);
-}
+    /* Autoplay was blocked; one click on this wakes every remote audio element. */
+    &__gesture-prompt {
+      display: block;
+      width: 100%;
+      text-align: center;
+      cursor: pointer;
+    }
 
-.red-theme .panel .muted {
-    color: var(--text-dim);
-}
+    &__notice,
+    &__banner {
+      margin: 0;
+    }
 
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
-    background: linear-gradient(
-        180deg,
-        rgb(255 255 255 / 10%),
-        rgb(0 0 0 / 18%)
-    );
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 18%),
-        var(--shadow-sm);
-}
+    &__banner {
+      font-weight: 600;
+    }
+  }
 
-.room-title {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-}
+  /* ------------------------------------------------------- pre-game lobby */
 
-.icon {
-    padding: 0.35rem 0.8rem;
-    font-size: 1.05rem;
-}
-
-.tight {
-    gap: 0.05rem;
-}
-
-.small {
-    font-size: 0.78rem;
-}
-
-/* Autoplay was blocked; one click on this wakes every remote audio element. */
-.gesture-prompt {
-    display: block;
-    width: 100%;
-    text-align: center;
-    cursor: pointer;
-}
-
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--text-dim);
-}
-
-.dot.open {
-    background: var(--good);
-}
-
-.dot.connecting {
-    background: var(--warn);
-}
-
-.dot.closed {
-    background: var(--bad);
-}
-
-.banner,
-.notice {
-    margin: 0;
-}
-
-.red-theme .error.banner {
-    text-shadow: 0 1px 3px rgb(0 0 0 / 60%);
-    font-weight: 600;
-}
-
-.lobby {
+  .lobby {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-}
 
-.lobby-heading {
-    color: var(--accent);
-}
+    &__content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
 
-.lobby-content {
-    display: flex;
-    gap: 2rem;
-}
+      @include respond-to("lg") {
+        flex-direction: row;
+        gap: 2rem;
+      }
+    }
 
-.lobby-left,
-.lobby-right {
-    flex: 1;
-}
+    &__col {
+      flex: 1;
+      min-width: 0;
 
-.lobby-right {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
+      &--settings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+    }
 
-.lobby-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
+    &__heading {
+      color: $ink;
+    }
 
-.lobby-seats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.9rem;
-    justify-content: center;
-    padding: 0.5rem 0;
-}
+    &__seats {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.9rem;
+      width: 100%;
+      padding: 0.5rem 0;
+    }
 
-.lobby-seats.vertical {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-}
+    &__seat {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
 
-.lobby-seat-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-}
+    &__conn {
+      flex: none;
+      padding: 0.25rem 0.6rem;
+      border: 1.5px solid;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
 
-.conn-tag {
-    flex: none;
-    padding: 0.25rem 0.6rem;
-    border: 1.5px solid;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
+      &--online {
+        color: $good;
+        border-color: $good;
+      }
 
-.conn-tag.online {
-    color: var(--good);
-    border-color: var(--good);
-}
+      &--offline {
+        color: $bad;
+        border-color: $bad;
+      }
+    }
 
-.conn-tag.offline {
-    color: var(--bad);
-    border-color: var(--bad);
-}
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
 
-.kick-btn {
-    flex: none;
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    font-family: var(--font-display);
-    font-size: 0.78rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    background: var(--bad);
-    color: var(--text);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 45%);
-}
+    &__start {
+      display: flex;
+      justify-content: center;
+      margin: 1.5rem 0 0.5rem;
+    }
 
-.kick-btn:hover {
-    background: #ff4b43;
-}
+    &__kick {
+      flex: none;
+    }
+  }
 
-/* ------------------------------------------------------------ the table */
+  /* ------------------------------------------------------------ the table */
 
-.stage {
+  .stage {
     position: relative;
     display: grid;
     grid-template-columns: 132px minmax(0, 1fr) 300px;
@@ -1262,106 +992,114 @@ function cancelQuit() {
     min-height: 74vh;
     padding: 1.25rem 1.5rem 1.5rem;
     border-radius: 26px;
-}
 
-.seat-arc {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 0.5rem 1.4rem;
-    padding-top: 0.5rem;
-    min-height: 132px;
-}
+    &__arc {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 0.5rem 1.4rem;
+      padding-top: 0.5rem;
+      min-height: 132px;
+    }
 
-.center-area {
-    grid-column: 1 / 3;
-    display: grid;
-    place-items: center;
-}
+    &__center {
+      grid-column: 1 / 3;
+      display: grid;
+      place-items: center;
+    }
 
-.banner-area {
-    grid-column: 3;
-    display: flex;
-    justify-content: center;
-    align-self: start;
-    padding-top: 0.5rem;
-}
+    &__banner {
+      grid-column: 3;
+      display: flex;
+      justify-content: center;
+      align-self: start;
+      padding-top: 0.5rem;
+    }
 
-.self-area {
-    grid-column: 1;
-    display: grid;
-    place-items: center;
-    align-self: end;
-}
+    &__self {
+      grid-column: 1;
+      display: grid;
+      place-items: center;
+      align-self: end;
+    }
 
-.hand-area {
-    grid-column: 2 / -1;
-    align-self: end;
-    min-height: 150px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    border-radius: 22px;
-    border: 2px dashed transparent;
-    transition:
+    &__hand {
+      grid-column: 2 / -1;
+      align-self: end;
+      min-height: 150px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-radius: 22px;
+      border: 2px dashed transparent;
+      transition:
         border-color 0.15s ease,
         background 0.15s ease,
         box-shadow 0.15s ease;
-}
 
-/* The drop target for a draw. Same warm accent as the deck's own glow, so it
-   reads as "this is where that card goes". */
-.hand-area.drop-active {
-    border-color: rgb(255 194 26 / 70%);
-    background: rgb(255 194 26 / 8%);
-    box-shadow: inset 0 0 34px rgb(255 140 40 / 30%);
-}
+      /* The drop target for a draw. Same warm accent as the deck's own glow,
+         so it reads as "this is where that card goes". */
+      &--drop-active {
+        border-color: rgb(255 194 26 / 70%);
+        background: rgb(255 194 26 / 8%);
+        box-shadow: inset 0 0 34px rgb(255 140 40 / 30%);
+      }
+    }
 
-.watching {
-    margin: 0 0 1.5rem;
-    color: var(--text-dim);
-    text-align: center;
-}
+    &__watching {
+      margin: 0 0 1.5rem;
+      color: $ink-dim;
+      text-align: center;
+    }
 
-/* The Nope window is urgent, so it floats over the piles. */
-.nope-overlay {
-    position: absolute;
-    left: 50%;
-    top: 46%;
-    transform: translate(-50%, -50%);
-    width: min(680px, 82%);
-    z-index: 8;
-}
+    /* The Nope window is urgent, so it floats over the piles. */
+    &__nope {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      width: min(680px, 82%);
+      z-index: 8;
+    }
 
-.curtain {
-    position: absolute;
-    inset: 0;
-    z-index: 12;
-    display: grid;
-    place-items: center;
-    border-radius: 26px;
-    background: rgb(20 8 0 / 62%);
-    backdrop-filter: blur(2px);
-}
+    &__curtain {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      display: grid;
+      place-items: center;
+      border-radius: 26px;
+      background: rgb(249 237 212 / 82%);
+      backdrop-filter: blur(2px);
+    }
 
-.result {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    align-items: center;
-    padding: 1.6rem 2.2rem;
-}
+    &__result {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 1.6rem 2.2rem;
 
-.result h2 {
-    font-size: 2rem;
-}
+      h2 {
+        font-size: 2rem;
+      }
+    }
 
-/* --------------------------------------------------------- log and chat */
+    &__result-seats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      justify-content: center;
+      padding: 0.5rem 0;
+    }
+  }
 
-.log-dock {
+  /* --------------------------------------------------------- log and chat */
+
+  .log-dock {
     position: fixed;
     right: 1rem;
     bottom: 1rem;
@@ -1371,61 +1109,65 @@ function cancelQuit() {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.4rem;
-    opacity: 0.8;
+    opacity: 0.85;
     transition: opacity 0.2s ease;
-}
 
-.log-dock:hover,
-.log-dock:focus-within {
-    opacity: 1;
-}
+    &:hover,
+    &:focus-within,
+    &--open {
+      opacity: 1;
+    }
 
-.log-toggle {
-    font-family: var(--font-display);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 0.45rem 1rem;
-    background: linear-gradient(180deg, #4a2810, #2c1607);
-    color: #fdf6e7;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    cursor: pointer;
-    transition:
+    &__toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: $font-display;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 0.45rem 1rem;
+      background: $cream-card;
+      color: $ink;
+      border: $outline-width solid $ink;
+      border-radius: 999px;
+      box-shadow: $shadow-xs;
+      cursor: pointer;
+      transition:
         filter 0.15s ease,
         transform 0.08s ease;
-}
 
-.log-toggle:hover {
-    filter: brightness(1.2);
-    transform: translateY(-1px);
-}
+      &:hover {
+        filter: brightness(1.04);
+      }
 
-.log-toggle:active {
-    transform: translateY(1px);
-}
+      &:active {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 $ink;
+      }
+    }
+  }
 
-.slide-enter-active,
-.slide-leave-active {
+  .slide-enter-active,
+  .slide-leave-active {
     transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
 
-.slide-enter-from,
-.slide-leave-to {
+  .slide-enter-from,
+  .slide-leave-to {
     opacity: 0;
     transform: translate(-50%, calc(-50% - 10px));
-}
+  }
 
-.fade-enter-active,
-.fade-leave-active {
+  .fade-enter-active,
+  .fade-leave-active {
     transition: opacity 0.25s ease;
-}
+  }
 
-.fade-enter-from,
-.fade-leave-to {
+  .fade-enter-from,
+  .fade-leave-to {
     opacity: 0;
-}
+  }
 </style>

@@ -156,15 +156,16 @@
     &__toggle {
       padding: 0.25rem 0.7rem;
       border-radius: 999px;
-      background: rgb(0 0 0 / 30%);
-      color: var(--text-dim);
+      background: $cream;
+      border: 2px solid $ink;
+      color: $ink-dim;
       font-size: 0.78rem;
       letter-spacing: 0.3px;
 
       &--on,
       &.on {
-        background: var(--good);
-        color: #10240f;
+        background: $good;
+        color: $cream;
       }
     }
 
@@ -183,7 +184,8 @@
     &__meter {
       height: 8px;
       border-radius: 999px;
-      background: rgb(0 0 0 / 35%);
+      background: $cream;
+      border: 2px solid $ink;
       overflow: hidden;
     }
 

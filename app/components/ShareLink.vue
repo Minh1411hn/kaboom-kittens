@@ -43,15 +43,15 @@
     &__input {
       flex: 1;
       font-size: 0.85rem;
-      color: var(--text-dim);
-      background: linear-gradient(180deg, var(--red-3), #2c0708);
-      border: 2px solid var(--maroon-edge);
-      box-shadow: inset 0 2px 5px rgb(0 0 0 / 45%);
+      color: $ink-dim;
+      background: $cream;
+      border: $outline-width solid $ink;
     }
 
     &__button {
       white-space: nowrap;
-      background: linear-gradient(180deg, var(--maroon-1), var(--maroon-2));
+      background: linear-gradient(180deg, $brick-1, $brick-2);
+      color: $cream;
     }
   }
 </style>
