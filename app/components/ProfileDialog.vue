@@ -1,22 +1,23 @@
 <template lang="pug">
-.profile-dialog(@click.self="emit('cancel')")
-  section.profile-dialog__panel.panel(aria-modal="true" role="dialog")
-    h2.profile-dialog__title {{ $t('app.profile_dialog.title') }}
+CommonDialog(:open="open" @close="emit('cancel')")
+  template(#title)
+    h2.profile-dialog__title {{ $t("app.profile_dialog.title") }}
 
+  .profile-dialog
     label.profile-dialog__field.stack
-      span.profile-dialog__label.muted {{ $t('app.nickname_label') }}
+      span.profile-dialog__label.muted {{ $t("app.nickname_label") }}
       input.profile-dialog__input(
         v-model="nicknameValue"
+        :placeholder="$t('app.nickname_placeholder')"
         autocomplete="nickname"
         autofocus
         maxlength="16"
-        :placeholder="$t('app.nickname_placeholder')"
       )
 
     p.profile-dialog__error.error(v-if="error") {{ error }}
 
     .profile-dialog__field.stack
-      span.profile-dialog__label.muted {{ $t('app.profile_dialog.avatar_label') }}
+      span.profile-dialog__label.muted {{ $t("app.profile_dialog.avatar_label") }}
       .profile-dialog__avatar-grid
         button.profile-dialog__avatar-choice(
           v-for="id in avatarIds"
@@ -27,28 +28,35 @@
         )
           img.profile-dialog__avatar-img(:src="avatarUrl(id)" alt="")
 
+    .profile-dialog__field.stack
+      span.profile-dialog__label.muted {{ $t("app.language_label") }}
+      CommonLangSelect
+
     .profile-dialog__actions
-      button.profile-dialog__btn(@click="emit('cancel')") {{ $t('app.cancel') }}
-      PlaqueButton(
+      CommonButton(:label="$t('app.cancel')" variant="red" @click="emit('cancel')")
+      CommonButton(
         :disabled="saving"
-        :title="saving ? $t('app.profile_dialog.saving') : $t('app.profile_dialog.save')"
-        compact
+        :label="$t('app.profile_dialog.save')"
+        :loading="saving"
         icon="lucide:save"
         type="button"
-        variant="primary"
+        variant="yellow"
         @click="save"
       )
 </template>
 
 <script setup lang="ts">
   /**
-   * Change nickname + avatar. Same backdrop/panel shell as ConfirmDialog.vue;
-   * the caller owns the actual network calls (REST session write, then the WS
-   * `update-profile` broadcast) and closes the dialog once `save` resolves —
-   * `saving` is driven by the caller too, since `emit` is fire-and-forget and
-   * cannot itself be awaited to know when that round trip finishes.
+   * Change nickname, avatar, and language. Chrome (backdrop, panel, focus trap)
+   * now lives in `common/Dialog.vue` — the caller owns the actual network calls
+   * (REST session write, then the WS `update-profile` broadcast) and closes the
+   * dialog once `save` resolves — `saving` is driven by the caller too, since
+   * `emit` is fire-and-forget and cannot itself be awaited to know when that
+   * round trip finishes.
    */
-  const props = withDefaults(defineProps<{ nickname: string; avatarId: string; saving?: boolean }>(), { saving: false })
+  const props = withDefaults(defineProps<{ open: boolean; nickname: string; avatarId: string; saving?: boolean }>(), {
+    saving: false
+  })
   const emit = defineEmits<{
     save: [nickname: string, avatarId: string]
     cancel: []
@@ -78,30 +86,12 @@
 </script>
 
 <style scoped lang="scss">
+  // The dialog's own card chrome (outline, shadow, width, padding) now lives in
+  // `common/Dialog.vue` — this scoped block only owns the layout inside it.
   .profile-dialog {
-    position: fixed;
-    inset: 0;
-    background: rgb(20 8 0 / 68%);
-    backdrop-filter: blur(3px);
-    display: grid;
-    place-items: center;
-    z-index: 21;
-    padding: 1rem;
-
-    &__panel {
-      max-width: min(440px, 100%);
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      padding: 1.3rem 1.5rem;
-    }
-
-    &__title {
-      font-size: 1.4rem;
-      line-height: 1.15;
-      text-align: center;
-    }
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 
     &__field {
       // inherits .stack flex column
@@ -159,14 +149,6 @@
       display: flex;
       gap: 0.6rem;
       justify-content: center;
-
-      :deep(.plaque-btn) {
-        width: auto;
-      }
-    }
-
-    &__btn {
-      flex: none;
     }
   }
 </style>

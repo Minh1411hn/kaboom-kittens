@@ -1,37 +1,37 @@
 <template lang="pug">
-  Teleport(to="body")
-    TransitionRoot(appear :show="open" as="template")
-      Dialog.modal(as="div" @close="handleClose")
+Teleport(to="body")
+  TransitionRoot(:show="open" appear as="template")
+    Dialog.modal(as="div" @close="handleClose")
+      TransitionChild(
+        as="template"
+        enter="modal__backdrop-fade"
+        enter-from="modal__backdrop-fade--from"
+        enter-to="modal__backdrop-fade--to"
+        leave="modal__backdrop-fade"
+        leave-from="modal__backdrop-fade--to"
+        leave-to="modal__backdrop-fade--from"
+      )
+        .modal__backdrop
+      .modal__wrapper
         TransitionChild(
           as="template"
-          enter="modal__backdrop-fade"
-          enter-from="modal__backdrop-fade--from"
-          enter-to="modal__backdrop-fade--to"
-          leave="modal__backdrop-fade"
-          leave-from="modal__backdrop-fade--to"
-          leave-to="modal__backdrop-fade--from"
+          enter="modal__panel-fade"
+          enter-from="modal__panel-fade--from"
+          enter-to="modal__panel-fade--to"
+          leave="modal__panel-fade"
+          leave-from="modal__panel-fade--to"
+          leave-to="modal__panel-fade--from"
         )
-          .modal__backdrop
-        .modal__wrapper
-          TransitionChild(
-            as="template"
-            enter="modal__panel-fade"
-            enter-from="modal__panel-fade--from"
-            enter-to="modal__panel-fade--to"
-            leave="modal__panel-fade"
-            leave-from="modal__panel-fade--to"
-            leave-to="modal__panel-fade--from"
-          )
-            DialogPanel.modal__panel(:class="panelClass")
-              DialogTitle(v-if="title || $slots.title" as="template")
-                slot(name="title")
-                  h2.modal__title {{ title }}
-              slot
+          DialogPanel.modal__panel(:class="panelClass")
+            DialogTitle(v-if="title || $slots.title" as="template")
+              slot(name="title")
+                h2.modal__title {{ title }}
+            slot
 </template>
 
 <script setup lang="ts">
   /**
-   * The one modal of the app — a Headless UI `Dialog` wearing the same thick
+   * The one dialog of the app — a Headless UI `Dialog` wearing the same thick
    * ink outline, cream card, and hard drop shadow as every hand-rolled overlay
    * here (`ConfirmDialog.vue`, `ProfileDialog.vue`, ...). New dialogs should
    * reach for this instead of duplicating that backdrop/panel CSS: `Dialog`

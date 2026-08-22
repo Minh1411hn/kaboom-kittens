@@ -1,5 +1,5 @@
 <template lang="pug">
-CommonModal(:open="open" persistent)
+CommonDialog(:open="open" persistent)
   template(#title)
     h1.nickname-gate__title
       Icon(aria-hidden="true" name="lucide:cat")
@@ -10,17 +10,17 @@ CommonModal(:open="open" persistent)
     .nickname-gate__top
       CommonLangSelect
     p.nickname-gate__subtitle.muted
-      | {{ $t('app.nickname_gate.subtitle') }}
+      | {{ $t("app.nickname_gate.subtitle") }}
 
     form.nickname-gate__form(@submit.prevent="submit")
       label.nickname-gate__field.stack
-        span.nickname-gate__label.muted {{ $t('app.nickname_label') }}
+        span.nickname-gate__label.muted {{ $t("app.nickname_label") }}
         input.nickname-gate__input(
           v-model="value"
+          :placeholder="$t('app.nickname_placeholder')"
           autocomplete="nickname"
           autofocus
           maxlength="16"
-          :placeholder="$t('app.nickname_placeholder')"
         )
 
       p.nickname-gate__error.error {{ error }}
@@ -71,7 +71,7 @@ CommonModal(:open="open" persistent)
 <style scoped lang="scss">
   /*
  * The gate's own card chrome (outline, shadow, width, padding) now lives in
- * `common/Modal.vue` — this scoped block only owns the layout inside it.
+ * `common/Dialog.vue` — this scoped block only owns the layout inside it.
  */
   .nickname-gate {
     display: flex;

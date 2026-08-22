@@ -8,20 +8,12 @@
       @profile-click="profileDialogOpen = true"
     )
       template(#actions)
-        CommonLangSelect
         CommonButton(
           :aria-label="$t('table.topbar.audio_settings')"
           icon="lucide:volume-2"
           variant="gold"
           @click="audioDialogOpen = true"
         )
-        CommonButton(
-          :aria-label="$t('app.your_profile')"
-          icon="lucide:settings"
-          variant="gold"
-          @click="profileDialogOpen = true"
-        )
-
     .home__inner
       //- Left column: the brand and the one primary action.
       section.home__brand
@@ -42,18 +34,18 @@
 
       //- Right column: who you are, then the live room list.
       section.home__lobby
-        h2.home__heading {{ $t('app.room_list_heading') }}
+        h2.home__heading {{ $t("app.room_list_heading") }}
 
         p.home__empty(v-if="!openRooms.length")
-          | {{ $t('app.no_rooms') }}
+          | {{ $t("app.no_rooms") }}
 
         ul.home__rooms(v-else)
           li.home__room(v-for="room in openRooms" :key="room.id")
             .home__room-main
               strong.home__room-name {{ room.name }}
               span.home__room-meta
-                | - {{ $t('app.room_player_count', { count: room.playerCount, max: room.maxPlayers }) }} ·
-                | {{ room.status === "playing" ? $t('app.status_playing') : $t('app.status_waiting') }} ·
+                | - {{ $t("app.room_player_count", { count: room.playerCount, max: room.maxPlayers }) }} ·
+                | {{  room.status === "playing" ? $t('app.status_playing') : $t('app.status_waiting')  }} ·
                 | {{ since(room.createdAt) }}
             CommonButton.home__room-join(
               :disabled="room.playerCount >= room.maxPlayers && room.status === 'lobby'"
@@ -64,9 +56,9 @@
             )
 
     ProfileDialog(
-      v-if="profileDialogOpen"
       :avatar-id="avatarId"
       :nickname="nickname"
+      :open="profileDialogOpen"
       :saving="savingProfile"
       @cancel="profileDialogOpen = false"
       @save="onProfileSave"

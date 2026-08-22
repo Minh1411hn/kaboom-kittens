@@ -229,11 +229,23 @@ Every SFC keeps its three blocks in this order, each with the same attributes ev
     &--disabled { ... }
   }
   ```
-- Reach for `app/components/common/Modal.vue` before hand-rolling a new dialog/overlay — pass a
+- Reach for `app/components/common/Dialog.vue` before hand-rolling a new dialog/overlay — pass a
   `title` (prop or slot) and body content via its default slot; it owns the backdrop, focus trap
   (Headless UI's `Dialog`), and card chrome.
 - Reach for `app/components/common/Button.vue` before writing new button markup — see its doc
   comment for the available `variant`/`size`/`loading` props.
+
+## i18n
+
+`@nuxtjs/i18n` (not raw vue-i18n), configured in `nuxt.config.ts`: two locales, `en` and `vi`
+(default), `strategy: "no_prefix"`, browser detection via a `kk_locale` cookie. Locale files live in
+`i18n/locales/en.json` and `i18n/locales/vi.json`, namespaced under `app`, `table`, `cards`,
+`errors`, `interactions`, `events`.
+
+Use `{{ $t('app.xxx') }}` in Pug templates; use `const { t } = useI18n()` + `t("app.xxx")` for
+JS-side strings in `<script setup>` (error messages, dynamic labels). Both locale files are kept in
+key parity by hand — nothing enforces this automatically, so any new or changed user-facing string
+needs its key added to **both** `en.json` and `vi.json`, not just one.
 
 ## Things that bite
 

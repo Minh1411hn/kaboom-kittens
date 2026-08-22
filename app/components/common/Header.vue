@@ -1,20 +1,17 @@
 <template lang="pug">
-  header.app-header
-    .app-header__side
-      slot(name="left")
+header.app-header
+  .app-header__side
+    slot(name="left")
 
-    .app-header__side.app-header__side--end
-      span.app-header__status(
-        :class="`app-header__status--${status}`"
-        :title="`Trạng thái kết nối: ${status}`"
-      )
-      CurrentUserButton(
-        :avatar-id="avatarId"
-        :clickable="clickable"
-        :nickname="nickname"
-        @click="$emit('profile-click')"
-      )
-      slot(name="actions")
+  .app-header__side.app-header__side--end
+    slot(name="actions")
+    //- span.app-header__status(:class="`app-header__status--${status}`" :title="`Trạng thái kết nối: ${status}`")
+    CurrentUserButton(
+      :avatar-id="avatarId"
+      :clickable="clickable"
+      :nickname="nickname"
+      @click="$emit('profile-click')"
+    )
 </template>
 
 <script setup lang="ts">
