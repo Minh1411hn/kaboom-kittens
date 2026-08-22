@@ -229,6 +229,11 @@ Every SFC keeps its three blocks in this order, each with the same attributes ev
     &--disabled { ... }
   }
   ```
+- Reach for `app/components/common/Modal.vue` before hand-rolling a new dialog/overlay — pass a
+  `title` (prop or slot) and body content via its default slot; it owns the backdrop, focus trap
+  (Headless UI's `Dialog`), and card chrome.
+- Reach for `app/components/common/Button.vue` before writing new button markup — see its doc
+  comment for the available `variant`/`size`/`loading` props.
 
 ## Things that bite
 

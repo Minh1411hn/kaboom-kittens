@@ -1,37 +1,45 @@
 <template lang="pug">
-form.nickname-gate.panel(@submit.prevent="submit")
-  .nickname-gate__top
-    CommonLangSelect
-  h1.nickname-gate__title
-    Icon(aria-hidden="true" name="lucide:cat")
-    |
-    | Kaboom Kitten
-  p.nickname-gate__subtitle.muted
-    | {{ $t('app.nickname_gate.subtitle') }}
+CommonModal(:open="open" persistent)
+  template(#title)
+    h1.nickname-gate__title
+      Icon(aria-hidden="true" name="lucide:cat")
+      |
+      | Kaboom Kitten
 
-  label.nickname-gate__field.stack
-    span.nickname-gate__label.muted {{ $t('app.nickname_label') }}
-    input.nickname-gate__input(
-      v-model="value"
-      autocomplete="nickname"
-      autofocus
-      maxlength="16"
-      :placeholder="$t('app.nickname_placeholder')"
-    )
+  .nickname-gate
+    .nickname-gate__top
+      CommonLangSelect
+    p.nickname-gate__subtitle.muted
+      | {{ $t('app.nickname_gate.subtitle') }}
 
-  p.nickname-gate__error.error {{ error }}
+    form.nickname-gate__form(@submit.prevent="submit")
+      label.nickname-gate__field.stack
+        span.nickname-gate__label.muted {{ $t('app.nickname_label') }}
+        input.nickname-gate__input(
+          v-model="value"
+          autocomplete="nickname"
+          autofocus
+          maxlength="16"
+          :placeholder="$t('app.nickname_placeholder')"
+        )
 
-  PlaqueButton(
-    :disabled="busy || value.trim().length < 2"
-    :title="busy ? $t('app.nickname_gate.processing') : $t('app.nickname_gate.enter')"
-    chevron
-    icon="lucide:paw-print"
-    type="submit"
-    variant="primary"
-  )
+      p.nickname-gate__error.error {{ error }}
+
+      CommonButton(
+        :disabled="busy || value.trim().length < 2"
+        :label="busy ? $t('app.nickname_gate.processing') : $t('app.nickname_gate.enter')"
+        :loading="busy"
+        type="submit"
+        variant="gold"
+      )
 </template>
 
 <script setup lang="ts">
+  defineProps<{
+    /** Visibility — the parent shows this once a session is ready but has no nickname yet. */
+    open: boolean
+  }>()
+
   const emit = defineEmits<{ done: [] }>()
   const { setNickname, remembered } = useSession()
   const { t } = useI18n()
@@ -62,41 +70,29 @@ form.nickname-gate.panel(@submit.prevent="submit")
 
 <style scoped lang="scss">
   /*
- * The gate is the entry point to both the landing page and a room link, so it
- * carries the same card look as everything else on the cream field: a thick ink
- * outline over `$cream-card`, spelled out here rather than borrowed from the
- * global `.panel`, because it also owns its own width and rhythm.
+ * The gate's own card chrome (outline, shadow, width, padding) now lives in
+ * `common/Modal.vue` — this scoped block only owns the layout inside it.
  */
   .nickname-gate {
-    position: relative;
-    max-width: 440px;
-    margin: 12vh auto;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.6rem 1.8rem;
-    background: $cream-card;
-    border: $outline-width solid $ink;
-    border-radius: $radius;
-    color: $ink;
-    box-shadow: $shadow;
 
     &__top {
       display: flex;
       justify-content: flex-end;
     }
 
-    &__title {
-      font-size: 2.4rem;
-      line-height: 1.05;
-      text-align: center;
-      color: $ink;
-    }
-
     &__subtitle {
       text-align: center;
       margin: 0;
       color: var(--text-dim);
+    }
+
+    &__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     &__field {
@@ -120,5 +116,12 @@ form.nickname-gate.panel(@submit.prevent="submit")
     &__error {
       color: var(--bad);
     }
+  }
+
+  .nickname-gate__title {
+    font-size: 2.4rem;
+    line-height: 1.05;
+    text-align: center;
+    color: $ink;
   }
 </style>

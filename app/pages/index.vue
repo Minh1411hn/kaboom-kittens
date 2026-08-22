@@ -1,8 +1,6 @@
 <template lang="pug">
 .home
-  NicknameGate(v-if="ready && !nickname" @done="onNicknameSet")
-
-  template(v-else-if="ready")
+  template(v-if="ready")
     CommonHeader.home__header(
       :avatar-id="avatarId"
       :nickname="nickname"
@@ -75,6 +73,8 @@
     )
 
     AudioSettingsDialog(v-if="audioDialogOpen" @cancel="audioDialogOpen = false")
+
+  NicknameGate(v-if="ready" :open="!nickname" @done="onNicknameSet")
 </template>
 
 <script setup lang="ts">
