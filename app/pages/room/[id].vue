@@ -43,6 +43,7 @@
 
     ProfileDialog(
       v-if="profileDialogOpen"
+      :open="profileDialogOpen"
       :avatar-id="avatarId"
       :nickname="nickname"
       :saving="savingProfile"
