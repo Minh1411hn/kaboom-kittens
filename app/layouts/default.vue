@@ -12,6 +12,8 @@
    */
   .layout {
     min-height: 100%;
-    background: $cream;
+    background:
+      url("/branding/background-pattern.png") center / cover no-repeat,
+      $cream;
   }
 </style>
