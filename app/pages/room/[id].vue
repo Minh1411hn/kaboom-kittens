@@ -1,8 +1,17 @@
 <template lang="pug">
 .room
-  NicknameGate(v-if="ready && !nickname" @done="onNicknameSet")
+  template(v-if="ready")
+    .room__guest-error(v-if="guestCreationError")
+      p.room__banner.error {{ guestCreationError }}
+      CommonButton(
+        :disabled="guestCreating"
+        :label="$t('app.guest_session.retry')"
+        :loading="guestCreating"
+        size="sm"
+        variant="gold"
+        @click="initializeGuest"
+      )
 
-  template(v-else-if="ready")
     CommonHeader.room__header(
       :avatar-id="avatarId"
       :clickable="inLobby"
@@ -352,7 +361,7 @@
   const route = useRoute()
   const roomId = computed(() => String(route.params.id).toUpperCase())
 
-  const { nickname, avatarId, ready, load, setProfile } = useSession()
+  const { nickname, avatarId, ready, load, createGuest, setProfile } = useSession()
   const {
     state,
     hostId,
@@ -381,6 +390,8 @@
   const arrivingCards = ref<Card[]>([])
   const profileDialogOpen = ref(false)
   const savingProfile = ref(false)
+  const guestCreating = ref(false)
+  const guestCreationError = ref("")
   /** True between a drag's drop and the snapshot that answers it, so you cannot draw twice. */
   const drawPending = ref(false)
 
@@ -575,6 +586,7 @@
     resetRoom()
     stopPageHide = leaveOnPageHide()
     if (nickname.value) join()
+    else void initializeGuest()
   })
 
   let joined = false
@@ -591,6 +603,23 @@
     if (status.value === "open") send({ type: "join", roomId: roomId.value })
   }
 
+  async function initializeGuest() {
+    if (guestCreating.value) return
+    guestCreating.value = true
+    guestCreationError.value = ""
+    try {
+      await createGuest()
+      join()
+      // A temporary identity gets the player into the room, then this dialog
+      // lets them immediately choose the name and avatar everyone will see.
+      profileDialogOpen.value = true
+    } catch {
+      guestCreationError.value = t("app.guest_session.create_failed")
+    } finally {
+      guestCreating.value = false
+    }
+  }
+
   /**
    * Re-join on every fresh socket. A dropped connection now frees the seat while
    * the room is waiting, and mid-game it flags a disconnect — either way the new
@@ -602,10 +631,6 @@
       send({ type: "join", roomId: roomId.value })
     }
   })
-
-  function onNicknameSet() {
-    join()
-  }
 
   onBeforeUnmount(() => {
     stopPageHide?.()

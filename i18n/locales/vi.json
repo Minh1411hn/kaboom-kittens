@@ -30,6 +30,10 @@
       "enter": "Vào sảnh chờ",
       "fallback_error": "Biệt danh không hợp lệ hoặc đã bị từ chối."
     },
+    "guest_session": {
+      "create_failed": "Không thể tạo hồ sơ khách. Vui lòng thử lại.",
+      "retry": "Thử lại"
+    },
     "profile_dialog": {
       "title": "Chỉnh sửa hồ sơ",
       "avatar_label": "Ảnh đại diện",
