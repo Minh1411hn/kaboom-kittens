@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance for agents working in this repository.
 
 Online Exploding Kittens for 2–10 players. Nuxt 4 + Nitro WebSockets + Redis in one container.
 `README.md` is the product-level doc (rules, deck scaling, artwork pipeline, env vars) — read it for
@@ -132,44 +132,13 @@ the same path as a real player action, lock and all.
 
 ## Voice chat
 
-Group audio over the **Cloudflare Realtime SFU**: one `RTCPeerConnection` per
-tab, pushing one mic track and pulling everyone else's over that same
-connection. It is deliberately bolted *beside* the command path, not into it.
-
-```
-browser ──▶ /api/voice/{session,tracks,renegotiate,close}   [server/api/voice/]
-                └─ sessionFromEvent + ownsVoiceSession       [services/voice.ts]
-                └─ services/sfu.ts ──▶ rtc.live.cloudflare.com
-
-browser ──▶ ws `voice-join` / `voice-mic` / `voice-leave`    [_ws.ts]
-                └─ setVoiceMember / patchVoiceMic            [roomRepo.ts, room:${id}:voice]
-                └─ publishRoomChanged ──▶ snapshot.voice     [roomService.snapshotFor]
-```
-
-Three things to keep straight:
-
-- **The App Secret never leaves the server.** `NUXT_REALTIME_APP_ID` /
-  `NUXT_REALTIME_APP_SECRET`; unset means voice is off and `/api/voice/*`
-  answers `503`, which the client reads as "hide the voice UI".
-- **Session ids are capabilities.** Anyone holding one can renegotiate it or cut
-  its tracks, so every session we mint is stamped with its owner
-  (`voice:owner:${sessionId}`) and the proxy routes refuse to act on someone
-  else's. Only the *path* session is checked — the `sessionId` inside a remote
-  track object is meant to be another player's.
-- **Voice never enters `GameState`.** The roster lives in its own Redis hash
-  alongside chat, so `server/game/` stays pure and **`STATE_VERSION` does not
-  move** when the voice shape changes. It reaches clients as the `voice` field
-  on the `snapshot` message, which means a mic toggle reuses the whole existing
-  `publishRoomChanged` → `broadcastRoom` fanout and needs no new channel.
-
-Client side, `app/composables/useVoiceChat/index.ts` owns the WebRTC lifecycle. Its
-watchers are bound **once** at module scope, not per call site — the composable
-is used from three components and a per-instance watcher would fire three
-simultaneous pulls per roster change. Negotiation is serialised through one
-promise chain for the same reason: two offers in flight is glare. Speaking
-detection is a local `AnalyserNode` per stream, which is why
-`VoiceAudioSinks.vue` must keep a real `<audio>` element per member — Chrome
-only feeds WebAudio from a PeerConnection stream that is also attached to one.
+Group audio over the Cloudflare Realtime SFU, deliberately bolted *beside* the command path rather
+than into it. The wiring, the App Secret / session-capability rules, and the `useVoiceChat`
+watcher and negotiation constraints live in the `voice-chat` skill
+(`.claude/skills/voice-chat/SKILL.md`) — read it before touching `server/api/voice/`,
+`server/services/{voice,sfu}.ts`, `app/composables/useVoiceChat/`, or `VoiceAudioSinks.vue`.
+The one rule that matters from anywhere: **voice never enters `GameState`**, so `server/game/`
+stays pure and `STATE_VERSION` does not move when the voice shape changes.
 
 ## Adding a card
 
@@ -178,27 +147,24 @@ the build if `catalog.json` and the registry ever disagree about targets, out-of
 cards can be played solo — the client greys out cards from the catalog hints while the server
 enforces the registry, and a mismatch means offering a play that then gets rejected.
 
-## Styling
+## Styling and `.vue` conventions
 
-`app/assets/css/main.css` is still the source of truth: the token block under `:root` plus the base
-rules for `button`, `input`, `.panel` and friends. Tailwind v4 and Sass sit on top of it.
+`app/assets/css/main.css` is the source of truth for CSS tokens under `:root` and the base rules for
+`button`, `input`, `.panel`, and related elements. Tailwind v4 and Sass sit on top of it.
 
 - **Tailwind** is wired through `@tailwindcss/vite` (`vite.plugins` in `nuxt.config.ts`), not the
   Nuxt module. `app/assets/css/tailwind.css` is the entry and is loaded **after** `main.css`.
-  It imports utilities **unlayered and without preflight** on purpose — main.css is unlayered, and
-  unlayered rules beat any `@layer`, so layered utilities would lose to bare `button { … }`. Both
-  reasons are written out at the top of that file; read it before changing the imports.
+  It imports utilities **unlayered and without preflight** on purpose: `main.css` is unlayered, and
+  unlayered rules beat any `@layer`, so layered utilities would lose to bare `button { ... }`.
 - The tokens are re-exported as theme keys in `@theme`, so `bg-parchment`, `text-ink`,
-  `font-display`, `rounded-card` resolve to the same custom properties. They are aliases —
-  add new colours to `main.css` first, then alias them.
-- **Sass** is available in any `<style lang="scss">`. `app/assets/scss/_index.scss` is auto-injected
-  via `vite.css.preprocessorOptions.scss.additionalData`, so `$parchment`, `$shadow` and
-  `@include respond-to('md')` work with no import. Nothing in those partials may emit CSS — the
-  file is prepended to every style block and would duplicate the output once per component.
+  `font-display`, and `rounded-card` resolve to the same custom properties. Add new colours to
+  `main.css` first, then alias them.
+- Sass is available in any `<style lang="scss">`. `app/assets/scss/_index.scss` is auto-injected via
+  `vite.css.preprocessorOptions.scss.additionalData`, so `$parchment`, `$shadow`, and
+  `@include respond-to('md')` work with no import. Nothing in those partials may emit CSS because
+  the file is prepended to every style block.
 
-### `.vue` file conventions
-
-Every SFC keeps its three blocks in this order, each with the same attributes every time:
+Every Vue SFC uses this block order and attributes:
 
 ```vue
 <template lang="pug">
@@ -214,26 +180,11 @@ Every SFC keeps its three blocks in this order, each with the same attributes ev
 </style>
 ```
 
-- `<template lang="pug">` — Pug, not HTML. `pug` is a devDependency for this.
-- `<script setup lang="ts">` — always Composition API with `setup`, never Options API and never a
-  bare `<script>` for component logic.
-- `<style scoped lang="scss">` — always `scoped`, always SCSS, never a global `<style>` in a
-  component.
-- Inside `<style>`, name classes with **BEM** (`block__element--modifier`) and nest with SCSS's
-  **parent selector (`&`)** instead of repeating the block name:
-
-  ```scss
-  .card {
-    &__title { ... }
-    &__title--active { ... }
-    &--disabled { ... }
-  }
-  ```
-- Reach for `app/components/common/Dialog.vue` before hand-rolling a new dialog/overlay — pass a
-  `title` (prop or slot) and body content via its default slot; it owns the backdrop, focus trap
-  (Headless UI's `Dialog`), and card chrome.
-- Reach for `app/components/common/Button.vue` before writing new button markup — see its doc
-  comment for the available `variant`/`size`/`loading` props.
+- Use Pug templates, Composition API with `<script setup>`, and scoped SCSS.
+- Name CSS classes with BEM and nest with SCSS's parent selector (`&`).
+- Prefer `app/components/common/Dialog.vue` to a custom dialog or overlay; it owns the backdrop,
+  focus trap, and card chrome.
+- Prefer `app/components/common/Button.vue` to handwritten button markup.
 
 ## i18n
 
@@ -275,16 +226,3 @@ needs its key added to **both** `en.json` and `vi.json`, not just one.
 - DO NOT attempt to compile, bundle, or verify code changes locally using terminal commands.
 - You are ONLY permitted to use `cat`, `grep`, or file system tools to read files, standard file editing tools to make changes
 - Assume all code changes you write are correct; do not attempt to verify them by running any scripts without asking permissions from user.
-
-## Layout
-
-```
-shared/          types, zod protocol schemas, card catalog + combo rules (client + server)
-server/game/     the pure engine — engine, effects, registry, nope, turn, deck, rng, projection, cards/
-server/services/ redis, roomRepo, lock, bus (pub/sub + peer registry), roomService, sessions, timers
-server/api/      REST: session, rooms, health, and the voice/* SFU proxy
-server/routes/   _ws.ts — the single socket entrypoint
-server/plugins/  realtime.ts — starts the bus and timer dispatcher once per process
-app/             pages, components, composables
-tests/           WebSocket integration tests (need a running server)
-```

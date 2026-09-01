@@ -57,8 +57,8 @@
   // gap, touch support — and keeps `order` in sync with the DOM via its default
   // `onUpdate` (do not pass a custom `onUpdate` in the options below, or that
   // sync is lost). `order` is the single source of truth for the rendered list
-  // in both modes; in read-only mode `disabled: true` means it never diverges
-  // from `props.cards`.
+  // in both modes. Read-only updates are synced below; editable updates stay
+  // local so an unrelated snapshot cannot undo a drag in progress.
 
   const order = ref<Card[]>([...props.cards])
   const choicesEl = ref<HTMLElement | null>(null)
@@ -75,6 +75,16 @@
     chosenClass: "reorder-chosen",
     dragClass: "reorder-dragging"
   })
+
+  // Projection returns a fresh array on every snapshot. Compare the ordered
+  // uid sequence so read-only peeks update only when their contents or order
+  // actually changes, while editable order remains owned by SortableJS.
+  watch(
+    () => JSON.stringify(props.cards.map((card) => card.uid)),
+    () => {
+      if (!props.editable) order.value = [...props.cards]
+    }
+  )
 </script>
 
 <style scoped lang="scss">

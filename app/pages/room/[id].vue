@@ -297,6 +297,7 @@
 
     SeeFutureModal(
       v-if="showAlterFutureModal"
+      :key="state?.interaction?.id"
       :cards="state?.interaction?.cards ?? []"
       editable
       @submit="onAlterFutureSubmit"
@@ -691,22 +692,26 @@
     namedCardId.value = null
   })
 
+  const latestOwnFutureSeenSeq = computed(() => {
+    const playerId = you.value?.id
+    const events = state.value?.log
+    if (!playerId || !events) return null
+    for (let index = events.length - 1; index >= 0; index--) {
+      const event = events[index]!
+      if (event.type === "future-seen" && event.playerId === playerId) return event.seq
+    }
+    return null
+  })
+
+  watch(latestOwnFutureSeenSeq, (seq, previous) => {
+    if (seq !== null && seq !== previous) peekDismissed.value = false
+  })
+
   watch(
-    () => you.value?.peek,
-    (newPeek, oldPeek) => {
-      if (newPeek && newPeek.length > 0) {
-        const newKey = newPeek.map((c) => c.uid).join(",")
-        const oldKey = oldPeek?.map((c) => c.uid).join(",")
-        // If the deck was drawn from, the new peek is just a suffix of the old peek.
-        // In this case, we shouldn't pop up the modal again.
-        if (newKey !== oldKey && (!oldKey || !oldKey.endsWith(newKey))) {
-          peekDismissed.value = false
-        }
-      } else {
-        peekDismissed.value = false
-      }
-    },
-    { deep: true }
+    () => you.value?.peek?.length ?? 0,
+    (length) => {
+      if (!length) peekDismissed.value = false
+    }
   )
 
   const showPeekModal = computed(() =>

@@ -432,6 +432,27 @@ describe("SeeFutureModal", () => {
     expect(wrapper.findAll(".card")).toHaveLength(2);
   });
 
+  it("keeps a mounted read-only peek in sync with ordered card updates", async () => {
+    const skip = card("skip", "p1");
+    const defuse = card("defuse", "p2");
+    const favor = card("favor", "p3");
+    const wrapper = await mountSuspended(SeeFutureModal, {
+      props: { cards: [skip, defuse, favor] },
+    });
+
+    await wrapper.setProps({ cards: [defuse, favor] });
+    expect(
+      wrapper.findAll(".see-future__label").map((label) => label.text()),
+    ).toEqual(["Defuse", "Favor"]);
+    expect(wrapper.findAll(".see-future__rank")[0]!.text()).toBe("Top #1");
+
+    // The set is unchanged, but its order is still meaningful for a peek.
+    await wrapper.setProps({ cards: [favor, defuse] });
+    expect(
+      wrapper.findAll(".see-future__label").map((label) => label.text()),
+    ).toEqual(["Favor", "Defuse"]);
+  });
+
   it("emits close when clicking the backdrop", async () => {
     const wrapper = await mountSuspended(SeeFutureModal, {
       props: {
@@ -923,4 +944,3 @@ describe("CardArrivalFlyer", () => {
     expect(wrapper.find(".card-arrival").exists()).toBe(true);
   });
 });
-

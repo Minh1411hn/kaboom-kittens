@@ -111,11 +111,16 @@ export function applyEffect(
                     ? state.drawPile.shift()
                     : state.drawPile.pop();
             if (!card) return;
-            // Peeked knowledge is stale the moment the top of the deck changes.
-            if (effect.from === "top") {
-                for (const pid of Object.keys(state.peeks)) {
-                    state.peeks[pid] = state.peeks[pid]!.slice(1);
-                }
+            // A peek is a prefix of the draw pile. Top draws consume its head;
+            // bottom draws consume its tail once the peek spans the whole pile.
+            for (const pid of Object.keys(state.peeks)) {
+                const rest =
+                    effect.from === "top"
+                        ? state.peeks[pid]!.slice(1)
+                        : state.peeks[pid]!;
+                const live = rest.slice(0, state.drawPile.length);
+                if (live.length) state.peeks[pid] = live;
+                else delete state.peeks[pid];
             }
 
             if (card.id === "exploding-kitten") {

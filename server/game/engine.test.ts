@@ -11,7 +11,7 @@ import {
 import type { Rejection } from '#shared/types/errors'
 import { addPlayer, createGame, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby } from './engine'
 import { cardCount, deckComposition, explodingKittenCount, makeCard } from './deck'
-import { projectStateFor } from './projection'
+import { livePeekFor, projectStateFor } from './projection'
 import { currentPlayer, playerById } from './turn'
 
 // ---------------------------------------------------------------------------
@@ -1219,6 +1219,20 @@ describe('the future', () => {
       }).code,
     ).toBe('invalid-order')
   })
+
+  it('projects only the peek prefix that still matches the live draw pile', () => {
+    const state = started(3)
+    const player = currentPlayer(state)!
+    const [first, second] = state.drawPile
+    state.peeks[player.id] = [{ ...first! }, { ...second! }, makeCard('skip')]
+
+    const live = livePeekFor(state, player.id)
+    expect(live?.map((card) => card.uid)).toEqual([first!.uid, second!.uid])
+    expect(live![0]).not.toBe(first)
+
+    state.peeks[player.id] = [makeCard('favor'), { ...first! }]
+    expect(livePeekFor(state, player.id)).toBeNull()
+  })
 })
 
 describe('shuffle', () => {
@@ -1263,6 +1277,91 @@ describe('draw from the bottom', () => {
     })
     expect(playerById(after, player.id)!.hand.map((c) => c.uid)).toContain(bottom.uid)
     expect(currentPlayer(after)!.id).not.toBe(player.id)
+  })
+
+  it('removes the bottom card from a peek that spans the whole pile', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    setHand(state, player.id, ['see-the-future-3x', 'draw-from-the-bottom'])
+    state.drawPile = [makeCard('skip'), makeCard('favor'), makeCard('shuffle')]
+
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['see-the-future-3x']),
+      combo: null,
+    })
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['draw-from-the-bottom']),
+      combo: null,
+    })
+
+    expect(state.drawPile.map((card) => card.id)).toEqual(['skip', 'favor'])
+    expect(state.peeks[player.id]!.map((card) => card.id)).toEqual(['skip', 'favor'])
+  })
+
+  it('keeps a peek unchanged when the bottom card was outside it', () => {
+    let state = started(3)
+    removeAllNopes(state)
+    const player = currentPlayer(state)!
+    setHand(state, player.id, ['see-the-future-3x', 'draw-from-the-bottom'])
+    state.drawPile = [makeCard('skip'), makeCard('favor'), makeCard('shuffle'), makeCard('reverse')]
+
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['see-the-future-3x']),
+      combo: null,
+    })
+    const seen = state.peeks[player.id]!.map((card) => card.uid)
+    state = run(state, {
+      type: 'play-card',
+      playerId: player.id,
+      uids: uidsOf(state, player.id, ['draw-from-the-bottom']),
+      combo: null,
+    })
+
+    expect(state.peeks[player.id]!.map((card) => card.uid)).toEqual(seen)
+  })
+})
+
+describe('peek cleanup', () => {
+  it('keeps the unseen suffix after a top draw', () => {
+    const state = started(3)
+    const player = currentPlayer(state)!
+    const known = [makeCard('skip'), makeCard('favor'), makeCard('shuffle')]
+    state.drawPile = [...known, ...state.drawPile]
+    state.peeks[player.id] = known.map((card) => ({ ...card }))
+
+    const after = run(state, { type: 'draw-card', playerId: player.id })
+    const expected = known.slice(1).map((card) => card.uid)
+    expect(after.peeks[player.id]!.map((card) => card.uid)).toEqual(expected)
+    expect(projectStateFor(after, player.id).you!.peek!.map((card) => card.uid)).toEqual(expected)
+  })
+
+  it('deletes an exhausted peek after a top draw', () => {
+    const state = started(3)
+    const player = currentPlayer(state)!
+    state.peeks[player.id] = [{ ...state.drawPile[0]! }]
+
+    const after = run(state, { type: 'draw-card', playerId: player.id })
+    expect(after.peeks[player.id]).toBeUndefined()
+  })
+
+  it('clears stale peeks when an empty draw pile is rebuilt', () => {
+    const state = started(3)
+    const player = currentPlayer(state)!
+    state.drawPile = []
+    state.discardPile = [makeCard('skip'), makeCard('favor')]
+    state.peeks[player.id] = [makeCard('shuffle')]
+
+    const after = run(state, { type: 'timeout-turn' })
+    expect(after.drawPile).toHaveLength(2)
+    expect(after.peeks).toEqual({})
+    expect(after.log.some((event) => event.type === 'deck-shuffled')).toBe(false)
   })
 })
 
@@ -1640,10 +1739,12 @@ describe('lobby rules', () => {
 
   it('eliminates rather than removes someone who leaves mid-game', () => {
     const state = started(3)
+    state.peeks.p1 = state.drawPile.slice(0, 3).map((card) => ({ ...card }))
     removePlayer(state, 'p1')
     const gone = playerById(state, 'p1')!
     expect(gone.alive).toBe(false)
     expect(gone.hand).toHaveLength(0)
+    expect(state.peeks.p1).toBeUndefined()
     // Seats stay put so turn order is unaffected.
     expect(state.players.map((p) => p.seat)).toEqual([0, 1, 2])
   })
