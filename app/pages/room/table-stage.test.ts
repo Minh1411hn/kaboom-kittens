@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { ALL_CARD_IDS, HAND_SIZE, type Card, type CardId, type PublicGameState, type PublicPlayer } from '#shared/types/game'
 import type { ClientMessage } from '#shared/protocol/messages'
+import ProfileDialog from '../../components/ProfileDialog.vue'
 import RoomPage from './[id].vue'
 
 /**
@@ -72,16 +73,25 @@ function playing(overrides: Partial<PublicGameState> = {}): PublicGameState {
   } as PublicGameState
 }
 
-mockNuxtImport('useSession', () => () => ({
-  nickname: useState<string>('kk:nickname', () => 'Whiskers'),
-  avatarId: useState<string>('kk:avatarId', () => 'art_02'),
-  playerId: useState<string>('kk:sessionPlayerId', () => 'p1'),
-  ready: useState<boolean>('kk:sessionReady', () => true),
-  load: async () => {},
-  setNickname: async () => {},
-  setProfile: async () => {},
-  remembered: () => 'Whiskers',
-}))
+mockNuxtImport('useSession', () => () => {
+  const nickname = useState<string>('kk:nickname', () => 'Whiskers')
+  const avatarId = useState<string>('kk:avatarId', () => 'art_02')
+
+  return {
+    nickname,
+    avatarId,
+    playerId: useState<string>('kk:sessionPlayerId', () => 'p1'),
+    ready: useState<boolean>('kk:sessionReady', () => true),
+    load: async () => {},
+    setNickname: async () => {},
+    createGuest: async () => {
+      nickname.value = 'Guest-1234'
+      avatarId.value = 'art_03'
+    },
+    setProfile: async () => {},
+    remembered: () => 'Whiskers',
+  }
+})
 
 mockNuxtImport('useGameSocket', () => () => {
   const state = useState<PublicGameState | null>('kk:state', () => null)
@@ -323,5 +333,21 @@ describe('the table stage', () => {
 
     await wrapper.get('.log-dock__toggle').trigger('click')
     expect(wrapper.get('.log-dock').classes()).not.toContain('log-dock--open')
+  })
+
+  it('creates a guest identity and opens profile editing for a shared-link visitor', async () => {
+    fixture = playing({ status: 'lobby' })
+    useState<string>('kk:nickname').value = ''
+
+    const wrapper = await mount()
+    await Promise.resolve()
+    await nextTick()
+
+    expect(sent).toContainEqual({ type: 'join', roomId: 'ABCD' })
+    const profile = wrapper.findComponent(ProfileDialog)
+    expect(profile.exists()).toBe(true)
+    expect(profile.props('open')).toBe(true)
+    expect(profile.props('nickname')).toBe('Guest-1234')
+    expect(profile.props('avatarId')).toBe('art_03')
   })
 })

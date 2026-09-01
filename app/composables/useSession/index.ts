@@ -41,6 +41,12 @@ export function useSession() {
     if (import.meta.client) localStorage.setItem('kk:nickname', result.nickname)
   }
 
+  /** Gives a shared-link visitor a valid identity; the server assigns its avatar. */
+  async function createGuest(): Promise<void> {
+    const suffix = Math.floor(1000 + Math.random() * 9000)
+    await setNickname(`Guest-${suffix}`)
+  }
+
   /** Sets both nickname and avatar together — the profile dialog's save. */
   async function setProfile(nicknameValue: string, avatarIdValue: string): Promise<void> {
     const result = await $fetch<{ playerId: string; nickname: string; avatarId: string }>('/api/session', {
@@ -58,5 +64,5 @@ export function useSession() {
     return import.meta.client ? (localStorage.getItem('kk:nickname') ?? '') : ''
   }
 
-  return { nickname, avatarId, playerId, ready, load, setNickname, setProfile, remembered }
+  return { nickname, avatarId, playerId, ready, load, setNickname, createGuest, setProfile, remembered }
 }

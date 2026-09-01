@@ -30,6 +30,10 @@
       "enter": "Enter the lobby",
       "fallback_error": "Invalid nickname, or it was rejected."
     },
+    "guest_session": {
+      "create_failed": "Couldn't create your guest profile. Try again.",
+      "retry": "Try again"
+    },
     "profile_dialog": {
       "title": "Edit profile",
       "avatar_label": "Avatar",
