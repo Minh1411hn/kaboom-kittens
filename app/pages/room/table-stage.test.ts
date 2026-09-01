@@ -250,6 +250,108 @@ describe('the table stage', () => {
     expect(wrapper.findAll('.lobby__seats .seat')).toHaveLength(3)
   })
 
+  it('keeps a dismissed peek closed on draws and reopens it for a new own peek event', async () => {
+    const seen = [
+      card('skip', 'p1'),
+      card('favor', 'p2'),
+      card('shuffle', 'p3'),
+      card('reverse', 'p4'),
+      card('defuse', 'p5'),
+    ]
+    fixture = playing({
+      drawCount: 5,
+      you: { id: 'p1', hand: [], peek: seen, isHost: true },
+      log: [{ seq: 1, at: 1, type: 'future-seen', playerId: 'p1', count: 5 }],
+    })
+    const wrapper = await mount()
+    const state = useState<PublicGameState | null>('kk:state')
+
+    expect(wrapper.find('.see-future').exists()).toBe(true)
+    await wrapper.get('.see-future__btn').trigger('click')
+    expect(wrapper.find('.see-future').exists()).toBe(false)
+
+    // A fresh projection array and unrelated state change are not a new peek.
+    state.value = playing({
+      drawCount: 5,
+      turnDeadline: 123,
+      you: { id: 'p1', hand: [], peek: seen.map((card) => ({ ...card })), isHost: true },
+      log: [{ seq: 1, at: 1, type: 'future-seen', playerId: 'p1', count: 5 }],
+    })
+    await nextTick()
+    expect(wrapper.find('.see-future').exists()).toBe(false)
+
+    // A bottom draw truncates the tail. It is not a fresh peek, so dismissal holds.
+    state.value = playing({
+      drawCount: 4,
+      you: { id: 'p1', hand: [], peek: seen.slice(0, 4), isHost: true },
+      log: [
+        { seq: 1, at: 1, type: 'future-seen', playerId: 'p1', count: 5 },
+        { seq: 2, at: 2, type: 'card-drawn', playerId: 'p1' },
+      ],
+    })
+    await nextTick()
+    expect(wrapper.find('.see-future').exists()).toBe(false)
+
+    // Another player's private action must not reopen this player's dialog.
+    state.value = playing({
+      drawCount: 4,
+      you: { id: 'p1', hand: [], peek: seen.slice(0, 4), isHost: true },
+      log: [
+        { seq: 1, at: 1, type: 'future-seen', playerId: 'p1', count: 5 },
+        { seq: 2, at: 2, type: 'card-drawn', playerId: 'p1' },
+        { seq: 3, at: 3, type: 'future-seen', playerId: 'p2', count: 3 },
+      ],
+    })
+    await nextTick()
+    expect(wrapper.find('.see-future').exists()).toBe(false)
+
+    // A new See 3 is a subset of the old See 5, but its event makes it fresh.
+    state.value = playing({
+      drawCount: 4,
+      you: { id: 'p1', hand: [], peek: seen.slice(0, 3), isHost: true },
+      log: [
+        { seq: 1, at: 1, type: 'future-seen', playerId: 'p1', count: 5 },
+        { seq: 2, at: 2, type: 'card-drawn', playerId: 'p1' },
+        { seq: 3, at: 3, type: 'future-seen', playerId: 'p2', count: 3 },
+        { seq: 4, at: 4, type: 'future-seen', playerId: 'p1', count: 3 },
+      ],
+    })
+    await nextTick()
+    expect(wrapper.find('.see-future').exists()).toBe(true)
+    expect(wrapper.findAll('.see-future__choice-item')).toHaveLength(3)
+  })
+
+  it('resets editable card order when a new Alter interaction replaces the old one', async () => {
+    const interaction = (id: string, cards: Card[]): NonNullable<PublicGameState['interaction']> => ({
+      id,
+      kind: 'reorder-cards',
+      cardId: 'alter-the-future-3x',
+      requiredFrom: ['p1'],
+      deadline: Date.now() + 30000,
+      isForYou: true,
+      answered: [],
+      cards,
+    })
+    fixture = playing({
+      interaction: interaction('i1', [card('skip', 'a1'), card('favor', 'a2')]),
+    })
+    const wrapper = await mount()
+    const state = useState<PublicGameState | null>('kk:state')
+
+    state.value = playing({
+      interaction: interaction('i2', [card('shuffle', 'b1'), card('reverse', 'b2')]),
+    })
+    await nextTick()
+
+    expect(wrapper.findAll('.see-future__label').map((label) => label.text())).toEqual(['Shuffle', 'Reverse'])
+    await wrapper.get('.see-future__btn').trigger('click')
+    expect(sent.at(-1)).toEqual({
+      type: 'submit-interaction',
+      interactionId: 'i2',
+      response: { type: 'order', uids: ['b1', 'b2'] },
+    })
+  })
+
   it('lets the host kick another player from the waiting room, but not themself', async () => {
     fixture = playing({ status: 'lobby' })
     const wrapper = await mount()

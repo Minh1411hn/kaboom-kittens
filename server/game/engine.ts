@@ -113,6 +113,7 @@ export function addPlayer(
 }
 
 export function removePlayer(state: GameState, id: string): void {
+    delete state.peeks[id];
     // No game is in progress in either state, so the seat can go outright — and
     // `over` counts as waiting: whoever leaves the end-of-game screen is gone.
     if (state.status === "lobby" || state.status === "over") {
@@ -738,6 +739,7 @@ function settle(state: GameState, config: EngineConfig, env: EffectEnv): void {
     // but guard anyway so a malformed state cannot wedge the room.
     if (!state.drawPile.length && !state.interaction && !state.nopeWindow) {
         state.drawPile = shuffle(state, state.discardPile.splice(0));
+        applyEffects(state, [{ t: "CLEAR_PEEKS" }], env);
     }
 
     // Prompts and Nope windows carry their own deadlines; the turn clock pauses.

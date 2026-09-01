@@ -1,6 +1,23 @@
-import { HAND_SIZE, type GameState, type PublicGameState } from '#shared/types/game'
+import { HAND_SIZE, type Card, type GameState, type PublicGameState } from '#shared/types/game'
 import { deckComposition } from './deck'
 import { playerBySeat } from './turn'
+
+/**
+ * Peeks are snapshots, so only project the prefix that still matches the live
+ * draw pile. This keeps a missed invalidation from showing stale cards.
+ */
+export function livePeekFor(state: GameState, playerId: string): Card[] | null {
+  const seen = state.peeks[playerId]
+  if (!seen?.length) return null
+
+  const live: Card[] = []
+  for (let index = 0; index < seen.length; index++) {
+    const top = state.drawPile[index]
+    if (!top || top.uid !== seen[index]!.uid) break
+    live.push({ ...top })
+  }
+  return live.length ? live : null
+}
 
 /**
  * The ONLY way game state reaches a client. Everything hidden in the physical
@@ -69,7 +86,7 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
       ? {
           id: viewer.id,
           hand: viewer.hand.map((c) => ({ ...c })),
-          peek: state.peeks[viewer.id]?.map((c) => ({ ...c })) ?? null,
+          peek: livePeekFor(state, viewer.id),
           isHost: false, // filled in by the room layer, which owns host identity
         }
       : null,
