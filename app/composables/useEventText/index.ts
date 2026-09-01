@@ -38,7 +38,7 @@ export function useEventText() {
       case "card-stolen":
         return t("events.card-stolen", { name, target })
       case "card-given":
-        return t("events.card-given", { name, target, card })
+        return t("events.card-given", { name, target })
       case "card-demanded":
         return t("events.card-demanded", { name, target, card })
       case "card-demand-failed":

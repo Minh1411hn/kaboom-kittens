@@ -470,7 +470,7 @@
     "action-resolved": "The Nopes canceled out — {card} went through!",
     "card-drawn": "{name} drew a card.",
     "card-stolen": "{name} stole a random card from {target}.",
-    "card-given": "{name} gave {card} to {target}.",
+    "card-given": "{name} gave a card to {target}.",
     "card-demanded": "{name} gave {card} to {target}.",
     "card-demand-failed": "{name} didn't have any {card}.",
     "card-taken-from-discard": "{name} took {card} from the discard pile.",

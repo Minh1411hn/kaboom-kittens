@@ -470,7 +470,7 @@
     "action-resolved": "Các lá Nope đã tự triệt tiêu nhau — {card} được kích hoạt thành công!",
     "card-drawn": "{name} đã rút 1 lá bài.",
     "card-stolen": "{name} đã cướp 1 lá bài ngẫu nhiên từ {target}.",
-    "card-given": "{name} đã đưa {card} cho {target}.",
+    "card-given": "{name} đã đưa 1 lá bài cho {target}.",
     "card-demanded": "{name} đã đưa {card} cho {target}.",
     "card-demand-failed": "{name} không có lá {card} nào.",
     "card-taken-from-discard": "{name} đã lấy lá {card} từ chồng bài đã đánh.",

@@ -219,7 +219,8 @@ export function applyEffect(
                             : "card-demanded",
                     playerId: effect.fromPlayerId,
                     targetId: effect.toPlayerId,
-                    cardId: card.id,
+                    // A Favor-selected card remains private; only a named demand is public.
+                    ...(effect.reason === "demand" ? { cardId: card.id } : {}),
                 },
                 now,
             );
