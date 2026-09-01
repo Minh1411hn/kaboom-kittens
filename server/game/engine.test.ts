@@ -995,6 +995,7 @@ describe('steal a card', () => {
     })
     expect(playerById(after, victim.id)!.hand).toHaveLength(0)
     expect(playerById(after, player.id)!.hand.map((c) => c.id)).toEqual(['shuffle'])
+    expect(after.log.find((event) => event.type === 'card-stolen')?.cardId).toBeUndefined()
     // Stealing costs a card, not the turn.
     expect(currentPlayer(after)!.id).toBe(player.id)
   })
@@ -1058,6 +1059,9 @@ describe('favor', () => {
     })
     expect(playerById(state, player.id)!.hand.map((c) => c.id)).toEqual(['shuffle'])
     expect(playerById(state, target.id)!.hand.map((c) => c.id)).toEqual(['skip'])
+    expect(state.log.find((event) => event.type === 'card-given')?.cardId).toBeUndefined()
+    const observer = state.players.find((p) => p.id !== player.id && p.id !== target.id)!
+    expect(projectStateFor(state, observer.id).log.find((event) => event.type === 'card-given')?.cardId).toBeUndefined()
   })
 
   it('refuses a favor from a player with no cards', () => {
