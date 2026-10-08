@@ -69,9 +69,14 @@
   .table-center {
     position: relative;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: 1rem;
+
+    @include respond-to("sm") {
+      gap: 2rem;
+    }
 
     &__pile {
       display: flex;

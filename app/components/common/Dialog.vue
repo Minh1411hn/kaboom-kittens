@@ -88,6 +88,7 @@ Teleport(to="body")
       place-items: center;
       padding: 1rem;
       overflow-y: auto;
+      overflow-x: hidden;
     }
 
     &__panel {

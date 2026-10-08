@@ -185,8 +185,13 @@
       flex-direction: column;
       gap: 0.35rem;
       flex: 1;
-      min-width: 220px;
-      padding: 0 20px;
+      min-width: 150px;
+      padding: 0 0.5rem;
+
+      @include respond-to("sm") {
+        min-width: 220px;
+        padding: 0 20px;
+      }
     }
 
     &__players-flow {

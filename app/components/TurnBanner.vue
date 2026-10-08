@@ -74,12 +74,21 @@
       border: var(--outline-width) solid var(--ink);
       border-radius: var(--radius);
       box-shadow: var(--shadow-sm);
+
+      @media (max-height: 500px) {
+        padding: 0.5rem 0.8rem;
+        gap: 0.35rem;
+      }
     }
 
     &__pictogram {
       display: flex;
       align-items: center;
       gap: 0.45rem;
+
+      @media (max-height: 500px) {
+        display: none; // hide on very short screens to save space
+      }
     }
 
     &__who {
@@ -112,6 +121,10 @@
       letter-spacing: 0.5px;
       text-transform: uppercase;
       color: var(--ink);
+
+      @media (max-height: 500px) {
+        font-size: 1.15rem;
+      }
     }
 
     &__hint {

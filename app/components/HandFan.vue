@@ -11,11 +11,12 @@
       :disabled="item.isLeaving || item.isHeld"
       @click="!item.isLeaving && !item.isHeld && $emit('toggle', item.uid)"
     )
-      CardImage(:card-id="item.card.id" :selected="selected.includes(item.uid)" :uid="item.uid" :width="`${CARD_W}px`")
+      CardImage(:card-id="item.card.id" :selected="selected.includes(item.uid)" :uid="item.uid" :width="`${cardWidth}px`")
   p.hand-fan__empty(v-if="!slots.length") {{ $t('table.hand_fan.empty') }}
 </template>
 
 <script setup lang="ts">
+  import { useWindowSize } from "@vueuse/core"
   import type { Card } from "#shared/types/game"
 
   interface SlotItem {
@@ -43,9 +44,10 @@
 
   defineEmits<{ toggle: [uid: string] }>()
 
-  const CARD_W = 140
-  /** Roughly the width of the hand area on the table grid. */
   const FAN_W = 1120
+
+  const { width: windowWidth } = useWindowSize()
+  const cardWidth = computed(() => (windowWidth.value < 640 && windowWidth.value > 0 ? 94 : 140))
 
   const slots = ref<SlotItem[]>([])
   const leavingTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -152,14 +154,16 @@
   /**
    * Fans the cards out from the centre. Up to a full opening hand the cards
    * barely touch, so every title is readable; past that the overlap tightens to
-   * keep the fan inside FAN_W however big the hand gets. Hovering lifts a card
-   * clear of its neighbours, which is the escape hatch for a crowded hand.
+   * keep the fan inside the available width however big the hand gets.
    */
   const overlap = computed(() => {
     const count = slots.value.length
     if (count < 2) return 0
-    const needed = Math.ceil((CARD_W * count - FAN_W) / (count - 1))
-    return Math.max(6, Math.min(96, needed))
+    const w = cardWidth.value
+    // Dynamic width constraint for mobile screens (with some padding).
+    const availableW = windowWidth.value > 0 ? Math.min(FAN_W, windowWidth.value - 32) : FAN_W
+    const needed = Math.ceil((w * count - availableW) / (count - 1))
+    return Math.max(6, Math.min(w - 28, needed)) // Guarantee at least 28px of card edge is visible
   })
 </script>
 

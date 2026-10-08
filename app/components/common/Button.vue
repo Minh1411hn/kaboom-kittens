@@ -105,6 +105,10 @@ button.btn(
       outline-offset: 3px;
     }
 
+    @media (pointer: coarse) {
+      min-height: 40px;
+    }
+
     // Fills
     &--gold {
       background: linear-gradient(180deg, $gold-1, $gold-2);
