@@ -60,6 +60,10 @@
       "lobby_full": "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống.",
       "game_in_progress": "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
     },
+    "spectators": {
+      "title": "Đang xem",
+      "you": "(bạn)"
+    },
     "joining_room": "Đang tham gia phòng chơi…",
     "lobby": {
       "player_list": "Danh sách player",

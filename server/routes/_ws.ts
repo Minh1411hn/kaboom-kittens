@@ -17,6 +17,7 @@ import {
   listRooms,
   loadChat,
   patchVoiceMic,
+  removeSpectator,
   removeVoiceMember,
   setVoiceMember,
 } from '../services/roomRepo'
@@ -28,6 +29,7 @@ import {
   leaveRoom,
   leaveVoice,
   sendSnapshot,
+  syncSpectator,
   updateProfile,
 } from '../services/roomService'
 import { sessionFromCookieHeader } from '../services/sessions'
@@ -143,6 +145,7 @@ export default defineWebSocketHandler({
     // room is waiting and only flags a disconnect mid-game, so a player in a
     // live hand can still come back to it.
     await removeVoiceMember(context.roomId, context.playerId)
+    await removeSpectator(context.roomId, context.playerId)
     await leaveRoom(context.roomId, context.playerId)
     await broadcastRoom(context.roomId)
   },
@@ -171,6 +174,11 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       // already returns `you: null` for a viewer who is not on the roster, so a
       // spectator sees exactly the public table and nothing more.
       await joinRoom(message.roomId, context.playerId, context.nickname, context.avatarId)
+      await syncSpectator(message.roomId, {
+        playerId: context.playerId,
+        nickname: context.nickname,
+        avatarId: context.avatarId,
+      })
 
       context.roomId = message.roomId
       context.watchingLobby = false
@@ -183,7 +191,11 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       if (!context.roomId) return
       const roomId = context.roomId
       context.roomId = null
+      // Same rule as a closed socket: another tab still in the room keeps the
+      // seat, the voice entry and the spectator entry for this player.
+      if (playerHasOtherPeer(roomId, context.playerId, peer)) return broadcastRoom(roomId)
       await removeVoiceMember(roomId, context.playerId)
+      await removeSpectator(roomId, context.playerId)
       await leaveRoom(roomId, context.playerId)
       return broadcastRoom(roomId)
     }
@@ -308,7 +320,15 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       context.avatarId = message.avatarId
       if (!context.roomId) return
       const error = await updateProfile(context.roomId, context.playerId, message.nickname, message.avatarId)
-      if (error) return
+      if (error) {
+        // Not seated: the only place a watcher's name shows is the spectator list.
+        if (error.code !== 'not-seated') return
+        await syncSpectator(context.roomId, {
+          playerId: context.playerId,
+          nickname: message.nickname,
+          avatarId: message.avatarId,
+        })
+      }
       return broadcastRoom(context.roomId)
     }
 

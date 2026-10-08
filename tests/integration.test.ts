@@ -318,6 +318,54 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     expect(back.state!.players.map((p) => p.id)).toEqual([stayer.playerId, host.playerId])
   }, 30_000)
 
+  it('tells the table who is watching, and drops them once they sit down or leave', async () => {
+    const { roomId, players, host } = await makeRoom(['Lise', 'Marie'])
+    host.send({ type: 'start-game' })
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'playing', 5000, 'the game to start')
+
+    const spectatorsOf = (client: TestClient) => {
+      const snapshot = client.received.filter((m) => m.type === 'snapshot').at(-1)
+      return snapshot?.type === 'snapshot' ? snapshot.spectators.map((s) => s.playerId) : []
+    }
+    const waitForSpectators = async (client: TestClient, ids: string[], what: string) => {
+      for (let i = 0; i < 100 && JSON.stringify(spectatorsOf(client).sort()) !== JSON.stringify([...ids].sort()); i++)
+        await sleep(50)
+      expect(spectatorsOf(client).sort(), what).toEqual([...ids].sort())
+    }
+
+    const watchers: TestClient[] = []
+    for (const nickname of ['Chien', 'Rosalind']) {
+      const watcher = new TestClient(BASE_URL, nickname)
+      await watcher.login()
+      await watcher.connect()
+      clients.push(watcher)
+      watcher.send({ type: 'join', roomId })
+      await watcher.waitForState((state) => state.roomId === roomId, 5000, 'a spectator snapshot')
+      watchers.push(watcher)
+    }
+    const [first, second] = watchers as [TestClient, TestClient]
+
+    await waitForSpectators(host, [first.playerId, second.playerId], 'both watchers listed for a player')
+    await waitForSpectators(first, [first.playerId, second.playerId], 'a watcher sees themself too')
+    const listed = host.received.filter((m) => m.type === 'snapshot').at(-1)
+    expect(listed?.type === 'snapshot' && listed.spectators.find((s) => s.playerId === first.playerId)?.nickname).toBe('Chien')
+
+    // A dropped socket takes them off the list.
+    second.close()
+    await waitForSpectators(host, [first.playerId], 'the closed watcher gone')
+
+    // Sitting down for the next game takes them off it as well.
+    await playUntilOver(players)
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'over', 5000, 'the game to end')
+    for (const player of players) player.send({ type: 'return-to-lobby' })
+    await first.waitForState((state) => state.status === 'lobby', 5000, 'the room to reset')
+    first.send({ type: 'join', roomId })
+    await first.waitForState((state) => Boolean(state.you), 5000, 'a seat after the game')
+    await waitForSpectators(host, [], 'nobody watching once seated')
+  }, 60_000)
+
   it('seats a latecomer as a spectator, then gives them a seat when the game ends', async () => {
     const { roomId, players, host } = await makeRoom(['Grete', 'Emmy'])
     host.send({ type: 'start-game' })

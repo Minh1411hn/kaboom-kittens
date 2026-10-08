@@ -106,6 +106,13 @@
                 variant="red"
                 @click="kickPlayer(player.id)"
               )
+          SpectatorList.lobby__spectators(
+            v-if="spectatorRows.length"
+            :spectators="spectatorRows"
+            :you-id="playerId"
+            layout="inline"
+            @toggle-voice-mute="voiceToggleMute"
+          )
 
         .lobby__col.lobby__col--settings.panel
           h2.lobby__heading {{ $t("table.lobby.room_settings") }}
@@ -130,6 +137,12 @@
 
     //- ------------------------------------------------------ the table
     section.stage(v-else)
+      SpectatorList.stage__spectators(
+        v-if="spectatorRows.length"
+        :spectators="spectatorRows"
+        :you-id="playerId"
+        @toggle-voice-mute="voiceToggleMute"
+      )
       //- Everyone else, arced across the far side of the table.
       .stage__arc
         .stage__arc-slot(
@@ -373,6 +386,7 @@
     status,
     error,
     kicked,
+    spectators,
     connect,
     send,
     resetRoom,
@@ -477,6 +491,19 @@
   const { cardName } = useCardText()
 
   const discardRect = () => tableCenter.value?.discardRect() ?? null
+
+  /** Watchers, with the same voice read-outs a seat gets. */
+  const spectatorRows = computed(() =>
+    spectators.value.map((spectator) => {
+      const self = spectator.playerId === playerId.value
+      return {
+        ...spectator,
+        micOn: voiceMicOnFor(spectator.playerId),
+        muted: !self && voiceIsMuted(spectator.playerId),
+        speaking: voiceIsSpeaking(self ? "self" : spectator.playerId)
+      }
+    })
+  )
 
   const nopeWindow = computed(() => state.value?.nopeWindow ?? null)
   const hasNope = computed(() => hand.value.some((c) => c.id === "nope"))
@@ -1008,6 +1035,12 @@
     &__kick {
       flex: none;
     }
+
+    &__spectators {
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px dashed $ink-dim;
+    }
   }
 
   /* ------------------------------------------------------------ the table */
@@ -1032,6 +1065,12 @@
       gap: 0.5rem 1.4rem;
       padding-top: 0.5rem;
       min-height: 132px;
+    }
+
+    // A full-width strip below `lg`; from `lg` up it is pinned to the viewport
+    // edge (position: fixed) and leaves the grid altogether.
+    &__spectators {
+      grid-column: 1 / -1;
     }
 
     &__center {

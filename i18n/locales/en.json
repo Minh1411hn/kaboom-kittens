@@ -60,6 +60,10 @@
       "lobby_full": "The room is full — you're watching, you'll join as soon as a seat opens.",
       "game_in_progress": "You're watching this game — you'll join once it ends."
     },
+    "spectators": {
+      "title": "Watching",
+      "you": "(you)"
+    },
     "joining_room": "Joining the room…",
     "lobby": {
       "player_list": "Player list",

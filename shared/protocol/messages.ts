@@ -102,6 +102,17 @@ export interface RoomSummary {
   createdAt: number
 }
 
+/**
+ * Someone in the room without a seat: a latecomer waiting for the next game,
+ * or a full room's overflow. Their voice still carries, so the table lists
+ * them — kept outside `GameState`, like the voice roster.
+ */
+export interface Spectator {
+  playerId: string
+  nickname: string
+  avatarId: string
+}
+
 export interface ChatMessage {
   id: string
   playerId: string
@@ -124,6 +135,8 @@ export type ServerMessage =
       roomName: string
       /** Who is currently in the voice call, and which SFU track to pull. */
       voice: VoiceMember[]
+      /** Who is watching without a seat. */
+      spectators: Spectator[]
     }
   | { type: 'room-list'; rooms: RoomSummary[] }
   | { type: 'chat'; message: ChatMessage }

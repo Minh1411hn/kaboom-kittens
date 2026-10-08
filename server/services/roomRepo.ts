@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { STATE_VERSION, type GameState } from '#shared/types/game'
-import type { ChatMessage, RoomSummary } from '#shared/protocol/messages'
+import type { ChatMessage, RoomSummary, Spectator } from '#shared/protocol/messages'
 import type { VoiceMember } from '#shared/protocol/voice'
 import { MAX_PLAYERS } from '../game/deck'
 import { createGame } from '../game/engine'
@@ -21,6 +21,7 @@ const metaKey = (id: string) => `room:${id}`
 const stateKey = (id: string) => `room:${id}:state`
 const chatKey = (id: string) => `room:${id}:chat`
 const voiceKey = (id: string) => `room:${id}:voice`
+const spectatorsKey = (id: string) => `room:${id}:spectators`
 
 /** Short, unambiguous room codes — no 0/O/1/I to mistype from a shared link. */
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -98,13 +99,14 @@ export async function saveState(state: GameState): Promise<void> {
     .expire(metaKey(state.roomId), ttl())
     .expire(chatKey(state.roomId), ttl())
     .expire(voiceKey(state.roomId), ttl())
+    .expire(spectatorsKey(state.roomId), ttl())
     .exec()
 }
 
 export async function deleteRoom(id: string): Promise<void> {
   await useRedis()
     .multi()
-    .del(metaKey(id), stateKey(id), chatKey(id), voiceKey(id))
+    .del(metaKey(id), stateKey(id), chatKey(id), voiceKey(id), spectatorsKey(id))
     .zrem(ROOMS_INDEX, id)
     .exec()
 }
@@ -231,6 +233,35 @@ export async function loadVoice(roomId: string): Promise<VoiceMember[]> {
   return Object.values(raw ?? {}).flatMap((entry) => {
     try {
       return [JSON.parse(entry) as VoiceMember]
+    } catch {
+      return []
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Spectators — peers in the room who hold no seat. Not game state either: a
+// watcher has no effect on the engine, and the list rides on the snapshot.
+// ---------------------------------------------------------------------------
+
+export async function setSpectator(roomId: string, spectator: Spectator): Promise<void> {
+  await useRedis()
+    .multi()
+    .hset(spectatorsKey(roomId), spectator.playerId, JSON.stringify(spectator))
+    .expire(spectatorsKey(roomId), ttl())
+    .exec()
+}
+
+/** Returns whether there was an entry to remove, so callers can skip a broadcast. */
+export async function removeSpectator(roomId: string, playerId: string): Promise<boolean> {
+  return (await useRedis().hdel(spectatorsKey(roomId), playerId)) > 0
+}
+
+export async function loadSpectators(roomId: string): Promise<Spectator[]> {
+  const raw = await useRedis().hgetall(spectatorsKey(roomId))
+  return Object.values(raw ?? {}).flatMap((entry) => {
+    try {
+      return [JSON.parse(entry) as Spectator]
     } catch {
       return []
     }

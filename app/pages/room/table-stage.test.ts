@@ -108,6 +108,7 @@ mockNuxtImport('useGameSocket', () => () => {
     rooms: useState('kk:rooms', () => []),
     chat: useState('kk:chat', () => []),
     voice: useState('kk:voice', () => []),
+    spectators: useState('kk:spectators', () => []),
     pending: useState('kk:events', () => []),
     playerId: useState<string>('kk:playerId', () => 'p1'),
     status: useState<string>('kk:wsStatus', () => 'open'),
@@ -365,6 +366,29 @@ describe('the table stage', () => {
 
     await seats[1]!.get('.lobby__kick').trigger('click')
     expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
+  })
+
+  it('lists the spectators beside the table and in the waiting room', async () => {
+    fixture = playing()
+    const wrapper = await mount()
+    expect(wrapper.find('.spectator-list').exists()).toBe(false)
+
+    const spectators = useState<Array<{ playerId: string; nickname: string; avatarId: string }>>('kk:spectators')
+    spectators.value = [
+      { playerId: 's1', nickname: 'Latecomer', avatarId: 'art_03' },
+      { playerId: 's2', nickname: 'Lurker', avatarId: 'art_04' },
+    ]
+    await nextTick()
+
+    const list = wrapper.get('.stage .spectator-list')
+    expect(list.findAll('.spectator-list__item').map((item) => item.text())).toEqual(['Latecomer', 'Lurker'])
+    expect(list.get('.spectator-list__count').text()).toBe('2')
+
+    useState<PublicGameState | null>('kk:state').value = playing({ status: 'lobby' })
+    await nextTick()
+    expect(wrapper.find('.stage').exists()).toBe(false)
+    expect(wrapper.get('.lobby .spectator-list').text()).toContain('Latecomer')
+    spectators.value = []
   })
 
   it('makes the deck-position dialog wait for the kitten ceremony', async () => {

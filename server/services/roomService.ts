@@ -1,15 +1,18 @@
 import type { Peer } from 'crossws'
 import type { Command, GameState } from '#shared/types/game'
 import type { Rejection } from '#shared/types/errors'
-import type { ServerMessage } from '#shared/protocol/messages'
+import type { ServerMessage, Spectator } from '#shared/protocol/messages'
 import type { VoiceMember } from '#shared/protocol/voice'
 import { addPlayer, DEFAULT_CONFIG, reduce, removePlayer, resetToLobby, setConnected, type EngineConfig } from '../game/engine'
 import { projectStateFor } from '../game/projection'
 import {
   loadState,
   getRoomMeta,
+  loadSpectators,
   loadVoice,
+  removeSpectator,
   removeVoiceMember,
+  setSpectator,
   saveState,
   setHost,
   type RoomMeta,
@@ -208,6 +211,18 @@ export async function kickPlayer(roomId: string, targetPlayerId: string): Promis
   return undefined
 }
 
+/**
+ * Keeps the spectator list in step with the roster after a `join`: whoever did
+ * not get a seat is listed, whoever did is not. Called after every join, which
+ * is also how a watcher is seated once the room goes back to waiting.
+ */
+export async function syncSpectator(roomId: string, spectator: Spectator): Promise<void> {
+  const state = await loadState(roomId)
+  if (!state) return
+  if (state.players.some((p) => p.id === spectator.playerId)) await removeSpectator(roomId, spectator.playerId)
+  else await setSpectator(roomId, spectator)
+}
+
 // ---------------------------------------------------------------------------
 // Broadcasting
 // ---------------------------------------------------------------------------
@@ -217,10 +232,11 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   const listeners = peersInRoom(roomId)
   if (!listeners.length) return
 
-  const [state, meta, voice] = await Promise.all([
+  const [state, meta, voice, spectators] = await Promise.all([
     loadState(roomId),
     getRoomMeta(roomId),
     loadVoice(roomId),
+    loadSpectators(roomId),
   ])
   if (!state) {
     for (const { peer } of listeners) {
@@ -230,7 +246,7 @@ export async function broadcastRoom(roomId: string): Promise<void> {
   }
 
   for (const { peer, context } of listeners) {
-    send(peer, snapshotFor(state, meta, context.playerId, voice))
+    send(peer, snapshotFor(state, meta, context.playerId, voice, spectators))
   }
 }
 
@@ -239,6 +255,7 @@ export function snapshotFor(
   meta: RoomMeta | null,
   viewerId: string,
   voice: VoiceMember[] = [],
+  spectators: Spectator[] = [],
 ): ServerMessage {
   const projected = projectStateFor(state, viewerId)
   if (projected.you) projected.you.isHost = meta?.hostId === viewerId
@@ -250,20 +267,24 @@ export function snapshotFor(
     // loading" to the client, same as a room whose name has not arrived yet.
     roomName: meta?.name ?? '',
     voice,
+    // A seat always wins: a stale entry for someone who has since been seated
+    // must not list them twice.
+    spectators: spectators.filter((s) => !state.players.some((p) => p.id === s.playerId)),
   }
 }
 
 export async function sendSnapshot(peer: Peer, roomId: string, viewerId: string): Promise<void> {
-  const [state, meta, voice] = await Promise.all([
+  const [state, meta, voice, spectators] = await Promise.all([
     loadState(roomId),
     getRoomMeta(roomId),
     loadVoice(roomId),
+    loadSpectators(roomId),
   ])
   if (!state) {
     send(peer, { type: 'kicked', code: 'room-gone' })
     return
   }
-  send(peer, snapshotFor(state, meta, viewerId, voice))
+  send(peer, snapshotFor(state, meta, viewerId, voice, spectators))
 }
 
 /**
