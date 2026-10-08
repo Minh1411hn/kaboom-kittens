@@ -367,6 +367,30 @@ describe('the table stage', () => {
     expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
   })
 
+  it('lets a waiting player pick Spectate, and remembers it for the next join', async () => {
+    localStorage.removeItem('kk_spectate_ABCD')
+    fixture = playing({ status: 'lobby' })
+    const wrapper = await mount()
+
+    const spectate = wrapper.get('.play-mode__option--spectate')
+    expect(spectate.attributes('aria-checked')).toBe('false')
+    await spectate.trigger('click')
+
+    expect(sent.at(-1)).toEqual({ type: 'join', roomId: 'ABCD', spectate: true })
+    expect(localStorage.getItem('kk_spectate_ABCD')).toBe('1')
+    expect(wrapper.get('.play-mode__option--spectate').attributes('aria-checked')).toBe('true')
+
+    await wrapper.get('.play-mode__option--play').trigger('click')
+    expect(sent.at(-1)).toEqual({ type: 'join', roomId: 'ABCD', spectate: false })
+    expect(localStorage.getItem('kk_spectate_ABCD')).toBeNull()
+  })
+
+  it('hides the Play/Spectate choice once the game is under way', async () => {
+    fixture = playing()
+    const wrapper = await mount()
+    expect(wrapper.find('.play-mode').exists()).toBe(false)
+  })
+
   it('makes the deck-position dialog wait for the kitten ceremony', async () => {
     fixture = playing()
     const wrapper = await mount()
@@ -445,7 +469,7 @@ describe('the table stage', () => {
     await Promise.resolve()
     await nextTick()
 
-    expect(sent).toContainEqual({ type: 'join', roomId: 'ABCD' })
+    expect(sent).toContainEqual({ type: 'join', roomId: 'ABCD', spectate: false })
     const profile = wrapper.findComponent(ProfileDialog)
     expect(profile.exists()).toBe(true)
     expect(profile.props('open')).toBe(true)

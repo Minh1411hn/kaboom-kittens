@@ -58,7 +58,13 @@
     },
     "spectating": {
       "lobby_full": "Phòng đã đầy — bạn đang theo dõi, sẽ vào bàn ngay khi có chỗ trống.",
-      "game_in_progress": "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc."
+      "game_in_progress": "Bạn đang xem ván đấu — sẽ vào bàn khi ván này kết thúc.",
+      "by_choice": "Bạn đang ở chế độ xem. Chuyển sang Chơi để lấy ghế cho ván tiếp theo."
+    },
+    "play_mode": {
+      "label": "Tham gia với vai trò",
+      "play": "Chơi",
+      "spectate": "Xem"
     },
     "joining_room": "Đang tham gia phòng chơi…",
     "lobby": {

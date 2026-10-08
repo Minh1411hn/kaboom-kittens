@@ -72,7 +72,7 @@
     p.room__notice.panel(v-if="kicked") {{ kicked }}
     p.room__banner.error(v-if="error") {{ error }}
     p.room__notice.panel(v-if="spectating")
-      | {{  state?.status === "lobby" ? $t('table.spectating.lobby_full') : $t('table.spectating.game_in_progress')  }}
+      | {{  spectatingNotice  }}
 
     p.room__notice.panel.muted(v-if="!state") {{ $t("table.joining_room") }}
 
@@ -113,6 +113,9 @@
             p.muted
               | {{ $t("table.lobby.share_intro", { count: state.players.length }) }}
             ShareLink(:room-id="roomId")
+
+            .lobby__play-mode(v-if="state.status === 'lobby'")
+              PlayModeToggle(:spectate="spectatePreferred" @change="setSpectate")
 
             .lobby__start
               CommonButton(
@@ -585,12 +588,52 @@
 
   onMounted(() => {
     resetRoom()
+    spectatePreferred.value = readSpectate()
     stopPageHide = leaveOnPageHide()
     if (nickname.value) join()
     else void initializeGuest()
   })
 
   let joined = false
+
+  // --- play or spectate ------------------------------------------------------
+
+  /**
+   * Per room and per browser: a viewer convenience, not shared state. Every
+   * `join` carries it, so neither a refresh, a reconnect nor the auto-seat
+   * watcher below can put someone who chose to watch back in a seat.
+   */
+  const spectateKey = computed(() => `kk_spectate_${roomId.value}`)
+  const spectatePreferred = ref(false)
+
+  function readSpectate(): boolean {
+    try {
+      return localStorage.getItem(spectateKey.value) === "1"
+    } catch {
+      return false
+    }
+  }
+
+  function sendJoin() {
+    send({ type: "join", roomId: roomId.value, spectate: spectatePreferred.value })
+  }
+
+  function setSpectate(spectate: boolean) {
+    if (spectatePreferred.value === spectate) return
+    spectatePreferred.value = spectate
+    try {
+      if (spectate) localStorage.setItem(spectateKey.value, "1")
+      else localStorage.removeItem(spectateKey.value)
+    } catch {
+      // Storage blocked: the choice still holds for this page's lifetime.
+    }
+    sendJoin()
+  }
+
+  const spectatingNotice = computed(() => {
+    if (state.value?.status !== "lobby") return t("table.spectating.game_in_progress")
+    return spectatePreferred.value ? t("table.spectating.by_choice") : t("table.spectating.lobby_full")
+  })
 
   function join() {
     joined = true
@@ -601,7 +644,7 @@
     void startVoice()
     // A socket carried over from the lobby page is already open, so nothing
     // would wake the watcher below — send now instead.
-    if (status.value === "open") send({ type: "join", roomId: roomId.value })
+    if (status.value === "open") sendJoin()
   }
 
   async function initializeGuest() {
@@ -629,7 +672,7 @@
    */
   watch(status, (now, before) => {
     if (joined && now === "open" && before !== "open") {
-      send({ type: "join", roomId: roomId.value })
+      sendJoin()
     }
   })
 
@@ -649,14 +692,14 @@
   watch(
     () => [spectating.value, state.value?.status, state.value?.players.length],
     () => {
-      if (!spectating.value) {
+      if (!spectating.value || spectatePreferred.value) {
         seatAskedAt = -1
         return
       }
       const seated = state.value?.players.length ?? 0
       if (state.value?.status !== "lobby" || seatAskedAt === seated) return
       seatAskedAt = seated
-      send({ type: "join", roomId: roomId.value })
+      sendJoin()
     }
   )
 
@@ -997,6 +1040,11 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
+    }
+
+    &__play-mode {
+      display: flex;
+      justify-content: center;
     }
 
     &__start {

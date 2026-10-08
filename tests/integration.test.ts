@@ -318,6 +318,39 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     expect(back.state!.players.map((p) => p.id)).toEqual([stayer.playerId, host.playerId])
   }, 30_000)
 
+  it('lets a waiting player switch to spectate and back, handing the room over if they host', async () => {
+    const { roomId, players, host } = await makeRoom(['Barbara', 'Frances', 'Jean'])
+    const other = players[1]!
+
+    host.send({ type: 'join', roomId, spectate: true })
+    await other.waitForState((state) => state.players.length === 2, 5000, 'the host’s seat to free up')
+    expect(other.state!.players.some((p) => p.id === host.playerId)).toBe(false)
+    await other.waitFor((m) => m.type === 'snapshot' && m.hostId === other.playerId, 5000, 'host migration')
+    await host.waitForState((state) => state.you === null, 5000, 'the host to be watching')
+
+    // A spectator's reconnect join keeps them watching rather than reseating them.
+    host.send({ type: 'join', roomId, spectate: true })
+    await sleep(300)
+    expect(other.state!.players).toHaveLength(2)
+
+    host.send({ type: 'join', roomId })
+    await host.waitForState((state) => Boolean(state.you), 5000, 'a seat again')
+    expect(host.state!.players.map((p) => p.id).at(-1)).toBe(host.playerId)
+  }, 30_000)
+
+  it('keeps a seat in a game under way even when the join asks to spectate', async () => {
+    const { roomId, players, host } = await makeRoom(['Alice', 'Bob'])
+    host.send({ type: 'start-game' })
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'playing', 5000, 'the game to start')
+
+    host.send({ type: 'join', roomId, spectate: true })
+    await sleep(300)
+    await host.waitForState((state) => state.status === 'playing', 5000, 'a snapshot')
+    expect(host.state!.you).not.toBeNull()
+    expect(host.state!.players.find((p) => p.id === host.playerId)?.alive).toBe(true)
+  }, 30_000)
+
   it('seats a latecomer as a spectator, then gives them a seat when the game ends', async () => {
     const { roomId, players, host } = await makeRoom(['Grete', 'Emmy'])
     host.send({ type: 'start-game' })

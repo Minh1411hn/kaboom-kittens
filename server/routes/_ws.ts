@@ -170,7 +170,7 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
       // That is not a rejection: the peer watches instead. `projectStateFor`
       // already returns `you: null` for a viewer who is not on the roster, so a
       // spectator sees exactly the public table and nothing more.
-      await joinRoom(message.roomId, context.playerId, context.nickname, context.avatarId)
+      await joinRoom(message.roomId, context.playerId, context.nickname, context.avatarId, message.spectate ?? false)
 
       context.roomId = message.roomId
       context.watchingLobby = false

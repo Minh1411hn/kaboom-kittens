@@ -43,7 +43,9 @@ export const interactionResponseSchema = z.discriminatedUnion('type', [
 // ---------------------------------------------------------------------------
 
 export const clientMessageSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('join'), roomId: z.string().max(64) }),
+  // `spectate`: watch without a seat, and give up a seat already held while the
+  // room is waiting. Sent on every join so a refresh keeps the choice.
+  z.object({ type: z.literal('join'), roomId: z.string().max(64), spectate: z.boolean().optional() }),
   z.object({ type: z.literal('leave') }),
   z.object({ type: z.literal('watch-lobby') }),
   z.object({ type: z.literal('chat'), text: z.string().trim().min(1).max(200) }),

@@ -58,7 +58,13 @@
     },
     "spectating": {
       "lobby_full": "The room is full — you're watching, you'll join as soon as a seat opens.",
-      "game_in_progress": "You're watching this game — you'll join once it ends."
+      "game_in_progress": "You're watching this game — you'll join once it ends.",
+      "by_choice": "You're spectating. Switch to Play to take a seat in the next game."
+    },
+    "play_mode": {
+      "label": "Join as",
+      "play": "Play",
+      "spectate": "Spectate"
     },
     "joining_room": "Joining the room…",
     "lobby": {

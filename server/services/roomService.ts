@@ -82,7 +82,20 @@ export async function joinRoom(
   playerId: string,
   nickname: string,
   avatarId: string,
+  spectate = false,
 ): Promise<Rejection | undefined> {
+  if (spectate) {
+    // Watching by choice. A seat held in a waiting room is given up exactly as
+    // if the player had left (host migration included); a seat in a game under
+    // way is kept, so this never doubles as a way to dodge an elimination.
+    const state = await loadState(roomId)
+    if (state?.players.some((p) => p.id === playerId)) {
+      if (state.status === 'playing') return joinRoom(roomId, playerId, nickname, avatarId)
+      await leaveRoom(roomId, playerId, { onlyIfWaiting: true })
+    }
+    return undefined
+  }
+
   const error = await mutateRoom(roomId, (state) => {
     const existing = state.players.find((p) => p.id === playerId)
     if (existing) {
@@ -138,14 +151,21 @@ export async function updateProfile(
  * This runs for an explicit `leave` *and* for a dropped socket — closing the
  * tab, navigating away or refreshing all count as leaving a waiting room.
  */
-export async function leaveRoom(roomId: string, playerId: string): Promise<void> {
+export async function leaveRoom(
+  roomId: string,
+  playerId: string,
+  options: { onlyIfWaiting?: boolean } = {},
+): Promise<void> {
   const meta = await getRoomMeta(roomId)
 
-  await mutateRoom(roomId, (state) => {
+  const error = await mutateRoom(roomId, (state) => {
     const now = Date.now()
     // Spectators hold no seat; returning a Rejection keeps `mutateRoom` from
     // saving and broadcasting a state that did not change.
     if (!state.players.some((p) => p.id === playerId)) return { code: 'not-seated' }
+    // Switching to spectate re-checks under the lock: if the host started the
+    // game in the meantime, the seat stays put rather than going disconnected.
+    if (state.status === 'playing' && options.onlyIfWaiting) return { code: 'game-already-started' }
     if (state.status === 'playing') {
       setConnected(state, playerId, false, now)
       return
@@ -158,6 +178,8 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
       if (remaining.length && remaining.every((p) => p.ready)) resetToLobby(state, now)
     }
   })
+
+  if (error?.code === 'game-already-started') return
 
   const state = await loadState(roomId)
   if (!state) return
