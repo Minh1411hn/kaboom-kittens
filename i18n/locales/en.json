@@ -100,6 +100,14 @@
       "confirm": "Leave match",
       "cancel": "Stay"
     },
+    "kick_dialog": {
+      "button": "Kick",
+      "aria": "Remove {name} from the game",
+      "title": "Kick {name}?",
+      "message": "{name} will be eliminated from this game and their cards go to the discard pile. They can play again in the next game.",
+      "confirm": "Kick",
+      "cancel": "Cancel"
+    },
     "share_link": {
       "aria_label": "Room link",
       "copied": "Copied",
@@ -449,7 +457,8 @@
     "not-in-room": "Join a room first.",
     "voice-denied": "That voice session isn't yours.",
     "not-host": "Only the host can do that.",
-    "cant-kick-self": "You can't remove yourself."
+    "cant-kick-self": "You can't remove yourself.",
+    "kick-not-afk": "Only the host can kick a connected player. Anyone can kick a player who has been disconnected for {seconds}s."
   },
   "interactions": {
     "choose-card-from-hand": "Choose a card to give to {name}",
@@ -482,6 +491,7 @@
     "kitten-defused": "{name} used a Defuse!",
     "player-exploded": "{name} exploded!",
     "player-quit": "{name} left the game.",
+    "player-kicked": "{name} kicked {target} from the game.",
     "turn-changed": "It's {name}'s turn.",
     "player-attacked": "{target} was attacked and must take {count} turns.",
     "direction-reversed": "Play direction was reversed.",

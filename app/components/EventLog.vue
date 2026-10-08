@@ -45,6 +45,7 @@ aside.event-log
     "kitten-drawn": "lucide:bomb",
     "player-exploded": "lucide:bomb",
     "player-quit": "lucide:log-out",
+    "player-kicked": "lucide:user-x",
     "kitten-defused": "lucide:shield-check",
     "game-over": "lucide:trophy",
     "action-noped": "lucide:ban",

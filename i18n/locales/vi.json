@@ -100,6 +100,14 @@
       "confirm": "Rời trận",
       "cancel": "Ở lại"
     },
+    "kick_dialog": {
+      "button": "Kick",
+      "aria": "Loại {name} khỏi ván đấu",
+      "title": "Loại {name}?",
+      "message": "{name} sẽ bị loại khỏi ván này và toàn bộ bài trên tay bị bỏ vào chồng bài đã đánh. Họ vẫn chơi lại được từ ván sau.",
+      "confirm": "Loại",
+      "cancel": "Huỷ"
+    },
     "share_link": {
       "aria_label": "Liên kết phòng",
       "copied": "Đã sao chép",
@@ -449,7 +457,8 @@
     "not-in-room": "Hãy tham gia phòng trước.",
     "voice-denied": "Phiên thoại này không phải của bạn.",
     "not-host": "Chỉ chủ phòng mới có quyền thực hiện thao tác này.",
-    "cant-kick-self": "Bạn không thể tự mời chính mình ra khỏi phòng."
+    "cant-kick-self": "Bạn không thể tự mời chính mình ra khỏi phòng.",
+    "kick-not-afk": "Chỉ chủ phòng mới loại được người đang kết nối. Ai cũng có thể loại người đã mất kết nối quá {seconds} giây."
   },
   "interactions": {
     "choose-card-from-hand": "Chọn 1 lá bài để đưa cho {name}",
@@ -482,6 +491,7 @@
     "kitten-defused": "{name} đã sử dụng Defuse để gỡ bom!",
     "player-exploded": "{name} đã bị nổ tung!",
     "player-quit": "{name} đã rời khỏi ván đấu.",
+    "player-kicked": "{name} đã loại {target} khỏi ván đấu.",
     "turn-changed": "Đến lượt của {name}.",
     "player-attacked": "{target} bị tấn công và phải thực hiện {count} lượt.",
     "direction-reversed": "Chiều chơi đã bị đảo ngược.",

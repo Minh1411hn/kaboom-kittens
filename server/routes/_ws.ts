@@ -288,13 +288,13 @@ async function handle(peer: Peer, message: ClientMessage): Promise<void> {
     case 'kick-player': {
       if (!context.roomId) return fail(peer, 'not-in-room')
       const meta = await getRoomMeta(context.roomId)
-      if (meta?.hostId !== context.playerId) {
-        return fail(peer, 'not-host')
-      }
       if (message.targetPlayerId === context.playerId) {
         return fail(peer, 'cant-kick-self')
       }
-      const error = await kickPlayer(context.roomId, message.targetPlayerId)
+      // Who may kick depends on the phase, so `kickPlayer` decides: the host
+      // in the waiting room; mid-game also anyone, once the target is AFK.
+      const byHost = meta?.hostId === context.playerId
+      const error = await kickPlayer(context.roomId, context.playerId, message.targetPlayerId, byHost)
       if (error) return fail(peer, error.code, error.params)
       return broadcastRoom(context.roomId)
     }

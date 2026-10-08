@@ -281,6 +281,14 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     await bystander.waitForState((state) => state.players.length === 2, 5000, 'the roster to shrink')
     expect(bystander.state!.players.some((p) => p.id === target.playerId)).toBe(false)
 
+    // The server lets go of the kicked socket even if the client never closes it.
+    const snapshotsBefore = target.received.filter((m) => m.type === 'snapshot').length
+    host.send({ type: 'chat', text: 'still there?' })
+    await bystander.waitFor((m) => m.type === 'chat', 5000, 'the chat line')
+    await sleep(200)
+    expect(target.received.filter((m) => m.type === 'snapshot').length).toBe(snapshotsBefore)
+    expect(target.received.some((m) => m.type === 'chat' && m.message.text === 'still there?')).toBe(false)
+
     // Kicking is not a ban: the same player can rejoin normally.
     const rejoined = new TestClient(BASE_URL, target.nickname)
     rejoined.cookie = target.cookie
@@ -290,6 +298,31 @@ describe.skipIf(!serverUp)('end-to-end over websockets', () => {
     rejoined.send({ type: 'join', roomId })
     await rejoined.waitForState((state) => Boolean(state.you), 5000, 'a snapshot after rejoining')
     expect(rejoined.state!.players.some((p) => p.id === target.playerId)).toBe(true)
+  }, 30_000)
+
+  it('lets the host knock an AFK player out mid-game, but not a bystander', async () => {
+    const { players, host } = await makeRoom(['Hedy', 'Katherine', 'Dorothy'])
+    host.send({ type: 'start-game' })
+    for (const player of players)
+      await player.waitForState((state) => state.status === 'playing', 5000, 'the game to start')
+    const target = players[1]!
+    const bystander = players[2]!
+
+    // A connected player is not AFK as far as a non-host is concerned.
+    bystander.send({ type: 'kick-player', targetPlayerId: target.playerId })
+    await bystander.waitFor((message) => message.type === 'error')
+    expect(bystander.errors).toContain('kick-not-afk')
+
+    host.send({ type: 'kick-player', targetPlayerId: target.playerId })
+    const out = (state: PublicGameState) => state.players.find((p) => p.id === target.playerId)?.alive === false
+    await bystander.waitForState(out, 5000, 'the target to be eliminated')
+    expect(bystander.state!.status).toBe('playing')
+    expect(bystander.state!.log.at(-1)).toMatchObject({ type: 'player-kicked', targetId: target.playerId })
+
+    // Eliminated, not thrown out: the target keeps watching the table.
+    await target.waitForState(out, 5000, 'the target to see it')
+    expect(target.received.some((message) => message.type === 'kicked')).toBe(false)
+    expect(target.state!.you!.hand).toHaveLength(0)
   }, 30_000)
 
   it('frees the seat when a waiting player’s socket drops, and hands the room over', async () => {

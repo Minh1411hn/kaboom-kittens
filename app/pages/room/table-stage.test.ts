@@ -367,6 +367,43 @@ describe('the table stage', () => {
     expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
   })
 
+  it('lets the host kick an opponent mid-game after a confirm', async () => {
+    fixture = playing()
+    const wrapper = await mount()
+
+    const slots = wrapper.findAll('.stage__arc-slot')
+    expect(slots.map((slot) => slot.find('.stage__kick').exists())).toEqual([true, true])
+
+    await slots[0]!.get('.stage__kick').trigger('click')
+    expect(wrapper.get('.confirm-dialog').text()).toContain('Mittens')
+    expect(sent.some((m) => m.type === 'kick-player')).toBe(false)
+
+    await wrapper.get('.confirm-dialog__btn--danger').trigger('click')
+    expect(sent.at(-1)).toEqual({ type: 'kick-player', targetPlayerId: 'p2' })
+    expect(wrapper.find('.confirm-dialog').exists()).toBe(false)
+  })
+
+  it('offers a non-host the mid-game kick only for a disconnected opponent', async () => {
+    fixture = playing({
+      players: [
+        player({ id: 'p1', nickname: 'Whiskers', seat: 0 }),
+        player({ id: 'p2', nickname: 'Mittens', seat: 1, connected: false }),
+        player({ id: 'p3', nickname: 'Boots', seat: 2 }),
+        player({ id: 'p4', nickname: 'Socks', seat: 3, alive: false, connected: false }),
+      ],
+    })
+    const wrapper = await mount()
+    useState<string>('kk:hostId').value = 'p3'
+    await nextTick()
+
+    const kickable = wrapper
+      .findAll('.stage__arc-slot')
+      .filter((slot) => slot.find('.stage__kick').exists())
+      .map((slot) => slot.text())
+    expect(kickable).toHaveLength(1)
+    expect(kickable[0]).toContain('Mittens')
+  })
+
   it('makes the deck-position dialog wait for the kitten ceremony', async () => {
     fixture = playing()
     const wrapper = await mount()

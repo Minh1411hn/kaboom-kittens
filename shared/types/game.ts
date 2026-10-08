@@ -233,6 +233,7 @@ export interface GameEvent {
     | 'kitten-defused'
     | 'player-exploded'
     | 'player-quit'
+    | 'player-kicked'
     | 'turn-changed'
     | 'player-attacked'
     | 'direction-reversed'
@@ -306,6 +307,9 @@ export type Command =
   | { type: 'timeout-turn'; now: number }
   | { type: 'timeout-interaction'; now: number }
   | { type: 'quit-game'; playerId: string; now: number }
+  /** Mid-game removal. `byHost` is decided by the room layer, which owns host
+   *  identity; without it the target must have been disconnected for a while. */
+  | { type: 'kick-player'; playerId: string; targetPlayerId: string; byHost: boolean; now: number }
   | { type: 'return-to-lobby'; playerId: string; now: number }
 
 // ---------------------------------------------------------------------------

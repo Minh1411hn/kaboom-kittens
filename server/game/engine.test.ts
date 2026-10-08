@@ -755,6 +755,111 @@ describe('quit game', () => {
   })
 })
 
+describe('kick player', () => {
+  const kick = (state: GameState, playerId: string, targetPlayerId: string, byHost = true, now?: number) =>
+    run(state, { type: 'kick-player', playerId, targetPlayerId, byHost, now })
+
+  /** p1..pN in seat order, with `id` on turn and nobody holding a Nope. */
+  function table(players: number, currentId: string): GameState {
+    const state = started(players)
+    removeAllNopes(state)
+    setTurn(state, currentId)
+    return state
+  }
+
+  it('lets the host eliminate an AFK current player and passes the turn on', () => {
+    const state = table(4, 'p1')
+    setHand(state, 'p1', ['skip', 'tacocat'])
+    const discardBefore = state.discardPile.length
+
+    const after = kick(state, 'p0', 'p1')
+
+    expect(playerById(after, 'p1')!.alive).toBe(false)
+    expect(playerById(after, 'p1')!.hand).toHaveLength(0)
+    expect(after.discardPile).toHaveLength(discardBefore + 2)
+    expect(currentPlayer(after)!.id).toBe('p2')
+    expect(after.log.at(-1)).toMatchObject({ type: 'player-kicked', playerId: 'p0', targetId: 'p1' })
+  })
+
+  it('ends the game when the kick leaves one player standing', () => {
+    const state = table(2, 'p1')
+    const after = kick(state, 'p0', 'p1')
+    expect(after.status).toBe('over')
+    expect(after.winnerId).toBe('p0')
+  })
+
+  it('stops waiting on a kicked Favor target and keeps the asker on turn', () => {
+    let state = table(3, 'p0')
+    setHand(state, 'p0', ['favor'])
+    setHand(state, 'p1', ['tacocat', 'skip'])
+    state = run(state, { type: 'play-card', playerId: 'p0', uids: uidsOf(state, 'p0', ['favor']), combo: null, targetPlayerId: 'p1' })
+    expect(state.interaction?.requiredFrom).toEqual(['p1'])
+
+    const after = kick(state, 'p0', 'p1')
+
+    expect(after.interaction).toBeNull()
+    expect(currentPlayer(after)!.id).toBe('p0')
+    expect(after.turnDeadline).not.toBeNull()
+  })
+
+  it('puts a kitten mid-reinsertion back on the deck and skips only the kicked player', () => {
+    let state = table(4, 'p1')
+    setHand(state, 'p1', ['defuse'])
+    stackDraw(state, ['exploding-kitten'])
+    state = run(state, { type: 'draw-card', playerId: 'p1' })
+    expect(state.interaction?.kind).toBe('choose-deck-position')
+    const kittenUid = state.limbo[0]!.uid
+
+    const after = kick(state, 'p0', 'p1')
+
+    expect(after.interaction).toBeNull()
+    expect(after.limbo).toHaveLength(0)
+    expect(after.drawPile[0]!.uid).toBe(kittenUid)
+    expect(currentPlayer(after)!.id).toBe('p2')
+  })
+
+  it('closes a Nope window once the kicked player was the only one who could Nope', () => {
+    let state = table(3, 'p0')
+    setHand(state, 'p0', ['skip'])
+    setHand(state, 'p2', ['nope'])
+    state = run(state, { type: 'play-card', playerId: 'p0', uids: uidsOf(state, 'p0', ['skip']), combo: null })
+    expect(state.nopeWindow).not.toBeNull()
+
+    const after = kick(state, 'p0', 'p2')
+
+    expect(after.nopeWindow).toBeNull()
+    // The skip went through: p0's turn is over and p2 is out, so it is p1's.
+    expect(currentPlayer(after)!.id).toBe('p1')
+  })
+
+  it('lets a non-host kick only after the target has been gone for the grace period', () => {
+    const state = table(3, 'p1')
+    const grace = DEFAULT_CONFIG.kickAfterDisconnectMs
+
+    expect(expectRejected(state, { type: 'kick-player', playerId: 'p2', targetPlayerId: 'p1', byHost: false }).code).toBe('kick-not-afk')
+
+    const target = playerById(state, 'p1')!
+    target.connected = false
+    target.disconnectedAt = clock
+    expect(
+      expectRejected(state, { type: 'kick-player', playerId: 'p2', targetPlayerId: 'p1', byHost: false, now: clock + grace - 1 }).code,
+    ).toBe('kick-not-afk')
+
+    const after = kick(state, 'p2', 'p1', false, clock + grace)
+    expect(playerById(after, 'p1')!.alive).toBe(false)
+  })
+
+  it('refuses kicks that make no sense', () => {
+    const state = table(3, 'p0')
+    expect(expectRejected(state, { type: 'kick-player', playerId: 'p0', targetPlayerId: 'p0', byHost: true }).code).toBe('cant-kick-self')
+    expect(expectRejected(state, { type: 'kick-player', playerId: 'p0', targetPlayerId: 'nobody', byHost: true }).code).toBe('kick-target-not-found')
+    expect(expectRejected(state, { type: 'kick-player', playerId: 'ghost', targetPlayerId: 'p1', byHost: false }).code).toBe('not-in-game')
+    const after = kick(state, 'p0', 'p1')
+    expect(expectRejected(after, { type: 'kick-player', playerId: 'p0', targetPlayerId: 'p1', byHost: true }).code).toBe('already-left')
+    expect(expectRejected(newGame(3), { type: 'kick-player', playerId: 'p0', targetPlayerId: 'p1', byHost: true }).code).toBe('game-not-started')
+  })
+})
+
 describe('return to lobby', () => {
   /**
    * Runs quit-game until one player remains, then restores everyone's

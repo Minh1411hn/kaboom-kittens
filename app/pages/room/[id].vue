@@ -152,6 +152,15 @@
             @pick="pickTarget"
             @toggle-voice-mute="voiceToggleMute"
           )
+          CommonButton.stage__kick(
+            v-if="canKick(player)"
+            :aria-label="$t('table.kick_dialog.aria', { name: player.nickname })"
+            :label="$t('table.kick_dialog.button')"
+            icon="lucide:user-x"
+            size="sm"
+            variant="red"
+            @click="kickTarget = player"
+          )
 
       .stage__center
         TableCenter(
@@ -353,10 +362,20 @@
       @cancel="cancelQuit"
       @confirm="quitGame"
     )
+
+    ConfirmDialog(
+      v-if="kickTarget"
+      :cancel-label="$t('table.kick_dialog.cancel')"
+      :confirm-label="$t('table.kick_dialog.confirm')"
+      :message="$t('table.kick_dialog.message', { name: kickTarget.nickname })"
+      :title="$t('table.kick_dialog.title', { name: kickTarget.nickname })"
+      @cancel="kickTarget = null"
+      @confirm="confirmKick"
+    )
 </template>
 
 <script setup lang="ts">
-  import type { Card, CardId, DeckOverrides, InteractionResponse } from "#shared/types/game"
+  import type { Card, CardId, DeckOverrides, InteractionResponse, PublicPlayer } from "#shared/types/game"
   import { CARD_CATALOG } from "#shared/types/game"
 
   const route = useRoute()
@@ -843,6 +862,24 @@
     send({ type: "kick-player", targetPlayerId })
   }
 
+  /** Mid-game kick, for a player stalling the table. Pending a confirm. */
+  const kickTarget = ref<PublicPlayer | null>(null)
+
+  /**
+   * The host may kick anyone still in the game; everyone else only a player
+   * whose socket is gone. The server additionally makes non-hosts wait out the
+   * disconnect grace period, so a quick refresh never costs anyone the game.
+   */
+  function canKick(player: PublicPlayer): boolean {
+    if (!isPlaying.value || !youAreSeated.value || !player.alive) return false
+    return isHost.value || !player.connected
+  }
+
+  function confirmKick() {
+    if (kickTarget.value) kickPlayer(kickTarget.value.id)
+    kickTarget.value = null
+  }
+
   function askToQuit() {
     confirmingQuit.value = true
   }
@@ -1032,6 +1069,17 @@
       gap: 0.5rem 1.4rem;
       padding-top: 0.5rem;
       min-height: 132px;
+    }
+
+    &__arc-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    &__kick {
+      flex: none;
     }
 
     &__center {

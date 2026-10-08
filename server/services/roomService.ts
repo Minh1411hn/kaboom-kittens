@@ -24,6 +24,7 @@ export function engineConfig(): EngineConfig {
     ...DEFAULT_CONFIG,
     nopeWindowMs: Number(config.nopeWindowMs) || DEFAULT_CONFIG.nopeWindowMs,
     turnTimeoutMs: Number(config.turnTimeoutMs) || DEFAULT_CONFIG.turnTimeoutMs,
+    kickAfterDisconnectMs: Number(config.disconnectGraceMs) || DEFAULT_CONFIG.kickAfterDisconnectMs,
   }
 }
 
@@ -183,12 +184,33 @@ export async function leaveRoom(roomId: string, playerId: string): Promise<void>
 }
 
 /**
- * Host-only removal, lobby phase only. Not a ban: the removed player can
- * `join` this room again afterwards exactly like a first-time joiner, since
+ * Waiting room: host-only removal. Not a ban — the removed player can `join`
+ * this room again afterwards exactly like a first-time joiner, since
  * `removePlayer` (lobby branch) drops their entry outright rather than
  * flagging it.
+ *
+ * Mid-game: an engine command, so the removal goes through `reduce` like any
+ * other move. The target is eliminated (not removed, seats stay stable) and
+ * keeps watching; the engine decides whether a non-host may do it.
  */
-export async function kickPlayer(roomId: string, targetPlayerId: string): Promise<Rejection | undefined> {
+export async function kickPlayer(
+  roomId: string,
+  kickerId: string,
+  targetPlayerId: string,
+  byHost: boolean,
+): Promise<Rejection | undefined> {
+  const current = await loadState(roomId)
+  if (current?.status === 'playing') {
+    return applyCommand(roomId, {
+      type: 'kick-player',
+      playerId: kickerId,
+      targetPlayerId,
+      byHost,
+      now: Date.now(),
+    })
+  }
+  if (!byHost) return { code: 'not-host' }
+
   const error = await mutateRoom(roomId, (state) => {
     if (state.status !== 'lobby' && state.status !== 'over') return { code: 'kick-not-in-lobby' }
     if (!state.players.some((p) => p.id === targetPlayerId)) return { code: 'kick-target-not-found' }
@@ -203,8 +225,14 @@ export async function kickPlayer(roomId: string, targetPlayerId: string): Promis
   })
   if (error) return error
 
-  const target = peersInRoom(roomId).find((l) => l.context.playerId === targetPlayerId)
-  if (target) send(target.peer, { type: 'kicked', code: 'kicked-by-host' })
+  // Detach every socket of the kicked player from the room on the server side
+  // too. Waiting for the client to close would leave a client that ignores the
+  // notice listening to snapshots and sitting in the voice roster.
+  for (const target of peersInRoom(roomId).filter((l) => l.context.playerId === targetPlayerId)) {
+    send(target.peer, { type: 'kicked', code: 'kicked-by-host' })
+    target.context.roomId = null
+  }
+  await removeVoiceMember(roomId, targetPlayerId)
   return undefined
 }
 

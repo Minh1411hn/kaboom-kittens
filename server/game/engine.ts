@@ -44,12 +44,16 @@ export interface EngineConfig {
     nopeWindowMs: number;
     turnTimeoutMs: number;
     interactionTimeoutMs: number;
+    /** How long a player must have been disconnected before anyone, not just
+     *  the host, may kick them mid-game. A refresh must not get you kicked. */
+    kickAfterDisconnectMs: number;
 }
 
 export const DEFAULT_CONFIG: EngineConfig = {
     nopeWindowMs: 5000,
     turnTimeoutMs: 45000,
     interactionTimeoutMs: 10000,
+    kickAfterDisconnectMs: 60000,
 };
 
 export interface ReduceResult {
@@ -259,21 +263,15 @@ function dispatch(
             if (!player.alive) return { code: "already-left" };
             // No interaction/nopeWindow guard here, unlike draw-card — a player
             // quitting should go through even mid-prompt or mid-Nope-window.
-            removePlayer(state, command.playerId);
-            logEvent(
-                state,
-                {
-                    type: "player-quit",
-                    playerId: command.playerId,
-                },
-                env.now,
-            );
-            // settle() below re-runs both of these, but only this explicit call
-            // produces the "quit the game" log line above.
-            skipEliminatedCurrent(state);
-            checkGameOver(state, env.now);
+            eliminate(state, command.playerId, env, {
+                type: "player-quit",
+                playerId: command.playerId,
+            });
             return undefined;
         }
+
+        case "kick-player":
+            return kickPlayer(state, command, config, env);
 
         case "return-to-lobby": {
             if (state.status !== "over") return { code: "game-not-over" };
@@ -380,6 +378,74 @@ function startGame(
             now,
         );
     }
+    return undefined;
+}
+
+/**
+ * Takes a player out of a game in progress: the shared path for quitting and
+ * being kicked. It goes through mid-prompt and mid-Nope-window, and since the
+ * leaver's hand is gone it stops waiting for their answer or their Nope.
+ *
+ * Order matters: a leaver who was placing a defused kitten gets it put back
+ * (on top) and their turn ended by the prompt itself. Skipping their turn
+ * first would make that END_TURN skip the next player as well.
+ */
+function eliminate(
+    state: GameState,
+    playerId: string,
+    env: EffectEnv,
+    event: Omit<GameEvent, "seq" | "at">,
+): void {
+    removePlayer(state, playerId);
+    logEvent(state, event, env.now);
+    checkGameOver(state, env.now);
+    if (state.status !== "playing") return;
+
+    if (state.interaction?.requiredFrom.includes(playerId))
+        completeInteractionIfReady(state, env);
+    if (windowCanCloseNow(state)) resolveActionStack(state, env);
+    // settle() re-runs this too, but only after the log line above.
+    skipEliminatedCurrent(state);
+}
+
+/**
+ * The host may kick anyone mid-game. Anyone else seated may kick only a player
+ * who has been disconnected for `kickAfterDisconnectMs`, so an AFK player
+ * cannot stall the table but a refresh does not cost you the game.
+ */
+function kickPlayer(
+    state: GameState,
+    command: Extract<Command, { type: "kick-player" }>,
+    config: EngineConfig,
+    env: EffectEnv,
+): Rejection | undefined {
+    if (state.status !== "playing") return { code: "game-not-started" };
+    const kicker = playerById(state, command.playerId);
+    if (!command.byHost && !kicker) return { code: "not-in-game" };
+    if (command.playerId === command.targetPlayerId)
+        return { code: "cant-kick-self" };
+    const target = playerById(state, command.targetPlayerId);
+    if (!target) return { code: "kick-target-not-found" };
+    if (!target.alive) return { code: "already-left" };
+    if (!command.byHost) {
+        const away =
+            !target.connected && target.disconnectedAt !== null
+                ? env.now - target.disconnectedAt
+                : -1;
+        if (away < config.kickAfterDisconnectMs)
+            return {
+                code: "kick-not-afk",
+                params: {
+                    seconds: Math.round(config.kickAfterDisconnectMs / 1000),
+                },
+            };
+    }
+
+    eliminate(state, target.id, env, {
+        type: "player-kicked",
+        playerId: command.playerId,
+        targetId: target.id,
+    });
     return undefined;
 }
 

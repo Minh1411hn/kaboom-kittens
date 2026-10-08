@@ -61,6 +61,8 @@ export function useEventText() {
         return t("events.player-exploded", { name })
       case "player-quit":
         return t("events.player-quit", { name })
+      case "player-kicked":
+        return t("events.player-kicked", { name, target })
       case "turn-changed":
         return t("events.turn-changed", { name })
       case "player-attacked":

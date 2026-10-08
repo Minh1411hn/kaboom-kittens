@@ -58,6 +58,9 @@ export type RejectionCode =
   | 'room-gone'
   | 'kick-not-in-lobby'
   | 'kick-target-not-found'
+  | 'kick-not-afk'
+  | 'cant-kick-self'
+  | 'not-host'
   | 'not-seated'
 
 export interface Rejection {
