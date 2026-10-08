@@ -35,7 +35,12 @@
     |
     | {{ $t('table.player_seat.ready') }}
 
-  span.player-seat__fan.fan(v-if="player.alive && player.handCount" aria-hidden="true")
+  div.player-seat__spectator(v-if="player.hand && player.hand.length")
+    span.player-seat__spectator-label {{ $t('table.player_seat.spectating_hands') }}
+    div.player-seat__spectator-cards
+      CardImage(v-for="card in player.hand" :key="card.uid" :card-id="card.id" :uid="card.uid" width="30px")
+
+  span.player-seat__fan.fan(v-else-if="player.alive && player.handCount" aria-hidden="true")
     img.player-seat__mini.mini(v-for="i in fanned" :key="i" :src="back" :style="fanStyle(i)" alt="" draggable="false")
     span.player-seat__more.more(v-if="overflow") +{{ overflow }}
 
@@ -230,6 +235,32 @@
       font-size: 0.7rem;
       letter-spacing: 0.3px;
       color: $ink-dim;
+    }
+
+    &__spectator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      margin-top: 0.1rem;
+    }
+
+    &__spectator-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2px;
+      color: $ink-dim;
+      font-family: var(--font-display);
+    }
+
+    &__spectator-cards {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      flex-wrap: wrap;
+      
+      > * + * {
+        margin-left: -15px;
+      }
     }
   }
 </style>

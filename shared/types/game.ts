@@ -318,6 +318,7 @@ export interface PublicPlayer {
   avatarId: string
   seat: number
   handCount: number
+  hand?: Card[]
   alive: boolean
   connected: boolean
   ready: boolean

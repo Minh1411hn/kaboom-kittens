@@ -113,7 +113,8 @@
       "ready_title": "Đã sẵn sàng cho ván mới",
       "ready": "Sẵn sàng",
       "hand_count": "{count} lá bài",
-      "turns_left": "· còn {count} lượt"
+      "turns_left": "· còn {count} lượt",
+      "spectating_hands": "Đang xem bài"
     },
     "kitten_reveal": {
       "drew": "{name} đã rút phải Exploding Kitten!",

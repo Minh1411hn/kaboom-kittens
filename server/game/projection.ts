@@ -52,6 +52,8 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
   // will see. Public: the waiting room shows the composition to every player.
   const counts = deckComposition(state.players.length, state.deckOverrides)
 
+  const viewerIsSeatedAndDead = Boolean(viewer && !viewer.alive && state.status === 'playing')
+
   return {
     roomId: state.roomId,
     status: state.status,
@@ -61,6 +63,7 @@ export function projectStateFor(state: GameState, viewerId: string | null): Publ
       avatarId: p.avatarId,
       seat: p.seat,
       handCount: p.hand.length,
+      hand: viewerIsSeatedAndDead && p.alive ? p.hand.map((c) => ({ ...c })) : undefined,
       alive: p.alive,
       connected: p.connected,
       ready: p.ready,

@@ -113,7 +113,8 @@
       "ready_title": "Ready for a new game",
       "ready": "Ready",
       "hand_count": "{count} cards",
-      "turns_left": "· {count} turns left"
+      "turns_left": "· {count} turns left",
+      "spectating_hands": "Spectating hands"
     },
     "kitten_reveal": {
       "drew": "{name} drew the Exploding Kitten!",
